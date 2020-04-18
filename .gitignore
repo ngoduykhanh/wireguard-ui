@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+wireguard-ui
 
 # Test binary, built with `go test -c`
 *.test
@@ -15,6 +16,5 @@
 vendor/
 assets/
 db/
-
 
 
