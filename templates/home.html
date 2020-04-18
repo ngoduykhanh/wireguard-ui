@@ -15,31 +15,31 @@ Dashboard
     <div class="container-fluid">
         <h5 class="mt-4 mb-2">Wireguard Clients</h5>
         <div class="row">
-            {{range .clients}}
+            {{range .clientDataList}}
             <div class="col-sm-6">
                 <div class="info-box">
                     <img
-                        src="https://wg-gen-web-demo.127-0-0-1.fr/api/v1.0/client/a69b9f3f-556f-4f2a-8020-55bdd4479841/config?qrcode=true" />
+                        src="{{ .QRCode }}" />
                     <div class="info-box-content">
                         <div class="btn-group">
                             <button type="button" class="btn btn-outline-success btn-sm">Download</button>
                             <button type="button" class="btn btn-outline-primary btn-sm">Edit</button>
                             <button type="button" class="btn btn-outline-warning btn-sm">Disable</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#modal_remove_client" data-clientid="{{ .ID }}" data-clientname="{{ .Name }}">Remove</button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#modal_remove_client" data-clientid="{{ .Client.ID }}" data-clientname="{{ .Client.Name }}">Remove</button>
                         </div>
                         <hr>
-                        <span class="info-box-text"><i class="fas fa-user"></i> {{ .Name }}</span>
-                        <span class="info-box-text"><i class="fas fa-envelope"></i> {{ .Email }}</span>
+                        <span class="info-box-text"><i class="fas fa-user"></i> {{ .Client.Name }}</span>
+                        <span class="info-box-text"><i class="fas fa-envelope"></i> {{ .Client.Email }}</span>
                         <span class="info-box-text"><i class="fas fa-clock"></i>
-                            {{ .CreatedAt.Format "2 Jan 2006 15:04" }}</span>
+                            {{ .Client.CreatedAt.Format "2 Jan 2006 15:04" }}</span>
                         <span class="info-box-text"><i class="fas fa-history"></i>
-                            {{ .UpdatedAt.Format "2 Jan 2006 15:04" }}</span>
+                            {{ .Client.UpdatedAt.Format "2 Jan 2006 15:04" }}</span>
                         <span class="info-box-text"><strong>IP Allocation</strong></span>
-                        {{range .AllocatedIPs}}
+                        {{range .Client.AllocatedIPs}}
                         <small class="badge badge-secondary"></i>{{.}}</small>
                         {{end}}
                         <span class="info-box-text"><strong>Allowed IPs</strong></span>
-                        {{range .AllowedIPs}}
+                        {{range .Client.AllowedIPs}}
                         <small class="badge badge-secondary"></i>{{.}}</small>
                         {{end}}
                     </div>

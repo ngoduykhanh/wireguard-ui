@@ -17,3 +17,9 @@ type Client struct {
 	CreatedAt       time.Time 	`json:"created_at"`
 	UpdatedAt       time.Time 	`json:"updated_at"`
 }
+
+// ClientData includes the Client and extra data
+type ClientData struct {
+	Client	*Client
+	QRCode	string
+}

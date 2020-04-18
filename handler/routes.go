@@ -2,15 +2,18 @@ package handler
 
 import (
 	"encoding/json"
+	"encoding/base64"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/ngoduykhanh/wireguard-ui/model"
+	"github.com/ngoduykhanh/wireguard-ui/util"
 	"github.com/sdomino/scribble"
 	"github.com/labstack/gommon/log"
 	"github.com/rs/xid"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"github.com/skip2/go-qrcode"
 )
 
 // Home handler
@@ -28,18 +31,31 @@ func Home() echo.HandlerFunc {
 			log.Error("Cannot fetch clients from database: ", err)
 		}
 
-		clients := []model.Client{}
+		clientDataList := []model.ClientData{}
 		for _, f := range records {
 			client := model.Client{}
+			clientData := model.ClientData{}
+
+			// get client info
 			if err := json.Unmarshal([]byte(f), &client); err != nil {
 				log.Error("Cannot decode client json structure: ", err)
 			}
-			clients = append(clients, client)
+			clientData.Client = &client
+
+			// generate client qrcode image in base64
+			png, err := qrcode.Encode(util.BuildClientConfig(client), qrcode.Medium, 256)
+			if err != nil {
+				log.Error("Cannot generate QRCode: ", err)
+			}
+			clientData.QRCode = "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
+
+			// create the list of clients and their qrcode data
+			clientDataList = append(clientDataList, clientData)
 		}
 
 		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
 			"name": "Khanh",
-			"clients": clients,
+			"clientDataList": clientDataList,
 		})
 	}
 }
