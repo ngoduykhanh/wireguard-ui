@@ -162,7 +162,7 @@ func WireGuardServerInterfaces() echo.HandlerFunc {
 		// validate the input addresses
 		if util.ValidateServerAddresses(serverInterface.Addresses) == false {
 			log.Warnf("Invalid server interface addresses input from user: %v", serverInterface.Addresses)
-			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Interface IP addresses must be in CIDR format"})
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Interface IP address must be in CIDR format"})
 		}
 
 		serverInterface.UpdatedAt = time.Now().UTC()
