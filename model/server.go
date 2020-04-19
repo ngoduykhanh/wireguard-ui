@@ -13,7 +13,7 @@ type Server struct {
 // ServerKeypair model
 type ServerKeypair struct {
 	PrivateKey string    `json:"private_key"`
-	PublicKey  string    `json:"pulbic_key"`
+	PublicKey  string    `json:"public_key"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 

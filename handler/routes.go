@@ -76,10 +76,11 @@ func NewClient() echo.HandlerFunc {
 		guid := xid.New()
 		client.ID = guid.String()
 
-		// gen Wireguard key pairs
+		// gen Wireguard key pair
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
-			return err
+			log.Error("Cannot generate wireguard key pair: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
 		}
 		client.PrivateKey = key.String()
 		client.PublicKey = key.PublicKey().String()
@@ -139,9 +140,15 @@ func WireGuardServer() echo.HandlerFunc {
 			log.Error("Cannot fetch server interface config from database: ", err)
 		}
 
+		serverKeyPair := model.ServerKeypair{}
+		if err := db.Read("server", "keypair", &serverKeyPair); err != nil {
+			log.Error("Cannot fetch server key pair from database: ", err)
+		}
+
 		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
 			"name":            "Khanh",
 			"serverInterface": serverInterface,
+			"serverKeyPair":   serverKeyPair,
 		})
 	}
 }
@@ -171,5 +178,34 @@ func WireGuardServerInterfaces() echo.HandlerFunc {
 		log.Infof("Updated wireguard server interfaces settings: %v", serverInterface)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated interface addresses successfully"})
+	}
+}
+
+// WireGuardServerKeyPair handler to generate private and public keys
+func WireGuardServerKeyPair() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// gen Wireguard key pair
+		key, err := wgtypes.GeneratePrivateKey()
+		if err != nil {
+			log.Error("Cannot generate wireguard key pair: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+		}
+
+		serverKeyPair := new(model.ServerKeypair)
+		serverKeyPair.PrivateKey = key.String()
+		serverKeyPair.PublicKey = key.PublicKey().String()
+		serverKeyPair.UpdatedAt = time.Now().UTC()
+
+		// write config to the database
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+		}
+		db.Write("server", "keypair", serverKeyPair)
+		log.Infof("Updated wireguard server interfaces settings: %v", serverKeyPair)
+
+		return c.JSON(http.StatusOK, serverKeyPair)
 	}
 }
