@@ -219,7 +219,6 @@ Wireguard Server Settings
             $('#btn_show_private_key').click(function () {
                 var privateElement = document.getElementById("private_key");
                 var btnElement = document.getElementById("btn_show_private_key");
-                console.log(privateElement);
                 if (privateElement.type === 'password') {
                     privateElement.type = 'text';
                     btnElement.innerText = 'Hide';
