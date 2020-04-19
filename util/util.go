@@ -40,7 +40,7 @@ func BuildClientConfig(client model.Client) string {
 	return strConfig
 }
 
-// ValidateCIDR to validate an network CIDR
+// ValidateCIDR to validate a network CIDR
 func ValidateCIDR(cidr string) bool {
 	_, _, err := net.ParseCIDR(cidr)
 	if err != nil {
@@ -49,12 +49,28 @@ func ValidateCIDR(cidr string) bool {
 	return true
 }
 
-// ValidateAllowedIPs to validate allowed ip addresses in CIDR format.
-func ValidateAllowedIPs(cidrs []string) bool {
+// ValidateCIDRList to validate a list of network CIDR
+func ValidateCIDRList(cidrs []string) bool {
 	for _, cidr := range cidrs {
 		if ValidateCIDR(cidr) == false {
 			return false
 		}
+	}
+	return true
+}
+
+// ValidateAllowedIPs to validate allowed ip addresses in CIDR format
+func ValidateAllowedIPs(cidrs []string) bool {
+	if ValidateCIDRList(cidrs) == false {
+		return false
+	}
+	return true
+}
+
+// ValidateServerAddresses to validate allowed ip addresses in CIDR format
+func ValidateServerAddresses(cidrs []string) bool {
+	if ValidateCIDRList(cidrs) == false {
+		return false
 	}
 	return true
 }

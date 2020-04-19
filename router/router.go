@@ -29,7 +29,8 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 func New() *echo.Echo {
 	e := echo.New()
 	templates := make(map[string]*template.Template)
-	templates["home.html"] = template.Must(template.ParseFiles("templates/home.html", "templates/base.html"))
+	templates["clients.html"] = template.Must(template.ParseFiles("templates/clients.html", "templates/base.html"))
+	templates["server.html"] = template.Must(template.ParseFiles("templates/server.html", "templates/base.html"))
 
 	e.Logger.SetLevel(log.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())

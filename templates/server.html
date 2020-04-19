@@ -1,0 +1,165 @@
+{{define "title"}}
+Wireguard Server
+{{end}}
+
+{{define "username"}}
+{{index . "name"}}
+{{end}}
+
+{{define "page_title"}}
+Wireguard Server Settings
+{{end}}
+
+{{define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        <!-- <h5 class="mt-4 mb-2">Wireguard Server</h5> -->
+        <div class="row">
+            <!-- left column -->
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Interfaces</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form role="form" id="frm_server_interface" name="frm_server_interface">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="addresses" class="control-label">Server Interface Addresses</label>
+                                <input type="text" data-role="tagsinput" class="form-control" id="addresses" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="listen_port">Listen Port</label>
+                                <input type="text" class="form-control" id="listen_port" name="listen_port"
+                                    placeholder="Listen Port" value="{{ .serverInterface.ListenPort }}">
+                            </div>
+                        </div>
+                        <!-- /.card-body -->
+
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success">Save</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- /.card -->
+            </div>
+            <!-- right column -->
+            <div class="col-md-6">
+                <div class="card card-danger">
+                    <div class="card-header">
+                        <h3 class="card-title">Key Pair</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form role="form">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="private_key">Private Key</label>
+                                <div class="input-group input-group">
+                                    <input type="text" class="form-control" id="private_key" placeholder="Private Key">
+                                    <span class="input-group-append">
+                                        <button type="button" class="btn btn-danger btn-flat">Show</button>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="public_key">Public Key</label>
+                                <input type="text" class="form-control" id="public_key" placeholder="Public Key">
+                            </div>
+                        </div>
+                        <!-- /.card-body -->
+
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-danger">Regenerate</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- /.card -->
+            </div>
+        </div>
+        <!-- /.row -->
+    </div>
+</section>
+{{end}}
+
+{{define "bottom_js"}}
+    <script>
+        function submitServerInterfaceSetting() {
+            var addresses = $("#addresses").val().split(",");
+            var listen_port = $("#listen_port").val();
+            var data = {"addresses": addresses, "listen_port": listen_port};
+
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '/wg-server/interfaces',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function(data) {
+                    $('#modal_new_client').modal('hide');
+                    toastr.success('Updated Wireguard server interface addresses successfully');
+                },
+                error: function(jqXHR, exception) {
+                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+    </script>
+    <script>
+        // Wireguard Interface Addresses tag input
+        $('#addresses').tagsInput({
+            'width': '100%',
+            // 'height': '75%',
+            'interactive': true,
+            'defaultText': 'Add More',
+            'removeWithBackspace': true,
+            'minChars': 0,
+            'maxChars': 18,
+            'placeholderColor': '#666666'
+        });
+
+        // Load server addresses to the form
+        {{range .serverInterface.Addresses}}
+        $('#addresses').addTag('{{.}}');
+        {{end}}
+
+        // Wireguard Interface Addresses form validation
+        $(document).ready(function () {
+            $.validator.setDefaults({
+                submitHandler: function () {
+                    submitServerInterfaceSetting();
+                }
+            });
+            $('#frm_server_interface').validate({
+                rules: {
+                    listen_port: {
+                        required: true,
+                        digits: true,
+                        range: [1, 65535]
+                    }
+                },
+                messages: {
+                    listen_port: {
+                        required: "Please enter a port",
+                        digits: "Port must be an integer",
+                        range: "Port must be in range 1..65535"
+                    }
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    </script>
+{{end}}

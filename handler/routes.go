@@ -16,8 +16,8 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
-// Home handler
-func Home() echo.HandlerFunc {
+// WireGuardClients handler
+func WireGuardClients() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// initialize database directory
 		dir := "./db"
@@ -53,7 +53,7 @@ func Home() echo.HandlerFunc {
 			clientDataList = append(clientDataList, clientData)
 		}
 
-		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
+		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
 			"name":           "Khanh",
 			"clientDataList": clientDataList,
 		})
@@ -68,7 +68,7 @@ func NewClient() echo.HandlerFunc {
 
 		// validate the input AllowedIPs
 		if util.ValidateAllowedIPs(client.AllowedIPs) == false {
-			log.Warn("Invalid Allowed IPs input from user: %v", client.AllowedIPs)
+			log.Warnf("Invalid Allowed IPs input from user: %v", client.AllowedIPs)
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
 		}
 
@@ -120,5 +120,56 @@ func RemoveClient() echo.HandlerFunc {
 
 		log.Infof("Removed wireguard client: %v", client)
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Client removed"})
+	}
+}
+
+// WireGuardServer handler
+func WireGuardServer() echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		// initialize database directory
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+		}
+
+		serverInterface := model.ServerInterface{}
+		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+			log.Error("Cannot fetch server interface config from database: ", err)
+		}
+
+		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
+			"name":            "Khanh",
+			"serverInterface": serverInterface,
+		})
+	}
+}
+
+// WireGuardServerInterfaces handler
+func WireGuardServerInterfaces() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		serverInterface := new(model.ServerInterface)
+		c.Bind(serverInterface)
+
+		// validate the input addresses
+		if util.ValidateServerAddresses(serverInterface.Addresses) == false {
+			log.Warnf("Invalid server interface addresses input from user: %v", serverInterface.Addresses)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Interface IP addresses must be in CIDR format"})
+		}
+
+		serverInterface.UpdatedAt = time.Now().UTC()
+
+		// write config to the database
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+		}
+		db.Write("server", "interfaces", serverInterface)
+		log.Infof("Updated wireguard server interfaces settings: %v", serverInterface)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated interface addresses successfully"})
 	}
 }
