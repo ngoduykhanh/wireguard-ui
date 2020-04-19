@@ -246,6 +246,10 @@
                     $('#modal_new_client').modal('hide');
                     toastr.success('Created new client successfully');
                     // TODO: trigger reloading the dashboard
+                },
+                error: function(jqXHR, exception) {
+                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
                 }
             });
         }

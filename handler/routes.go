@@ -1,19 +1,19 @@
 package handler
 
 import (
-	"encoding/json"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/util"
-	"github.com/sdomino/scribble"
-	"github.com/labstack/gommon/log"
 	"github.com/rs/xid"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"github.com/sdomino/scribble"
 	"github.com/skip2/go-qrcode"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 // Home handler
@@ -54,7 +54,7 @@ func Home() echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
-			"name": "Khanh",
+			"name":           "Khanh",
 			"clientDataList": clientDataList,
 		})
 	}
@@ -62,9 +62,15 @@ func Home() echo.HandlerFunc {
 
 // NewClient handler
 func NewClient() echo.HandlerFunc {
-	return func (c echo.Context) error {
+	return func(c echo.Context) error {
 		client := new(model.Client)
 		c.Bind(client)
+
+		// validate the input AllowedIPs
+		if util.ValidateAllowedIPs(client.AllowedIPs) == false {
+			log.Warn("Invalid Allowed IPs input from user: %v", client.AllowedIPs)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
+		}
 
 		// gen ID
 		guid := xid.New()
@@ -80,38 +86,39 @@ func NewClient() echo.HandlerFunc {
 		client.CreatedAt = time.Now().UTC()
 		client.UpdatedAt = client.CreatedAt
 
-		// write to the database
+		// write client to the database
 		dir := "./db"
 		db, err := scribble.New(dir, nil)
 		if err != nil {
 			log.Error("Cannot initialize the database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
 		db.Write("clients", client.ID, client)
 		log.Infof("Created wireguard client: %v", client)
 
-		return c.JSON(http.StatusOK, client)	
+		return c.JSON(http.StatusOK, client)
 	}
 }
 
 // RemoveClient handler
 func RemoveClient() echo.HandlerFunc {
-	return func (c echo.Context) error {
+	return func(c echo.Context) error {
 		client := new(model.Client)
 		c.Bind(client)
 
-		// delete from database
+		// delete client from database
 		dir := "./db"
 		db, err := scribble.New(dir, nil)
 		if err != nil {
 			log.Error("Cannot initialize the database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
-
 		if err := db.Delete("clients", client.ID); err != nil {
 			log.Error("Cannot delete wireguard client: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot delete client from database"})
 		}
 
 		log.Infof("Removed wireguard client: %v", client)
-
-		return c.JSON(http.StatusOK, "Client removed!")
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Client removed"})
 	}
 }

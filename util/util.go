@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/ngoduykhanh/wireguard-ui/model"
@@ -37,4 +38,23 @@ func BuildClientConfig(client model.Client) string {
 		peerPersistentKeepalive + "\n"
 
 	return strConfig
+}
+
+// ValidateCIDR to validate an network CIDR
+func ValidateCIDR(cidr string) bool {
+	_, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+// ValidateAllowedIPs to validate allowed ip addresses in CIDR format.
+func ValidateAllowedIPs(cidrs []string) bool {
+	for _, cidr := range cidrs {
+		if ValidateCIDR(cidr) == false {
+			return false
+		}
+	}
+	return true
 }

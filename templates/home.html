@@ -105,6 +105,10 @@ Dashboard
                         $('#modal_remove_client').modal('hide');
                         toastr.success('Removed client successfully');
                         // TODO: trigger reloading the dashboard
+                    },
+                    error: function(jqXHR, exception) {
+                        var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
                     }
                 });
             });
