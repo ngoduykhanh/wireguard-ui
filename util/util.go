@@ -8,23 +8,18 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/model"
 )
 
-const wgConfigDNS = "1.1.1.1, 8.8.8.8"
-const wgConfigPersistentKeepalive = 15
-const wgConfigEndpoint = "wireguard.example.com:56231"
-const wgConfigServerPublicKey = "/OKCBc8PxIqCpgqlE9G1kSaTecdAvYf3loEwFj6MXDc="
-
 // BuildClientConfig to create wireguard client config string
-func BuildClientConfig(client model.Client) string {
+func BuildClientConfig(client model.Client, server model.Server, setting model.GlobalSetting) string {
 	// Interface section
 	clientAddress := fmt.Sprintf("Address = %s", strings.Join(client.AllocatedIPs, ","))
 	clientPrivateKey := fmt.Sprintf("PrivateKey = %s", client.PrivateKey)
-	clientDNS := fmt.Sprintf("DNS = %s", wgConfigDNS)
+	clientDNS := fmt.Sprintf("DNS = %s", strings.Join(setting.DNSServers, ","))
 
 	// Peer section
-	peerPublicKey := fmt.Sprintf("PublicKey = %s", wgConfigServerPublicKey)
+	peerPublicKey := fmt.Sprintf("PublicKey = %s", server.KeyPair.PublicKey)
 	peerAllowedIPs := fmt.Sprintf("AllowedIPs = %s", strings.Join(client.AllowedIPs, ","))
-	peerEndpoint := fmt.Sprintf("Endpoint = %s", wgConfigEndpoint)
-	peerPersistentKeepalive := fmt.Sprintf("PersistentKeepalive = %d", wgConfigPersistentKeepalive)
+	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", setting.EndpointAddress, server.Interface.ListenPort)
+	peerPersistentKeepalive := fmt.Sprintf("PersistentKeepalive = %d", setting.PersistentKeepalive)
 
 	// build the config as string
 	strConfig := "[Interface]\n" +

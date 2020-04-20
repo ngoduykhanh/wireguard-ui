@@ -31,6 +31,28 @@ func WireGuardClients() echo.HandlerFunc {
 			log.Error("Cannot fetch clients from database: ", err)
 		}
 
+		// read server information
+		serverInterface := model.ServerInterface{}
+		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+			log.Error("Cannot fetch server interface config from database: ", err)
+		}
+
+		serverKeyPair := model.ServerKeypair{}
+		if err := db.Read("server", "keypair", &serverKeyPair); err != nil {
+			log.Error("Cannot fetch server key pair from database: ", err)
+		}
+
+		// read global settings
+		globalSettings := model.GlobalSetting{}
+		if err := db.Read("server", "global_settings", &globalSettings); err != nil {
+			log.Error("Cannot fetch global settings from database: ", err)
+		}
+
+		server := model.Server{}
+		server.Interface = &serverInterface
+		server.KeyPair = &serverKeyPair
+
+		// read client information and build a client list
 		clientDataList := []model.ClientData{}
 		for _, f := range records {
 			client := model.Client{}
@@ -43,7 +65,7 @@ func WireGuardClients() echo.HandlerFunc {
 			clientData.Client = &client
 
 			// generate client qrcode image in base64
-			png, err := qrcode.Encode(util.BuildClientConfig(client), qrcode.Medium, 256)
+			png, err := qrcode.Encode(util.BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
 			if err != nil {
 				log.Error("Cannot generate QRCode: ", err)
 			}
