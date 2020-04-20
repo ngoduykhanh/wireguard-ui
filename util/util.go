@@ -1,6 +1,8 @@
 package util
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -8,6 +10,7 @@ import (
 
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/ngoduykhanh/wireguard-ui/model"
+	"github.com/sdomino/scribble"
 )
 
 // BuildClientConfig to create wireguard client config string
@@ -153,4 +156,115 @@ func GetPublicIP() (model.Interface, error) {
 	publicInterface.IPAddress = ip.String()
 
 	return publicInterface, err
+}
+
+// GetIPFromCIDR get ip from CIDR
+func GetIPFromCIDR(cidr string) (string, error) {
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", err
+	}
+	return ip.String(), nil
+}
+
+// GetAllocatedIPs to get all ip addresses allocated to clients and server
+func GetAllocatedIPs() ([]string, error) {
+	allocatedIPs := make([]string, 0)
+
+	// initialize database directory
+	dir := "./db"
+	db, err := scribble.New(dir, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// read server information
+	serverInterface := model.ServerInterface{}
+	if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+		return nil, err
+	}
+
+	// append server's addresses to the result
+	for _, cidr := range serverInterface.Addresses {
+		ip, err := GetIPFromCIDR(cidr)
+		if err != nil {
+			return nil, err
+		}
+		allocatedIPs = append(allocatedIPs, ip)
+	}
+
+	// read client information
+	records, err := db.ReadAll("clients")
+	if err != nil {
+		return nil, err
+	}
+
+	// append client's addresses to the result
+	for _, f := range records {
+		client := model.Client{}
+		if err := json.Unmarshal([]byte(f), &client); err != nil {
+			return nil, err
+		}
+
+		for _, cidr := range client.AllocatedIPs {
+			ip, err := GetIPFromCIDR(cidr)
+			if err != nil {
+				return nil, err
+			}
+			allocatedIPs = append(allocatedIPs, ip)
+		}
+	}
+
+	return allocatedIPs, nil
+}
+
+// inc from https://play.golang.org/p/m8TNTtygK0
+func inc(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
+}
+
+// GetBroadcastIP func to get the broadcast ip address of a network
+func GetBroadcastIP(n *net.IPNet) net.IP {
+	var broadcast net.IP
+	if len(n.IP) == 4 {
+		broadcast = net.ParseIP("0.0.0.0").To4()
+	} else {
+		broadcast = net.ParseIP("::")
+	}
+	for i := 0; i < len(n.IP); i++ {
+		broadcast[i] = n.IP[i] | ^n.Mask[i]
+	}
+	return broadcast
+}
+
+// GetAvailableIP get the ip address that can be allocated from an CIDR
+func GetAvailableIP(cidr string, allocatedList []string) (string, error) {
+	ip, net, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", err
+	}
+
+	broadcastAddr := GetBroadcastIP(net).String()
+	networkAddr := net.IP.String()
+
+	for ip := ip.Mask(net.Mask); net.Contains(ip); inc(ip) {
+		available := true
+		suggestedAddr := ip.String()
+		for _, allocatedAddr := range allocatedList {
+			if suggestedAddr == allocatedAddr {
+				available = false
+				break
+			}
+		}
+		if available && suggestedAddr != networkAddr && suggestedAddr != broadcastAddr {
+			return suggestedAddr, nil
+		}
+	}
+
+	return "", errors.New("No more available ip address")
 }

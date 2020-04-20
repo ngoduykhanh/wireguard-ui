@@ -137,16 +137,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="client_allocated_ips" class="control-label">IP Allocation</label>
-                                <select id="client_allocated_ips" class=" select2" data-placeholder="Select an IP address"
-                                    style="width: 100%;">
-                                    <option>192.168.1.1</option>
-                                    <option>192.168.1.2</option>
-                                    <option>192.168.1.3</option>
-                                    <option>192.168.1.4</option>
-                                    <option>192.168.1.5</option>
-                                    <option>192.168.1.6</option>
-                                    <option>192.168.1.7</option>
-                                </select>
+                                <input type="text" data-role="tagsinput" class="form-control" id="client_allocated_ips">
                             </div>
                             <div class="form-group">
                                 <label for="client_allowed_ips" class="control-label">Allowed IPs</label>
@@ -228,10 +219,9 @@
     <script>
         // submitNewClient function for new client form submition
         function submitNewClient() {
-            // TODO: Get allocated_ips and allowed_ips as multiple value in array
             var name = $("#client_name").val();
             var email = $("#client_email").val();
-            var allocated_ips = $("#client_allocated_ips").select2('val');
+            var allocated_ips = $("#client_allocated_ips").val().split(",");
             var allowed_ips = $("#client_allowed_ips").val().split(",");
             var enabled = false;
 
@@ -239,7 +229,7 @@
                 enabled = true;
             }
 
-            var data = {"name": name, "email": email, "allocated_ips": [allocated_ips], "allowed_ips": allowed_ips,
+            var data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
             "enabled": enabled};
             console.log(data);
 
@@ -261,10 +251,43 @@
                 }
             });
         }
+
+        // updateIPAllocationSuggestion function for automatically fill
+        // the IP Allocation input with suggested ip addresses
+        function updateIPAllocationSuggestion() {
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '/api/suggest-client-ips',
+                dataType: 'json',
+                contentType: "application/json",
+                success: function(data) {
+                    data.forEach(function (item, index) {
+                        $('#client_allocated_ips').addTag(item);
+                    })
+                },
+                error: function(jqXHR, exception) {
+                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
     </script>
     <script>
         //Initialize Select2 Elements
         $('.select2').select2()
+
+        // IP Allocation tag input
+        $('#client_allocated_ips').tagsInput({
+            'width': '100%',
+            'height': '75%',
+            'interactive': true,
+            'defaultText': 'Add More',
+            'removeWithBackspace': true,
+            'minChars': 0,
+            'maxChars': 18,
+            'placeholderColor': '#666666'
+        });
 
         // AllowedIPs tag input
         $('#client_allowed_ips').tagsInput({
@@ -315,6 +338,14 @@
                 unhighlight: function (element, errorClass, validClass) {
                     $(element).removeClass('is-invalid');
                 }
+            });
+        });
+
+        // New Client modal event
+        $(document).ready(function () {
+            $('#modal_new_client').on('shown.bs.modal', function (e) {
+                $('#client_allocated_ips').importTags('');
+                updateIPAllocationSuggestion();
             });
         });
     </script>
