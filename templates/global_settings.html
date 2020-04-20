@@ -27,8 +27,15 @@ Global Settings
                         <div class="card-body">
                             <div class="form-group">
                                 <label for="endpoint_address">Endpoint Address</label>
-                                <input type="text" class="form-control" id="endpoint_address" name="endpoint_address" placeholder="Endpoint Address"
-                                    value="{{ .globalSettings.EndpointAddress }}">
+                                <div class="input-group input-group">
+                                    <input type="text" class="form-control" id="endpoint_address" name="endpoint_address" placeholder="Endpoint Address"
+                                        value="{{ .globalSettings.EndpointAddress }}">
+                                    <span class="input-group-append">
+                                        <button type="button" class="btn btn-success btn-flat" data-toggle="modal"
+                                            data-target="#modal_endpoint_address_suggestion"><i
+                                                class="nav-icon fas fa-magic"></i> Suggest</button>
+                                    </span>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="dns_servers" class="control-label">DNS Servers</label>
@@ -60,6 +67,31 @@ Global Settings
     </div>
 </section>
 
+<div class="modal fade" id="modal_endpoint_address_suggestion">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Endpoint Address Suggestion</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Following is the list of public and local IP addresses for your consideration.</p>
+                <select id="ip_suggestion" class="select2"
+                    data-placeholder="Select an IP address" style="width: 100%;">
+                </select>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="btn_use_ip" disabled>Use selected IP address</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
 {{end}}
 
 {{define "bottom_js"}}
@@ -86,6 +118,20 @@ Global Settings
                     var responseJson = jQuery.parseJSON(jqXHR.responseText);
                     toastr.error(responseJson['message']);
                 }
+            });
+        }
+
+        function updateEndpointSuggestionIP() {
+            $.getJSON("/api/machine-ips", null, function(data) {
+                $("#ip_suggestion option").remove();
+                $.each(data, function(index, item) {
+                    $("#ip_suggestion").append(
+                        $("<option></option>")
+                            .text(item.ip_address + ' on ' + item.name)
+                            .val(item.ip_address)
+                    );
+                });
+                document.getElementById("btn_use_ip").disabled = false;
             });
         }
     </script>
@@ -148,6 +194,22 @@ Global Settings
                 unhighlight: function (element, errorClass, validClass) {
                     $(element).removeClass('is-invalid');
                 }
+            });
+        });
+
+        // Endpoint IP suggestion modal event
+        $(document).ready(function () {
+            $('#modal_endpoint_address_suggestion').on('shown.bs.modal', function (e) {
+                updateEndpointSuggestionIP();
+            });
+        });
+
+        // Use selected IP address from suggestion form
+        $(document).ready(function () {
+            $('#btn_use_ip').click(function () {
+                var ip = $('#ip_suggestion').select2('val');
+                $('#endpoint_address').val(ip);
+                $('#modal_endpoint_address_suggestion').modal('hide');
             });
         });
     </script>

@@ -281,3 +281,25 @@ func GlobalSettingSubmit() echo.HandlerFunc {
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated global settings successfully"})
 	}
 }
+
+// MachineIPAddresses handler to get local interface ip addresses
+func MachineIPAddresses() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// get private ip addresses
+		interfaceList, err := util.GetInterfaceIPs()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get machine ip addresses"})
+		}
+
+		// get public ip address
+		// TODO: Remove the go-external-ip dependency
+		publicInterface, err := util.GetPublicIP()
+		if err != nil {
+			log.Warn("Cannot get machine public ip address: ", err)
+		} else {
+			interfaceList = append(interfaceList, publicInterface)
+		}
+
+		return c.JSON(http.StatusOK, interfaceList)
+	}
+}
