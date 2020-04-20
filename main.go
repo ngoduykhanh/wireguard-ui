@@ -14,5 +14,7 @@ func main() {
 	app.GET("/wg-server", handler.WireGuardServer())
 	app.POST("wg-server/interfaces", handler.WireGuardServerInterfaces())
 	app.POST("wg-server/keypair", handler.WireGuardServerKeyPair())
+	app.GET("/global-settings", handler.GlobalSettings())
+	app.POST("/global-settings", handler.GlobalSettingSubmit())
 	app.Logger.Fatal(app.Start("127.0.0.1:5000"))
 }

@@ -31,6 +31,7 @@ func New() *echo.Echo {
 	templates := make(map[string]*template.Template)
 	templates["clients.html"] = template.Must(template.ParseFiles("templates/clients.html", "templates/base.html"))
 	templates["server.html"] = template.Must(template.ParseFiles("templates/server.html", "templates/base.html"))
+	templates["global_settings.html"] = template.Must(template.ParseFiles("templates/global_settings.html", "templates/base.html"))
 
 	e.Logger.SetLevel(log.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())

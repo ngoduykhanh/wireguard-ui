@@ -74,3 +74,21 @@ func ValidateServerAddresses(cidrs []string) bool {
 	}
 	return true
 }
+
+// ValidateIPAddress to validate the IPv4 and IPv6 address
+func ValidateIPAddress(ip string) bool {
+	if net.ParseIP(ip) == nil {
+		return false
+	}
+	return true
+}
+
+// ValidateIPAddressList to validate a list of IPv4 and IPv6 addresses
+func ValidateIPAddressList(ips []string) bool {
+	for _, ip := range ips {
+		if ValidateIPAddress(ip) == false {
+			return false
+		}
+	}
+	return true
+}

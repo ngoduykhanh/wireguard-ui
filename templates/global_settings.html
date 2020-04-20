@@ -1,0 +1,154 @@
+{{define "title"}}
+Global Settings
+{{end}}
+
+{{define "username"}}
+{{index . "name"}}
+{{end}}
+
+{{define "page_title"}}
+Global Settings
+{{end}}
+
+{{define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        <!-- <h5 class="mt-4 mb-2">Global Settings</h5> -->
+        <div class="row">
+            <!-- left column -->
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Wireguard Global Settings</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form role="form" id="frm_global_settings" name="frm_global_settings">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="endpoint_address">Endpoint Address</label>
+                                <input type="text" class="form-control" id="endpoint_address" name="endpoint_address" placeholder="Endpoint Address"
+                                    value="{{ .globalSettings.EndpointAddress }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="dns_servers" class="control-label">DNS Servers</label>
+                                <input type="text" data-role="tagsinput" class="form-control" id="dns_servers" value="">
+                            </div>
+                            <div class="form-group">
+                                <label for="mtu">MTU</label>
+                                <input type="text" class="form-control" id="mtu" name="mtu" placeholder="MTU"
+                                    value="{{ .globalSettings.MTU }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="persistent_keepalive">Persistent Keepalive</label>
+                                <input type="text" class="form-control" id="persistent_keepalive"
+                                    name="persistent_keepalive" placeholder="Persistent Keepalive"
+                                    value="{{ .globalSettings.PersistentKeepalive }}">
+                            </div>
+                        </div>
+                        <!-- /.card-body -->
+
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success">Save</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- /.card -->
+            </div>
+        </div>
+        <!-- /.row -->
+    </div>
+</section>
+
+{{end}}
+
+{{define "bottom_js"}}
+    <script>
+        function submitGlobalSettings() {
+            var endpoint_address = $("#endpoint_address").val();
+            var dns_servers = $("#dns_servers").val().split(",");
+            var mtu = $("#mtu").val();
+            var persistent_keepalive = $("#persistent_keepalive").val();
+            var data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive};
+
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '/global-settings',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function(data) {
+                    $('#modal_new_client').modal('hide');
+                    toastr.success('Update global settings successfully');
+                },
+                error: function(jqXHR, exception) {
+                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+    </script>
+    <script>
+        // Wireguard Interface DNS server tag input
+        $('#dns_servers').tagsInput({
+            'width': '100%',
+            'height': '75%',
+            'interactive': true,
+            'defaultText': 'Add More',
+            'removeWithBackspace': true,
+            'minChars': 0,
+            'maxChars': 18,
+            'placeholderColor': '#666666'
+        });
+
+        // Load DNS server to the form
+        {{range .globalSettings.DNSServers}}
+        $('#dns_servers').addTag('{{.}}');
+        {{end}}
+
+        // Global setting form validation
+        $(document).ready(function () {
+            $.validator.setDefaults({
+                submitHandler: function () {
+                    submitGlobalSettings();
+                }
+            });
+            $('#frm_global_settings').validate({
+                rules: {
+                    mtu: {
+                        required: true,
+                        digits: true,
+                        range: [68, 65535]
+                    },
+                    persistent_keepalive: {
+                        required: true,
+                        digits: true
+                    }
+                },
+                messages: {
+                    mtu: {
+                        required: "Please enter a MTU value",
+                        digits: "MTU must be an integer",
+                        range: "MTU must be in range 68..65535"
+                    },
+                    persistent_keepalive: {
+                        required: "Please enter a Persistent Keepalive value",
+                        digits: "Persistent keepalive must be an integer"
+                    }
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        });
+    </script>
+{{end}}

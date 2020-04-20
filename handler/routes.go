@@ -209,3 +209,53 @@ func WireGuardServerKeyPair() echo.HandlerFunc {
 		return c.JSON(http.StatusOK, serverKeyPair)
 	}
 }
+
+// GlobalSettings handler
+func GlobalSettings() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// initialize database directory
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+		}
+
+		globalSettings := model.GlobalSetting{}
+		if err := db.Read("server", "global_settings", &globalSettings); err != nil {
+			log.Error("Cannot fetch global settings from database: ", err)
+		}
+
+		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
+			"name":           "Khanh",
+			"globalSettings": globalSettings,
+		})
+	}
+}
+
+// GlobalSettingSubmit handler to update the global settings
+func GlobalSettingSubmit() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		globalSettings := new(model.GlobalSetting)
+		c.Bind(globalSettings)
+
+		// validate the input dns server list
+		if util.ValidateIPAddressList(globalSettings.DNSServers) == false {
+			log.Warnf("Invalid DNS server list input from user: %v", globalSettings.DNSServers)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Invalid DNS server address"})
+		}
+
+		globalSettings.UpdatedAt = time.Now().UTC()
+
+		// write config to the database
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+		}
+		db.Write("server", "global_settings", globalSettings)
+		log.Infof("Updated global settings: %v", globalSettings)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated global settings successfully"})
+	}
+}
