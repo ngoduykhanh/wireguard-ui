@@ -86,7 +86,7 @@
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                         <li class="nav-item">
-                            <a href="/" class="nav-link active">
+                            <a href="/" class="nav-link {{if eq .baseData.Active "" }}active{{end}}">
                                 <i class="nav-icon fas fa-user-secret"></i>
                                 <p>
                                     Wireguard Clients
@@ -94,7 +94,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/wg-server" class="nav-link">
+                            <a href="/wg-server" class="nav-link {{if eq .baseData.Active "wg-server" }}active{{end}}">
                                 <i class="nav-icon fas fa-server"></i>
                                 <p>
                                     Wireguard Server
@@ -102,7 +102,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/global-settings" class="nav-link">
+                            <a href="/global-settings" class="nav-link {{if eq .baseData.Active "global-settings" }}active{{end}}">
                                 <i class="nav-icon fas fa-cog"></i>
                                 <p>
                                     Global Settings

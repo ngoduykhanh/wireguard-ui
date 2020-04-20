@@ -76,7 +76,7 @@ func WireGuardClients() echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
-			"name":           "Khanh",
+			"baseData":       model.BaseData{""},
 			"clientDataList": clientDataList,
 		})
 	}
@@ -149,7 +149,6 @@ func RemoveClient() echo.HandlerFunc {
 // WireGuardServer handler
 func WireGuardServer() echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		// initialize database directory
 		dir := "./db"
 		db, err := scribble.New(dir, nil)
@@ -168,7 +167,7 @@ func WireGuardServer() echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
-			"name":            "Khanh",
+			"baseData":        model.BaseData{"wg-server"},
 			"serverInterface": serverInterface,
 			"serverKeyPair":   serverKeyPair,
 		})
@@ -248,7 +247,7 @@ func GlobalSettings() echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
-			"name":           "Khanh",
+			"baseData":       model.BaseData{"global-settings"},
 			"globalSettings": globalSettings,
 		})
 	}
