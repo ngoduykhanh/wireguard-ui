@@ -89,11 +89,25 @@ func NewClient() echo.HandlerFunc {
 		client := new(model.Client)
 		c.Bind(client)
 
+		// initialize db
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+		}
+
+		// read server information
+		serverInterface := model.ServerInterface{}
+		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+			log.Error("Cannot fetch server interface config from database: ", err)
+		}
+
 		// validate the input Allocation IPs
-		// TODO: validate if they are really available
-		if util.ValidateCIDRList(client.AllocatedIPs) == false {
-			log.Warnf("Invalid allocation ip input from user: %v", client.AllocatedIPs)
-			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "IP allocation is not valid"})
+		allocatedIPs, err := util.GetAllocatedIPs()
+		check, err := util.ValidateIPAllocation(serverInterface.Addresses, allocatedIPs, client.AllocatedIPs)
+		if !check {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
 		}
 
 		// validate the input AllowedIPs
@@ -118,12 +132,6 @@ func NewClient() echo.HandlerFunc {
 		client.UpdatedAt = client.CreatedAt
 
 		// write client to the database
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
-		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
-		}
 		db.Write("clients", client.ID, client)
 		log.Infof("Created wireguard client: %v", client)
 
