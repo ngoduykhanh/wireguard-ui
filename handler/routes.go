@@ -166,7 +166,7 @@ func SetClientStatus() echo.HandlerFunc {
 
 		client.Enabled = status
 		db.Write("clients", clientID, &client)
-		log.Infof("Change client %s to status %b", client.ID, status)
+		log.Infof("Changed client %s enabled status to %v", client.ID, status)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "ok"})
 	}

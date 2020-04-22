@@ -7,6 +7,7 @@ Wireguard Clients
     .paused-client {
         transition: transform .2s;
         cursor: pointer;
+        vertical-align: middle;
     }
     i[class^="paused-client"]:hover { transform: scale(1.5); }
 </style>
@@ -28,7 +29,8 @@ Wireguard Clients
             {{range .clientDataList}}
             <div class="col-sm-6">
                 <div class="info-box">
-                    <div class="overlay" id="paused_{{.Client.ID}}" {{if eq .Client.Enabled true}}style="display: none;"{{end}}>
+                    <div class="overlay" id="paused_{{.Client.ID}}"
+                        {{if eq .Client.Enabled true}}style="visibility: hidden;" {{end}}>
                         <i class="paused-client fas fa-3x fa-play" onclick="resumeClient('{{.Client.ID}}')"></i>
                     </div>
                     <img
@@ -140,13 +142,13 @@ Wireguard Clients
         function resumeClient(clientID) {
             setClientStatus(clientID, true);
             var divElement = document.getElementById("paused_" + clientID);
-            divElement.style.display = "none";
+            divElement.style.visibility = "hidden";
         }
 
         function pauseClient(clientID) {
             setClientStatus(clientID, false);
             var divElement = document.getElementById("paused_" + clientID);
-            divElement.style.display = "block";
+            divElement.style.visibility = "visible";
         }
     </script>
     <script>
