@@ -139,6 +139,39 @@ func NewClient() echo.HandlerFunc {
 	}
 }
 
+// SetClientStatus handler to enable / disable a client
+func SetClientStatus() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		data := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&data)
+
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+
+		clientID := data["id"].(string)
+		status := data["status"].(bool)
+
+		// initialize database directory
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+		}
+
+		client := model.Client{}
+		if err := db.Read("clients", clientID, &client); err != nil {
+			log.Error("Cannot fetch server interface config from database: ", err)
+		}
+
+		client.Enabled = status
+		db.Write("clients", clientID, &client)
+		log.Infof("Change client %s to status %b", client.ID, status)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "ok"})
+	}
+}
+
 // RemoveClient handler
 func RemoveClient() echo.HandlerFunc {
 	return func(c echo.Context) error {

@@ -10,6 +10,7 @@ func main() {
 
 	app.GET("/", handler.WireGuardClients())
 	app.POST("/new-client", handler.NewClient())
+	app.POST("/client/set-status", handler.SetClientStatus())
 	app.POST("/remove-client", handler.RemoveClient())
 	app.GET("/wg-server", handler.WireGuardServer())
 	app.POST("wg-server/interfaces", handler.WireGuardServerInterfaces())
