@@ -7,7 +7,6 @@ Wireguard Clients
     .paused-client {
         transition: transform .2s;
         cursor: pointer;
-        vertical-align: middle;
     }
     i[class^="paused-client"]:hover { transform: scale(1.5); }
 </style>
@@ -27,7 +26,7 @@ Wireguard Clients
         <!-- <h5 class="mt-4 mb-2">Wireguard Clients</h5> -->
         <div class="row">
             {{range .clientDataList}}
-            <div class="col-sm-6">
+            <div class="col-sm-6" id="client_{{.Client.ID}}">
                 <div class="info-box">
                     <div class="overlay" id="paused_{{.Client.ID}}"
                         {{if eq .Client.Enabled true}}style="visibility: hidden;" {{end}}>
@@ -196,7 +195,8 @@ Wireguard Clients
                     success: function(data) {
                         $('#modal_remove_client').modal('hide');
                         toastr.success('Removed client successfully');
-                        // TODO: trigger reloading the dashboard
+                        var divElement = document.getElementById('client_' + client_id);
+                        divElement.style.display = "none";
                     },
                     error: function(jqXHR, exception) {
                         var responseJson = jQuery.parseJSON(jqXHR.responseText);
