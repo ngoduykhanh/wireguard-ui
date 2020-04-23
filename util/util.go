@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strings"
+	"text/template"
 	"time"
 
 	externalip "github.com/glendc/go-external-ip"
@@ -307,4 +309,31 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 	}
 
 	return true, nil
+}
+
+// WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
+func WriteWireGuardServerConfig(serverConfig model.Server, clientDataList []model.ClientData, globalSettings model.GlobalSetting) error {
+	t, err := template.ParseFiles("templates/wg.conf")
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(globalSettings.ConfigFilePath)
+	if err != nil {
+		return err
+	}
+
+	config := map[string]interface{}{
+		"serverConfig":   serverConfig,
+		"clientDataList": clientDataList,
+		"globalSettings": globalSettings,
+	}
+
+	err = t.Execute(f, config)
+	if err != nil {
+		return err
+	}
+	f.Close()
+
+	return nil
 }

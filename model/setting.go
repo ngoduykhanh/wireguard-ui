@@ -10,5 +10,6 @@ type GlobalSetting struct {
 	DNSServers          []string  `json:"dns_servers"`
 	MTU                 int       `json:"mtu,string"`
 	PersistentKeepalive int       `json:"persistent_keepalive,string"`
+	ConfigFilePath      string    `json:"config_file_path"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }

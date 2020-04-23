@@ -19,5 +19,6 @@ func main() {
 	app.POST("/global-settings", handler.GlobalSettingSubmit())
 	app.GET("/api/machine-ips", handler.MachineIPAddresses())
 	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation())
+	app.GET("/api/apply-wg-config", handler.ApplyServerConfig())
 	app.Logger.Fatal(app.Start("127.0.0.1:5000"))
 }

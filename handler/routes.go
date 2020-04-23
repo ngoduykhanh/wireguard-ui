@@ -389,3 +389,66 @@ func SuggestIPAllocation() echo.HandlerFunc {
 		return c.JSON(http.StatusOK, suggestedIPs)
 	}
 }
+
+// ApplyServerConfig handler to write config file and restart Wireguard server
+func ApplyServerConfig() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// initialize database directory
+		dir := "./db"
+		db, err := scribble.New(dir, nil)
+		if err != nil {
+			log.Error("Cannot initialize the database: ", err)
+		}
+
+		// read server information
+		serverInterface := model.ServerInterface{}
+		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+			log.Error("Cannot fetch server interface config from database: ", err)
+		}
+
+		serverKeyPair := model.ServerKeypair{}
+		if err := db.Read("server", "keypair", &serverKeyPair); err != nil {
+			log.Error("Cannot fetch server key pair from database: ", err)
+		}
+
+		server := model.Server{}
+		server.Interface = &serverInterface
+		server.KeyPair = &serverKeyPair
+
+		// read global settings
+		globalSettings := model.GlobalSetting{}
+		if err := db.Read("server", "global_settings", &globalSettings); err != nil {
+			log.Error("Cannot fetch global settings from database: ", err)
+		}
+
+		// read client information and build a client list
+		records, err := db.ReadAll("clients")
+		if err != nil {
+			log.Error("Cannot fetch clients from database: ", err)
+		}
+
+		clientDataList := []model.ClientData{}
+		for _, f := range records {
+			client := model.Client{}
+			clientData := model.ClientData{}
+
+			// get client info
+			if err := json.Unmarshal([]byte(f), &client); err != nil {
+				log.Error("Cannot decode client json structure: ", err)
+			}
+			clientData.Client = &client
+
+			// create the list of clients and their qrcode data
+			clientDataList = append(clientDataList, clientData)
+		}
+
+		// Write config file
+		err = util.WriteWireGuardServerConfig(server, clientDataList, globalSettings)
+		if err != nil {
+			log.Error("Cannot apply server config: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot apply server config: %v", err)})
+		}
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
+	}
+}
