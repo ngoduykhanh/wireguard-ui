@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,68 +11,15 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 	"github.com/rs/xid"
-	"github.com/sdomino/scribble"
-	"github.com/skip2/go-qrcode"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 // WireGuardClients handler
 func WireGuardClients() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// initialize database directory
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		clientDataList, err := util.GetClients(true)
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
-		}
-
-		// read server information
-		serverInterface := model.ServerInterface{}
-		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
-			log.Error("Cannot fetch server interface config from database: ", err)
-		}
-
-		serverKeyPair := model.ServerKeypair{}
-		if err := db.Read("server", "keypair", &serverKeyPair); err != nil {
-			log.Error("Cannot fetch server key pair from database: ", err)
-		}
-
-		// read global settings
-		globalSettings := model.GlobalSetting{}
-		if err := db.Read("server", "global_settings", &globalSettings); err != nil {
-			log.Error("Cannot fetch global settings from database: ", err)
-		}
-
-		server := model.Server{}
-		server.Interface = &serverInterface
-		server.KeyPair = &serverKeyPair
-
-		// read client information and build a client list
-		records, err := db.ReadAll("clients")
-		if err != nil {
-			log.Error("Cannot fetch clients from database: ", err)
-		}
-
-		clientDataList := []model.ClientData{}
-		for _, f := range records {
-			client := model.Client{}
-			clientData := model.ClientData{}
-
-			// get client info
-			if err := json.Unmarshal([]byte(f), &client); err != nil {
-				log.Error("Cannot decode client json structure: ", err)
-			}
-			clientData.Client = &client
-
-			// generate client qrcode image in base64
-			png, err := qrcode.Encode(util.BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
-			if err != nil {
-				log.Error("Cannot generate QRCode: ", err)
-			}
-			clientData.QRCode = "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
-
-			// create the list of clients and their qrcode data
-			clientDataList = append(clientDataList, clientData)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot get client list: %v", err)})
 		}
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
@@ -89,11 +35,9 @@ func NewClient() echo.HandlerFunc {
 		client := new(model.Client)
 		c.Bind(client)
 
-		// initialize db
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		db, err := util.DBConn()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
+			log.Error("Cannot initialize database: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
 
@@ -152,11 +96,10 @@ func SetClientStatus() echo.HandlerFunc {
 		clientID := data["id"].(string)
 		status := data["status"].(bool)
 
-		// initialize database directory
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		db, err := util.DBConn()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
+			log.Error("Cannot initialize database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
 
 		client := model.Client{}
@@ -179,12 +122,12 @@ func RemoveClient() echo.HandlerFunc {
 		c.Bind(client)
 
 		// delete client from database
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		db, err := util.DBConn()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
+			log.Error("Cannot initialize database: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
+
 		if err := db.Delete("clients", client.ID); err != nil {
 			log.Error("Cannot delete wireguard client: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot delete client from database"})
@@ -198,27 +141,15 @@ func RemoveClient() echo.HandlerFunc {
 // WireGuardServer handler
 func WireGuardServer() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// initialize database directory
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		server, err := util.GetServer()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
-		}
-
-		serverInterface := model.ServerInterface{}
-		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
-			log.Error("Cannot fetch server interface config from database: ", err)
-		}
-
-		serverKeyPair := model.ServerKeypair{}
-		if err := db.Read("server", "keypair", &serverKeyPair); err != nil {
-			log.Error("Cannot fetch server key pair from database: ", err)
+			log.Error("Cannot get server config: ", err)
 		}
 
 		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
 			"baseData":        model.BaseData{Active: "wg-server"},
-			"serverInterface": serverInterface,
-			"serverKeyPair":   serverKeyPair,
+			"serverInterface": server.Interface,
+			"serverKeyPair":   server.KeyPair,
 		})
 	}
 }
@@ -238,12 +169,12 @@ func WireGuardServerInterfaces() echo.HandlerFunc {
 		serverInterface.UpdatedAt = time.Now().UTC()
 
 		// write config to the database
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		db, err := util.DBConn()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
+			log.Error("Cannot initialize database: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
+
 		db.Write("server", "interfaces", serverInterface)
 		log.Infof("Updated wireguard server interfaces settings: %v", serverInterface)
 
@@ -267,12 +198,12 @@ func WireGuardServerKeyPair() echo.HandlerFunc {
 		serverKeyPair.UpdatedAt = time.Now().UTC()
 
 		// write config to the database
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		db, err := util.DBConn()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
+			log.Error("Cannot initialize database: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
+
 		db.Write("server", "keypair", serverKeyPair)
 		log.Infof("Updated wireguard server interfaces settings: %v", serverKeyPair)
 
@@ -283,16 +214,9 @@ func WireGuardServerKeyPair() echo.HandlerFunc {
 // GlobalSettings handler
 func GlobalSettings() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// initialize database directory
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		globalSettings, err := util.GetGlobalSettings()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
-		}
-
-		globalSettings := model.GlobalSetting{}
-		if err := db.Read("server", "global_settings", &globalSettings); err != nil {
-			log.Error("Cannot fetch global settings from database: ", err)
+			log.Error("Cannot get global settings: ", err)
 		}
 
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
@@ -317,12 +241,12 @@ func GlobalSettingSubmit() echo.HandlerFunc {
 		globalSettings.UpdatedAt = time.Now().UTC()
 
 		// write config to the database
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		db, err := util.DBConn()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
+			log.Error("Cannot initialize database: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
 		}
+
 		db.Write("server", "global_settings", globalSettings)
 		log.Infof("Updated global settings: %v", globalSettings)
 
@@ -355,17 +279,9 @@ func MachineIPAddresses() echo.HandlerFunc {
 // SuggestIPAllocation handler to get the list of ip address for client
 func SuggestIPAllocation() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// initialize database directory
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		server, err := util.GetServer()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
-		}
-
-		// read server information
-		serverInterface := model.ServerInterface{}
-		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
-			log.Error("Cannot fetch server interface config from database: ", err)
+			log.Error("Cannot fetch server config from database: ", err)
 		}
 
 		// return the list of suggestedIPs
@@ -377,7 +293,7 @@ func SuggestIPAllocation() echo.HandlerFunc {
 			log.Error("Cannot suggest ip allocation. Failed to get list of allocated ip addresses: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot suggest ip allocation: failed to get list of allocated ip addresses"})
 		}
-		for _, cidr := range serverInterface.Addresses {
+		for _, cidr := range server.Interface.Addresses {
 			ip, err := util.GetAvailableIP(cidr, allocatedIPs)
 			if err != nil {
 				log.Error("Failed to get available ip from a CIDR: ", err)
@@ -393,57 +309,26 @@ func SuggestIPAllocation() echo.HandlerFunc {
 // ApplyServerConfig handler to write config file and restart Wireguard server
 func ApplyServerConfig() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// initialize database directory
-		dir := "./db"
-		db, err := scribble.New(dir, nil)
+		server, err := util.GetServer()
 		if err != nil {
-			log.Error("Cannot initialize the database: ", err)
+			log.Error("Cannot get server config: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get server config"})
 		}
 
-		// read server information
-		serverInterface := model.ServerInterface{}
-		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
-			log.Error("Cannot fetch server interface config from database: ", err)
-		}
-
-		serverKeyPair := model.ServerKeypair{}
-		if err := db.Read("server", "keypair", &serverKeyPair); err != nil {
-			log.Error("Cannot fetch server key pair from database: ", err)
-		}
-
-		server := model.Server{}
-		server.Interface = &serverInterface
-		server.KeyPair = &serverKeyPair
-
-		// read global settings
-		globalSettings := model.GlobalSetting{}
-		if err := db.Read("server", "global_settings", &globalSettings); err != nil {
-			log.Error("Cannot fetch global settings from database: ", err)
-		}
-
-		// read client information and build a client list
-		records, err := db.ReadAll("clients")
+		clients, err := util.GetClients(false)
 		if err != nil {
-			log.Error("Cannot fetch clients from database: ", err)
+			log.Error("Cannot get client config: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get client config"})
 		}
 
-		clientDataList := []model.ClientData{}
-		for _, f := range records {
-			client := model.Client{}
-			clientData := model.ClientData{}
-
-			// get client info
-			if err := json.Unmarshal([]byte(f), &client); err != nil {
-				log.Error("Cannot decode client json structure: ", err)
-			}
-			clientData.Client = &client
-
-			// create the list of clients and their qrcode data
-			clientDataList = append(clientDataList, clientData)
+		settings, err := util.GetGlobalSettings()
+		if err != nil {
+			log.Error("Cannot get global settings: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
 		}
 
 		// Write config file
-		err = util.WriteWireGuardServerConfig(server, clientDataList, globalSettings)
+		err = util.WriteWireGuardServerConfig(server, clients, settings)
 		if err != nil {
 			log.Error("Cannot apply server config: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot apply server config: %v", err)})

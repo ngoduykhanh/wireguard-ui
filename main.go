@@ -1,11 +1,21 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
+	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
 func main() {
+	// initialize DB
+	err := util.InitDB()
+	if err != nil {
+		fmt.Print("Cannot init database: ", err)
+	}
+
+	// register routes
 	app := router.New()
 
 	app.GET("/", handler.WireGuardClients())
