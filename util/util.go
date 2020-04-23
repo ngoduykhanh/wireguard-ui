@@ -149,7 +149,7 @@ func GetPublicIP() (model.Interface, error) {
 	consensus.AddVoter(externalip.NewHTTPSource("http://ifconfig.top"), 1)
 
 	publicInterface := model.Interface{}
-	publicInterface.Name = "Public"
+	publicInterface.Name = "Public Address"
 
 	ip, err := consensus.ExternalIP()
 	if err != nil {

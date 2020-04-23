@@ -137,7 +137,7 @@ Global Settings
                 $.each(data, function(index, item) {
                     $("#ip_suggestion").append(
                         $("<option></option>")
-                            .text(item.ip_address + ' on ' + item.name)
+                            .text(item.ip_address + ' - ' + item.name)
                             .val(item.ip_address)
                     );
                 });

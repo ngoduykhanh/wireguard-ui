@@ -17,6 +17,10 @@ import (
 const dbPath = "./db"
 const defaultServerAddress = "10.252.1.0/24"
 const defaultServerPort = 51820
+const defaultDNS = "1.1.1.1"
+const defaultMTU = 1450
+const defaultPersistentKeepalive = 15
+const defaultConfigFilePath = "/etc/wireguard/wg0.conf"
 
 // DBConn to initialize the database connection
 func DBConn() (*scribble.Driver, error) {
@@ -33,6 +37,7 @@ func InitDB() error {
 	var serverPath string = path.Join(dbPath, "server")
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
+	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
 
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
@@ -72,6 +77,28 @@ func InitDB() error {
 		serverKeyPair.PublicKey = key.PublicKey().String()
 		serverKeyPair.UpdatedAt = time.Now().UTC()
 		db.Write("server", "keypair", serverKeyPair)
+	}
+
+	// global settings
+	if _, err := os.Stat(globalSettingPath); os.IsNotExist(err) {
+		db, err := DBConn()
+		if err != nil {
+			return err
+		}
+
+		publicInterface, err := GetPublicIP()
+		if err != nil {
+			return err
+		}
+
+		globalSetting := new(model.GlobalSetting)
+		globalSetting.EndpointAddress = fmt.Sprintf("%s:%d", publicInterface.IPAddress, defaultServerPort)
+		globalSetting.DNSServers = []string{defaultDNS}
+		globalSetting.MTU = defaultMTU
+		globalSetting.PersistentKeepalive = defaultPersistentKeepalive
+		globalSetting.ConfigFilePath = defaultConfigFilePath
+		globalSetting.UpdatedAt = time.Now().UTC()
+		db.Write("server", "global_settings", globalSetting)
 	}
 
 	return nil

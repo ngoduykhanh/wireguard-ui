@@ -269,7 +269,8 @@ func MachineIPAddresses() echo.HandlerFunc {
 		if err != nil {
 			log.Warn("Cannot get machine public ip address: ", err)
 		} else {
-			interfaceList = append(interfaceList, publicInterface)
+			// prepend public ip to the list
+			interfaceList = append([]model.Interface{publicInterface}, interfaceList...)
 		}
 
 		return c.JSON(http.StatusOK, interfaceList)
