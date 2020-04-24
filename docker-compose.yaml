@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  wg:
+    # image: ngoduykhanh/wireguard-ui:latest
+    image: wgui
+    container_name: wgui
+    ports:
+      - 5000:5000
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m

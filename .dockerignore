@@ -1,0 +1,25 @@
+# Node
+node_modules
+npm-debug.log
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Git
+.git
+.gitattributes
+.gitignore
+
+# Vscode
+.vscode
+*.code-workspace
+
+# Others
+.lgtm.yml
+.travis.yml
+
+# App data & bin
+db
+wireguard-ui
