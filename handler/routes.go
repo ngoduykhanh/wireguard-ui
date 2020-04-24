@@ -14,6 +14,13 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
+// LoginPage handler
+func LoginPage() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.Render(http.StatusOK, "login.html", map[string]interface{}{})
+	}
+}
+
 // WireGuardClients handler
 func WireGuardClients() echo.HandlerFunc {
 	return func(c echo.Context) error {

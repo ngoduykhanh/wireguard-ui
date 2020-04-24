@@ -22,6 +22,10 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 		err := errors.New("Template not found -> " + name)
 		return err
 	}
+	// login page does not need the base layout
+	if name == "login.html" {
+		return tmpl.Execute(w, data)
+	}
 	return tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
@@ -29,6 +33,7 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 func New() *echo.Echo {
 	e := echo.New()
 	templates := make(map[string]*template.Template)
+	templates["login.html"] = template.Must(template.ParseFiles("templates/login.html"))
 	templates["clients.html"] = template.Must(template.ParseFiles("templates/clients.html", "templates/base.html"))
 	templates["server.html"] = template.Must(template.ParseFiles("templates/server.html", "templates/base.html"))
 	templates["global_settings.html"] = template.Must(template.ParseFiles("templates/global_settings.html", "templates/base.html"))

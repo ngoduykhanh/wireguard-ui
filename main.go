@@ -19,6 +19,7 @@ func main() {
 	app := router.New()
 
 	app.GET("/", handler.WireGuardClients())
+	app.GET("/login", handler.LoginPage())
 	app.POST("/new-client", handler.NewClient())
 	app.POST("/client/set-status", handler.SetClientStatus())
 	app.POST("/remove-client", handler.RemoveClient())
