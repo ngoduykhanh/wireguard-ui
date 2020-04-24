@@ -31,7 +31,7 @@
                 <p class="login-box-msg">Sign in to start your session</p>
                 <form action="" method="post">
                     <div class="input-group mb-3">
-                        <input type="username" class="form-control" placeholder="Username">
+                        <input id="username" type="username" class="form-control" placeholder="Username">
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-envelope"></span>
@@ -39,7 +39,7 @@
                         </div>
                     </div>
                     <div class="input-group mb-3">
-                        <input type="password" class="form-control" placeholder="Password">
+                        <input id="password" type="password" class="form-control" placeholder="Password">
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
@@ -57,11 +57,14 @@
                         </div>
                         <!-- /.col -->
                         <div class="col-4">
-                            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                            <button id="btn_login" type="button" class="btn btn-primary btn-block">Sign In</button>
                         </div>
                         <!-- /.col -->
                     </div>
                 </form>
+                <div class="text-center mb-3">
+                    <p id="message"></p>
+                </div>
             </div>
             <!-- /.login-card-body -->
         </div>
@@ -75,5 +78,43 @@
     <script src="static/dist/js/adminlte.min.js"></script>
 
 </body>
+<script>
+    function redirectNext() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var nextURL = urlParams.get('next');
+        if (nextURL) {
+            window.location.href = nextURL;
+        } else {
+            window.location.href = '/';
+        } 
+    }
+</script>
+<script>
+    $(document).ready(function () {
+        $('#btn_login').click(function () {
+            var username = $("#username").val();
+            var password = $("#password").val();
+            var data = {"username": username, "password": password}
+            console.log(data);
 
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '/login',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function(data) {
+                    document.getElementById("message").innerHTML = '<p style="color:green">' + data['message'] + '</p>';
+                    // redirect after logging in successfully
+                    redirectNext();
+                },
+                error: function(jqXHR, exception) {
+                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    document.getElementById("message").innerHTML = '<p style="color:red">' + responseJson['message'] + '</p>';
+                }
+            });
+        });
+    });
+</script>
 </html>

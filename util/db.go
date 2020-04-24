@@ -15,6 +15,8 @@ import (
 )
 
 const dbPath = "./db"
+const defaultUsername = "admin"
+const defaultPassword = "admin"
 const defaultServerAddress = "10.252.1.0/24"
 const defaultServerPort = 51820
 const defaultDNS = "1.1.1.1"
@@ -38,6 +40,7 @@ func InitDB() error {
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
+	var userPath string = path.Join(serverPath, "users.json")
 
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
@@ -101,7 +104,36 @@ func InitDB() error {
 		db.Write("server", "global_settings", globalSetting)
 	}
 
+	// user info
+	if _, err := os.Stat(userPath); os.IsNotExist(err) {
+		db, err := DBConn()
+		if err != nil {
+			return err
+		}
+
+		user := new(model.User)
+		user.Username = defaultUsername
+		user.Password = defaultPassword
+		db.Write("server", "user", user)
+	}
+
 	return nil
+}
+
+// GetUser func to query user info from the database
+func GetUser() (model.User, error) {
+	user := model.User{}
+
+	db, err := DBConn()
+	if err != nil {
+		return user, err
+	}
+
+	if err := db.Read("server", "user", &user); err != nil {
+		return user, err
+	}
+
+	return user, nil
 }
 
 // GetGlobalSettings func to query global settings from the database

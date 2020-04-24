@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
@@ -21,9 +23,60 @@ func LoginPage() echo.HandlerFunc {
 	}
 }
 
+// Login for signing in handler
+func Login() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user := new(model.User)
+		c.Bind(user)
+
+		dbuser, err := util.GetUser()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot query user from DB"})
+		}
+
+		if user.Username == dbuser.Username && user.Password == dbuser.Password {
+			// TODO: refresh the token
+			sess, _ := session.Get("session", c)
+			sess.Options = &sessions.Options{
+				Path:     "/",
+				MaxAge:   86400,
+				HttpOnly: true,
+			}
+
+			// set session_token
+			tokenUID := xid.New().String()
+			sess.Values["username"] = user.Username
+			sess.Values["session_token"] = tokenUID
+			sess.Save(c.Request(), c.Response())
+
+			// set session_token in cookie
+			cookie := new(http.Cookie)
+			cookie.Name = "session_token"
+			cookie.Value = tokenUID
+			cookie.Expires = time.Now().Add(24 * time.Hour)
+			c.SetCookie(cookie)
+
+			return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Logged in successfully"})
+		}
+
+		return c.JSON(http.StatusUnauthorized, jsonHTTPResponse{false, "Invalid credentials"})
+	}
+}
+
+// Logout to log a user out
+func Logout() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		clearSession(c)
+		return c.Redirect(http.StatusTemporaryRedirect, "/login")
+	}
+}
+
 // WireGuardClients handler
 func WireGuardClients() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		clientDataList, err := util.GetClients(true)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot get client list: %v", err)})
@@ -31,6 +84,7 @@ func WireGuardClients() echo.HandlerFunc {
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
 			"baseData":       model.BaseData{Active: ""},
+			"username":       currentUser(c),
 			"clientDataList": clientDataList,
 		})
 	}
@@ -39,6 +93,9 @@ func WireGuardClients() echo.HandlerFunc {
 // NewClient handler
 func NewClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		client := new(model.Client)
 		c.Bind(client)
 
@@ -93,6 +150,9 @@ func NewClient() echo.HandlerFunc {
 // SetClientStatus handler to enable / disable a client
 func SetClientStatus() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		data := make(map[string]interface{})
 		err := json.NewDecoder(c.Request().Body).Decode(&data)
 
@@ -125,6 +185,9 @@ func SetClientStatus() echo.HandlerFunc {
 // RemoveClient handler
 func RemoveClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		client := new(model.Client)
 		c.Bind(client)
 
@@ -148,6 +211,9 @@ func RemoveClient() echo.HandlerFunc {
 // WireGuardServer handler
 func WireGuardServer() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		server, err := util.GetServer()
 		if err != nil {
 			log.Error("Cannot get server config: ", err)
@@ -155,6 +221,7 @@ func WireGuardServer() echo.HandlerFunc {
 
 		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
 			"baseData":        model.BaseData{Active: "wg-server"},
+			"username":        currentUser(c),
 			"serverInterface": server.Interface,
 			"serverKeyPair":   server.KeyPair,
 		})
@@ -164,6 +231,9 @@ func WireGuardServer() echo.HandlerFunc {
 // WireGuardServerInterfaces handler
 func WireGuardServerInterfaces() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		serverInterface := new(model.ServerInterface)
 		c.Bind(serverInterface)
 
@@ -192,6 +262,9 @@ func WireGuardServerInterfaces() echo.HandlerFunc {
 // WireGuardServerKeyPair handler to generate private and public keys
 func WireGuardServerKeyPair() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		// gen Wireguard key pair
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
@@ -221,6 +294,9 @@ func WireGuardServerKeyPair() echo.HandlerFunc {
 // GlobalSettings handler
 func GlobalSettings() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		globalSettings, err := util.GetGlobalSettings()
 		if err != nil {
 			log.Error("Cannot get global settings: ", err)
@@ -228,6 +304,7 @@ func GlobalSettings() echo.HandlerFunc {
 
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
 			"baseData":       model.BaseData{Active: "global-settings"},
+			"username":       currentUser(c),
 			"globalSettings": globalSettings,
 		})
 	}
@@ -236,6 +313,9 @@ func GlobalSettings() echo.HandlerFunc {
 // GlobalSettingSubmit handler to update the global settings
 func GlobalSettingSubmit() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		globalSettings := new(model.GlobalSetting)
 		c.Bind(globalSettings)
 
@@ -264,6 +344,9 @@ func GlobalSettingSubmit() echo.HandlerFunc {
 // MachineIPAddresses handler to get local interface ip addresses
 func MachineIPAddresses() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		// get private ip addresses
 		interfaceList, err := util.GetInterfaceIPs()
 		if err != nil {
@@ -287,6 +370,9 @@ func MachineIPAddresses() echo.HandlerFunc {
 // SuggestIPAllocation handler to get the list of ip address for client
 func SuggestIPAllocation() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		server, err := util.GetServer()
 		if err != nil {
 			log.Error("Cannot fetch server config from database: ", err)
@@ -317,6 +403,9 @@ func SuggestIPAllocation() echo.HandlerFunc {
 // ApplyServerConfig handler to write config file and restart Wireguard server
 func ApplyServerConfig() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
 		server, err := util.GetServer()
 		if err != nil {
 			log.Error("Cannot get server config: ", err)

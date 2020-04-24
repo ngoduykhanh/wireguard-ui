@@ -20,6 +20,8 @@ func main() {
 
 	app.GET("/", handler.WireGuardClients())
 	app.GET("/login", handler.LoginPage())
+	app.POST("/login", handler.Login())
+	app.GET("/logout", handler.Logout())
 	app.POST("/new-client", handler.NewClient())
 	app.POST("/client/set-status", handler.SetClientStatus())
 	app.POST("/remove-client", handler.RemoveClient())

@@ -5,6 +5,8 @@ import (
 	"io"
 	"text/template"
 
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -32,6 +34,8 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 // New function
 func New() *echo.Echo {
 	e := echo.New()
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
+
 	templates := make(map[string]*template.Template)
 	templates["login.html"] = template.Must(template.ParseFiles("templates/login.html"))
 	templates["clients.html"] = template.Must(template.ParseFiles("templates/clients.html", "templates/base.html"))
