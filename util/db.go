@@ -95,7 +95,7 @@ func InitDB() error {
 		}
 
 		globalSetting := new(model.GlobalSetting)
-		globalSetting.EndpointAddress = fmt.Sprintf("%s:%d", publicInterface.IPAddress, defaultServerPort)
+		globalSetting.EndpointAddress = publicInterface.IPAddress
 		globalSetting.DNSServers = []string{defaultDNS}
 		globalSetting.MTU = defaultMTU
 		globalSetting.PersistentKeepalive = defaultPersistentKeepalive
