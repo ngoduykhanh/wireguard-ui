@@ -2,8 +2,10 @@ version: '3'
 
 services:
   wg:
-    # image: ngoduykhanh/wireguard-ui:latest
-    image: wgui
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ngoduykhanh/wireguard-ui:latest
     container_name: wgui
     ports:
       - 5000:5000
@@ -11,3 +13,5 @@ services:
       driver: json-file
       options:
         max-size: 50m
+    volumes:
+      - /etc/wireguard/wg0.conf:/etc/wireguard/wg0.conf
