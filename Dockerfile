@@ -34,7 +34,7 @@ RUN mkdir -p /assets/plugins && \
 
 
 # Release stage
-FROM alpine3.11
+FROM alpine:3.11
 
 RUN addgroup -S wgui && \
     adduser -S -D -G wgui wgui
