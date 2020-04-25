@@ -34,7 +34,7 @@ RUN mkdir -p /assets/plugins && \
 
 
 # Release stage
-FROM golang:1.14.2-alpine3.11
+FROM alpine3.11
 
 RUN addgroup -S wgui && \
     adduser -S -D -G wgui wgui
