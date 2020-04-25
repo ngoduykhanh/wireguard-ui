@@ -57,5 +57,5 @@ COPY --from=builder --chown=wgui:wgui /assets/plugins /app/assets/plugins
 RUN chmod +x wg-ui
 
 EXPOSE 5000/tcp
-HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1:5000/"]
+HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1:5000/login"]
 ENTRYPOINT ["./wg-ui"]
