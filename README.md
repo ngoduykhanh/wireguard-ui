@@ -16,6 +16,8 @@ Please adjust volume mount points to work with your setup. Then run it:
 docker-compose up
 ```
 
+Default username and password are `admin`.
+
 ## Auto restart WireGuard daemon
 WireGuard-UI only takes care of configuration generation. You can use systemd to watch for the changes and restart the service. Following is an example:
 
