@@ -224,3 +224,20 @@ func GetClients(hasQRCode bool) ([]model.ClientData, error) {
 
 	return clients, nil
 }
+
+// GetClientByID func to query a client from the database
+func GetClientByID(clientID string) (model.Client, error) {
+	client := model.Client{}
+
+	db, err := DBConn()
+	if err != nil {
+		return client, err
+	}
+
+	// read client information
+	if err := db.Read("clients", clientID, &client); err != nil {
+		return client, err
+	}
+
+	return client, nil
+}

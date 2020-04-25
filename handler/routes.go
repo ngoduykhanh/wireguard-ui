@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -178,7 +179,34 @@ func SetClientStatus() echo.HandlerFunc {
 		db.Write("clients", clientID, &client)
 		log.Infof("Changed client %s enabled status to %v", client.ID, status)
 
-		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "ok"})
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Changed client status successfully"})
+	}
+}
+
+// DownloadClient handler
+func DownloadClient() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		clientID := c.QueryParam("clientid")
+		if clientID == "" {
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Missing clientid parameter"})
+		}
+
+		client, err := util.GetClientByID(clientID)
+		if err != nil {
+			log.Errorf("Cannot generate client id %s config file for downloading: %v", clientID, err)
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
+		}
+		// build config
+		server, _ := util.GetServer()
+		globalSettings, _ := util.GetGlobalSettings()
+		config := util.BuildClientConfig(client, server, globalSettings)
+
+		// create io reader from string
+		reader := strings.NewReader(config)
+
+		// set response header for downloading
+		c.Response().Header().Set(echo.HeaderContentDisposition, "attachment; filename=wg0.conf")
+		return c.Stream(http.StatusOK, "text/plain", reader)
 	}
 }
 

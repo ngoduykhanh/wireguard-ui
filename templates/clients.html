@@ -36,8 +36,9 @@ Wireguard Clients
                         src="{{ .QRCode }}" />
                     <div class="info-box-content">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-outline-success btn-sm">Download</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm">Edit</button>
+                            <button onclick="location.href='/download?clientid={{ .Client.ID }}'" type="button"
+                                class="btn btn-outline-success btn-sm">Download</button>
+                            <!-- <button type="button" class="btn btn-outline-primary btn-sm">Edit</button> -->
                             <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal"
                                 data-target="#modal_pause_client" data-clientid="{{ .Client.ID }}"
                                 data-clientname="{{ .Client.Name }}">Disable</button>

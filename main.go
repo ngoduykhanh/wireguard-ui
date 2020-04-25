@@ -25,6 +25,7 @@ func main() {
 	app.POST("/new-client", handler.NewClient())
 	app.POST("/client/set-status", handler.SetClientStatus())
 	app.POST("/remove-client", handler.RemoveClient())
+	app.GET("/download", handler.DownloadClient())
 	app.GET("/wg-server", handler.WireGuardServer())
 	app.POST("wg-server/interfaces", handler.WireGuardServerInterfaces())
 	app.POST("wg-server/keypair", handler.WireGuardServerKeyPair())
