@@ -16,3 +16,6 @@ wireguard-ui
 vendor/
 assets/
 node_modules
+
+# IDEs
+.vscode

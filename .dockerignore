@@ -19,6 +19,7 @@ docker-compose*
 # Others
 .lgtm.yml
 .travis.yml
+.vscode
 
 # App data & bin
 db
