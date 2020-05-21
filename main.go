@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/labstack/echo/v4"
-	"net/http"
-
-	"github.com/GeertJohan/go.rice"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
 	"github.com/ngoduykhanh/wireguard-ui/util"
+	"net/http"
 )
 
 func main() {
@@ -18,11 +17,14 @@ func main() {
 		fmt.Print("Cannot init database: ", err)
 	}
 
-	// the file server for rice. "assets" is the folder where the files come from.
+	// create rice box for embedded template
+	tmplBox := rice.MustFindBox("templates")
+
+	// rice file server for assets. "assets" is the folder where the files come from.
 	assetHandler := http.FileServer(rice.MustFindBox("assets").HTTPBox())
 
 	// register routes
-	app := router.New()
+	app := router.New(tmplBox)
 
 	app.GET("/", handler.WireGuardClients())
 	app.GET("/login", handler.LoginPage())

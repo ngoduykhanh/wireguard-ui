@@ -33,38 +33,32 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 }
 
 // New function
-func New() *echo.Echo {
+func New(tmplBox *rice.Box) *echo.Echo {
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
 
-	// create go rice box for embedded template
-	templateBox, err := rice.FindBox("../templates")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// read html template file to string
-	tmplBaseString, err := templateBox.String("base.html")
+	tmplBaseString, err := tmplBox.String("base.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplLoginString, err := templateBox.String("login.html")
+	tmplLoginString, err := tmplBox.String("login.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplClientsString, err := templateBox.String("clients.html")
+	tmplClientsString, err := tmplBox.String("clients.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplServerString, err := templateBox.String("server.html")
+	tmplServerString, err := tmplBox.String("server.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplGlobalSettingsString, err := templateBox.String("global_settings.html")
+	tmplGlobalSettingsString, err := tmplBox.String("global_settings.html")
 	if err != nil {
 		log.Fatal(err)
 	}
