@@ -44,7 +44,8 @@ jobs:
       run: ${HOME}/go/bin/rice embed-go
 
     # build and make the releases
-    - uses: wangyoucao577/go-release-action@master
+    - name: build and make the releases
+      uses: wangyoucao577/go-release-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
