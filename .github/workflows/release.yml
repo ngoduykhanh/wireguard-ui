@@ -39,10 +39,13 @@ jobs:
     - name: get go rice tool
       run: go get github.com/GeertJohan/go.rice/rice
 
+    # run go rice embed
+    - name: run go rice embed
+      run: ${GOPATH}/bin/rice embed-go
+
     # build and make the releases
     - uses: wangyoucao577/go-release-action@master
       with:
-        pre_command: "/go/bin/rice embed-go"
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
