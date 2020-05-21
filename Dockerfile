@@ -12,16 +12,19 @@ WORKDIR /build
 # Add sources
 COPY . /build
 
-# Get application dependencies and build
-RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o wg-ui .
-
 # Prepare assets
 RUN yarn install --pure-lockfile --production && \
     yarn cache clean
 
+# Move admin-lte dist
+RUN mkdir -p assets/dist/js assets/dist/css && \
+    cp /build/node_modules/admin-lte/dist/js/adminlte.min.js \
+    assets/dist/js/adminlte.min.js && \
+    cp /build/node_modules/admin-lte/dist/css/adminlte.min.css \
+    assets/dist/css/adminlte.min.css
+
 # Move plugin assets
-RUN mkdir -p /assets/plugins && \
+RUN mkdir -p assets/plugins && \
     cp -r /build/node_modules/admin-lte/plugins/jquery/ \
     /build/node_modules/admin-lte/plugins/fontawesome-free/ \
     /build/node_modules/admin-lte/plugins/bootstrap/ \
@@ -30,8 +33,15 @@ RUN mkdir -p /assets/plugins && \
     /build/node_modules/admin-lte/plugins/jquery-validation/ \
     /build/node_modules/admin-lte/plugins/select2/ \
     /build/node_modules/jquery-tags-input/ \
-    /assets/plugins/
+    assets/plugins/
 
+# Get go modules and build tool
+RUN go mod download && \
+    go get github.com/GeertJohan/go.rice/rice
+
+# Build
+RUN rice embed-go && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o wg-ui .
 
 # Release stage
 FROM alpine:3.11
@@ -47,12 +57,6 @@ RUN mkdir -p db
 
 # Copy binary files
 COPY --from=builder --chown=wgui:wgui /build/wg-ui /app
-# Copy templates
-COPY --from=builder --chown=wgui:wgui /build/templates /app/templates
-# Copy assets
-COPY --from=builder --chown=wgui:wgui /build/node_modules/admin-lte/dist/js/adminlte.min.js /app/assets/dist/js/adminlte.min.js
-COPY --from=builder --chown=wgui:wgui /build/node_modules/admin-lte/dist/css/adminlte.min.css /app/assets/dist/css/adminlte.min.css
-COPY --from=builder --chown=wgui:wgui /assets/plugins /app/assets/plugins
 
 RUN chmod +x wg-ui
 

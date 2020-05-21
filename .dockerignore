@@ -23,4 +23,5 @@ docker-compose*
 
 # App data & bin
 db
+assets
 wireguard-ui
