@@ -38,7 +38,7 @@ jobs:
     # build and make the releases
     - uses: wangyoucao577/go-release-action@master
       with:
-        pre_command: "go get github.com/GeertJohan/go.rice/rice && rice embed-go"
+        pre_command: "go get github.com/GeertJohan/go.rice/rice && ${GOPATH}/bin/rice embed-go"
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
