@@ -42,7 +42,7 @@ jobs:
     # build and make the releases
     - uses: wangyoucao577/go-release-action@master
       with:
-        pre_command: "rice embed-go"
+        pre_command: "/go/bin/rice embed-go"
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
