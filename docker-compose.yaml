@@ -12,4 +12,4 @@ services:
         max-size: 50m
     volumes:
       - ./db:/app/db
-#      - /etc/wireguard:/etc/wireguard
+      - /etc/wireguard:/etc/wireguard
