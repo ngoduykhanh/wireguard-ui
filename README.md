@@ -73,7 +73,13 @@ docker build -t wireguard-ui .
 
 ### Build binary file
 
-You can embed resources by generating Go source code
+Prepare the assets directory
+
+```
+./prepare_assets.sh
+```
+
+Then you can embed resources by generating Go source code
 
 ```
 rice embed-go
