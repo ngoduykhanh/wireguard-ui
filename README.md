@@ -1,6 +1,6 @@
-![](https://github.com/ngoduykhanh/wireguard-ui/wireguard-ui%20build%20release/badge.svg)
-
 # wireguard-ui
+![](https://github.com/ngoduykhanh/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
+
 A web user interface to manage your WireGuard setup.
 
 ## Features
