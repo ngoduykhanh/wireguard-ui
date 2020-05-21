@@ -28,10 +28,10 @@ jobs:
       with:
         cmd: install
 
-     - name: Prepare aseets
-       run: |
-         chmod +x ./prepare_assets.sh
-         ./prepare_assets.sh
+    - name: Prepare aseets
+      run: |
+        chmod +x ./prepare_assets.sh
+        ./prepare_assets.sh
 
     # build and make the releases
     - uses: wangyoucao577/go-release-action@master
