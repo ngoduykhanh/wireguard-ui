@@ -24,7 +24,7 @@ RUN mkdir -p assets/dist/js assets/dist/css && \
     assets/dist/css/adminlte.min.css
 
 # Move plugin assets
-RUN mkdir -p /assets/plugins && \
+RUN mkdir -p assets/plugins && \
     cp -r /build/node_modules/admin-lte/plugins/jquery/ \
     /build/node_modules/admin-lte/plugins/fontawesome-free/ \
     /build/node_modules/admin-lte/plugins/bootstrap/ \
