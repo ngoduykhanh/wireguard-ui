@@ -5,6 +5,7 @@ import (
 	"io"
 	"text/template"
 
+	"github.com/GeertJohan/go.rice"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -32,15 +33,42 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 }
 
 // New function
-func New() *echo.Echo {
+func New(tmplBox *rice.Box) *echo.Echo {
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
 
+	// read html template file to string
+	tmplBaseString, err := tmplBox.String("base.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmplLoginString, err := tmplBox.String("login.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmplClientsString, err := tmplBox.String("clients.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmplServerString, err := tmplBox.String("server.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmplGlobalSettingsString, err := tmplBox.String("global_settings.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// create template list
 	templates := make(map[string]*template.Template)
-	templates["login.html"] = template.Must(template.ParseFiles("templates/login.html"))
-	templates["clients.html"] = template.Must(template.ParseFiles("templates/clients.html", "templates/base.html"))
-	templates["server.html"] = template.Must(template.ParseFiles("templates/server.html", "templates/base.html"))
-	templates["global_settings.html"] = template.Must(template.ParseFiles("templates/global_settings.html", "templates/base.html"))
+	templates["login.html"] = template.Must(template.New("login").Parse(tmplLoginString))
+	templates["clients.html"] = template.Must(template.New("clients").Parse(tmplBaseString + tmplClientsString))
+	templates["server.html"] = template.Must(template.New("server").Parse(tmplBaseString + tmplServerString))
+	templates["global_settings.html"] = template.Must(template.New("global_settings").Parse(tmplBaseString + tmplGlobalSettingsString))
 
 	e.Logger.SetLevel(log.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())
@@ -51,7 +79,6 @@ func New() *echo.Echo {
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 	}))
 	e.Validator = NewValidator()
-	e.Static("/static", "assets")
 	e.Renderer = &TemplateRegistry{
 		templates: templates,
 	}
