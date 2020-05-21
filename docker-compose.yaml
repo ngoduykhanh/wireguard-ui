@@ -2,7 +2,8 @@ version: '3'
 
 services:
   wg:
-    image: ngoduykhanh/wireguard-ui:latest
+    #image: ngoduykhanh/wireguard-ui:latest
+    image: wgui:latest
     container_name: wgui
     ports:
       - 5000:5000
@@ -12,4 +13,4 @@ services:
         max-size: 50m
     volumes:
       - ./db:/app/db
-      - /etc/wireguard:/etc/wireguard
+#      - /etc/wireguard:/etc/wireguard

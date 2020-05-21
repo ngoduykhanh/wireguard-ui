@@ -41,7 +41,7 @@ func main() {
 	app.POST("/global-settings", handler.GlobalSettingSubmit())
 	app.GET("/api/machine-ips", handler.MachineIPAddresses())
 	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation())
-	app.GET("/api/apply-wg-config", handler.ApplyServerConfig())
+	app.GET("/api/apply-wg-config", handler.ApplyServerConfig(tmplBox))
 
 	// servers other static files
 	app.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))

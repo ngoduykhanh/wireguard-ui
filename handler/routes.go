@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	rice "github.com/GeertJohan/go.rice"
 	"net/http"
 	"strings"
 	"time"
@@ -429,7 +430,7 @@ func SuggestIPAllocation() echo.HandlerFunc {
 }
 
 // ApplyServerConfig handler to write config file and restart Wireguard server
-func ApplyServerConfig() echo.HandlerFunc {
+func ApplyServerConfig(tmplBox *rice.Box) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// access validation
 		validSession(c)
@@ -453,7 +454,7 @@ func ApplyServerConfig() echo.HandlerFunc {
 		}
 
 		// Write config file
-		err = util.WriteWireGuardServerConfig(server, clients, settings)
+		err = util.WriteWireGuardServerConfig(tmplBox, server, clients, settings)
 		if err != nil {
 			log.Error("Cannot apply server config: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot apply server config: %v", err)})
