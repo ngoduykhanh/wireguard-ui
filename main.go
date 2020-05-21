@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/labstack/echo/v4"
+	"net/http"
 
+	"github.com/GeertJohan/go.rice"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
 	"github.com/ngoduykhanh/wireguard-ui/util"
@@ -14,6 +17,9 @@ func main() {
 	if err != nil {
 		fmt.Print("Cannot init database: ", err)
 	}
+
+	// the file server for rice. "assets" is the folder where the files come from.
+	assetHandler := http.FileServer(rice.MustFindBox("assets").HTTPBox())
 
 	// register routes
 	app := router.New()
@@ -34,5 +40,9 @@ func main() {
 	app.GET("/api/machine-ips", handler.MachineIPAddresses())
 	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation())
 	app.GET("/api/apply-wg-config", handler.ApplyServerConfig())
+
+	// servers other static files
+	app.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
+
 	app.Logger.Fatal(app.Start("0.0.0.0:5000"))
 }

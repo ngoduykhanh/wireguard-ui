@@ -8,15 +8,24 @@ A web user interface to manage your WireGuard setup.
 - Retrieve configs using QR code / file
 
 ## Run WireGuard-UI
-Only docker option for now, please refer to this example of [docker-compose.yml](https://github.com/ngoduykhanh/wireguard-ui/blob/master/docker-compose.yaml).
 
-Please adjust volume mount points to work with your setup. Then run it:
+Default username and password are `admin`.
+
+### Using docker compose
+
+You can take a look at this example of [docker-compose.yml](https://github.com/ngoduykhanh/wireguard-ui/blob/master/docker-compose.yaml). Please adjust volume mount points to work with your setup. Then run it like below:
 
 ```
 docker-compose up
 ```
 
-Default username and password are `admin`.
+### Using binary file
+
+Download the binary file from the release and run it with command:
+
+```
+./wireguard-ui
+```
 
 ## Auto restart WireGuard daemon
 WireGuard-UI only takes care of configuration generation. You can use systemd to watch for the changes and restart the service. Following is an example:
@@ -50,6 +59,32 @@ Apply it
 ```
 systemctl enable wgui.{path,service}
 systemctl start wgui.{path,service}
+```
+
+## Build
+
+### Build docker image
+
+Go to the project root directory and run the following command:
+
+```
+docker build -t wireguard-ui .
+```
+
+### Build binary file
+
+You can embed resources by generating Go source code
+
+```
+rice embed-go
+go build -o wireguard-ui
+```
+
+Or, append resources to executable as zip file
+
+```
+go build -o wireguard-ui
+rice append --exec wireguard-ui
 ```
 
 ## Screenshot

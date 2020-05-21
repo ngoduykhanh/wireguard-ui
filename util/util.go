@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	rice "github.com/GeertJohan/go.rice"
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/sdomino/scribble"
@@ -268,7 +269,7 @@ func GetAvailableIP(cidr string, allocatedList []string) (string, error) {
 		}
 	}
 
-	return "", errors.New("No more available ip address")
+	return "", errors.New("no more available ip address")
 }
 
 // ValidateIPAllocation to validate the list of client's ip allocation
@@ -313,11 +314,25 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
 func WriteWireGuardServerConfig(serverConfig model.Server, clientDataList []model.ClientData, globalSettings model.GlobalSetting) error {
-	t, err := template.ParseFiles("templates/wg.conf")
+	// create go rice box for wireguard config
+	templateBox, err := rice.FindBox("../templates")
 	if err != nil {
 		return err
 	}
 
+	// read wg.conf template file to string
+	tmplWireguardConf, err := templateBox.String("wg.conf")
+	if err != nil {
+		return err
+	}
+
+	// parse the template
+	t, err := template.New("wg_config").Parse(tmplWireguardConf)
+	if err != nil {
+		return err
+	}
+
+	// write config file to disk
 	f, err := os.Create(globalSettings.ConfigFilePath)
 	if err != nil {
 		return err

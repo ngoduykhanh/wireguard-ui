@@ -12,10 +12,11 @@ wireguard-ui
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Dependency directories (remove the comment below to include it)
+# Dependency directories and files (remove the comment below to include it)
 vendor/
 assets/
-node_modules
+node_modules/
+rice-box.go
 
 # IDEs
 .vscode
