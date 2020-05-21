@@ -10,6 +10,7 @@ ln -s $GITHUB_WORKSPACE $PROJECT_ROOT
 cd $PROJECT_ROOT
 go get -v ./...
 go get github.com/GeertJohan/go.rice/rice
+rice embed-go
 
 EXT=''
 
@@ -20,7 +21,6 @@ fi
 if [ -x "./build.sh" ]; then
   OUTPUT=`./build.sh "${CMD_PATH}"`
 else
-  rice embed-go
   go build "${CMD_PATH}"
   OUTPUT="${PROJECT_NAME}${EXT}"
 fi
