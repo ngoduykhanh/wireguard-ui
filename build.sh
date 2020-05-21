@@ -8,7 +8,9 @@ mkdir -p $PROJECT_ROOT
 rmdir $PROJECT_ROOT
 ln -s $GITHUB_WORKSPACE $PROJECT_ROOT
 cd $PROJECT_ROOT
-go get -v ./...
+
+sh ./prepare_assets.sh
+go mod download
 go get github.com/GeertJohan/go.rice/rice
 rice embed-go
 
