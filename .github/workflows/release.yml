@@ -41,7 +41,7 @@ jobs:
 
     # run go rice embed
     - name: run go rice embed
-      run: ${GOPATH}/bin/rice embed-go
+      run: ${HOME}/go/bin/rice embed-go
 
     # build and make the releases
     - uses: wangyoucao577/go-release-action@master
