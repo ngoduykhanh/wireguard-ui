@@ -35,10 +35,14 @@ jobs:
         chmod +x ./prepare_assets.sh
         ./prepare_assets.sh
 
+    # get go rice tool
+    - name: get go rice tool
+      run: go get github.com/GeertJohan/go.rice/rice
+
     # build and make the releases
     - uses: wangyoucao577/go-release-action@master
       with:
-        pre_command: "go get github.com/GeertJohan/go.rice/rice && ${GOPATH}/bin/rice embed-go"
+        pre_command: "rice embed-go"
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
