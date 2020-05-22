@@ -11,8 +11,17 @@ jobs:
     strategy:
       matrix:
         # build and publish in parallel: linux/386, linux/amd64, darwin/386, darwin/amd64
-        goos: [linux, darwin]
-        goarch: ["386", amd64]
+        goos: [linux, freebsd, darwin]
+        goarch: [386, amd64, arm, arm64]
+        exclude:
+          - goarch: 386
+            goos: darwin
+          - goarch: arm
+            goos: darwin
+          - goarch: arm64
+            goos: darwin
+        goarm:
+          - 7
     steps:
     # get the source code
     - uses: actions/checkout@v2
