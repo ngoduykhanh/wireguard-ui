@@ -78,6 +78,7 @@ func New(tmplBox *rice.Box) *echo.Echo {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 	}))
+	e.HideBanner = true
 	e.Validator = NewValidator()
 	e.Renderer = &TemplateRegistry{
 		templates: templates,
