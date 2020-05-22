@@ -114,7 +114,7 @@ func InitDB() error {
 		user := new(model.User)
 		user.Username = defaultUsername
 		user.Password = defaultPassword
-		db.Write("server", "user", user)
+		db.Write("server", "users", user)
 	}
 
 	return nil
@@ -129,7 +129,7 @@ func GetUser() (model.User, error) {
 		return user, err
 	}
 
-	if err := db.Read("server", "user", &user); err != nil {
+	if err := db.Read("server", "users", &user); err != nil {
 		return user, err
 	}
 
@@ -181,7 +181,7 @@ func GetServer() (model.Server, error) {
 
 // GetClients to get all clients from the database
 func GetClients(hasQRCode bool) ([]model.ClientData, error) {
-	clients := []model.ClientData{}
+	var clients []model.ClientData
 
 	db, err := DBConn()
 	if err != nil {
@@ -201,7 +201,7 @@ func GetClients(hasQRCode bool) ([]model.ClientData, error) {
 
 		// get client info
 		if err := json.Unmarshal([]byte(f), &client); err != nil {
-			return clients, fmt.Errorf("Cannot decode client json structure: %v", err)
+			return clients, fmt.Errorf("cannot decode client json structure: %v", err)
 		}
 
 		// generate client qrcode image in base64
