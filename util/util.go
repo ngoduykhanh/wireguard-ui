@@ -25,6 +25,7 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 
 	// Peer section
 	peerPublicKey := fmt.Sprintf("PublicKey = %s", server.KeyPair.PublicKey)
+	peerPresharedKey := fmt.Sprintf("PresharedKey = %s", client.PresharedKey)
 	peerAllowedIPs := fmt.Sprintf("AllowedIPs = %s", strings.Join(client.AllowedIPs, ","))
 	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", setting.EndpointAddress, server.Interface.ListenPort)
 	peerPersistentKeepalive := fmt.Sprintf("PersistentKeepalive = %d", setting.PersistentKeepalive)
@@ -36,6 +37,7 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		clientDNS + "\n\n" +
 		"[Peer]" + "\n" +
 		peerPublicKey + "\n" +
+		peerPresharedKey + "\n" +
 		peerAllowedIPs + "\n" +
 		peerEndpoint + "\n" +
 		peerPersistentKeepalive + "\n"
