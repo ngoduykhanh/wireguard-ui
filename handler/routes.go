@@ -136,8 +136,16 @@ func NewClient() echo.HandlerFunc {
 			log.Error("Cannot generate wireguard key pair: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
 		}
+
+		presharedKey, err := wgtypes.GenerateKey()
+		if err != nil {
+			log.Error("Cannot generated preshared key: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard preshared key"})
+		}
+
 		client.PrivateKey = key.String()
 		client.PublicKey = key.PublicKey().String()
+		client.PresharedKey = presharedKey.String()
 		client.CreatedAt = time.Now().UTC()
 		client.UpdatedAt = client.CreatedAt
 

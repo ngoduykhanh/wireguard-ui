@@ -8,7 +8,8 @@ import (
 type Client struct {
 	ID           string    `json:"id"`
 	PrivateKey   string    `json:"private_key"`
-	PublicKey    string    `json:"pulbic_key"`
+	PublicKey    string    `json:"public_key"`
+	PresharedKey string	   `json:"preshared_key"`
 	Name         string    `json:"name"`
 	Email        string    `json:"email"`
 	AllocatedIPs []string  `json:"allocated_ips"`
