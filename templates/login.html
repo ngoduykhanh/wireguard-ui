@@ -80,8 +80,8 @@
 </body>
 <script>
     function redirectNext() {
-        var urlParams = new URLSearchParams(window.location.search);
-        var nextURL = urlParams.get('next');
+        const urlParams = new URLSearchParams(window.location.search);
+        const nextURL = urlParams.get('next');
         if (nextURL) {
             window.location.href = nextURL;
         } else {
@@ -92,9 +92,9 @@
 <script>
     $(document).ready(function () {
         $('#btn_login').click(function () {
-            var username = $("#username").val();
-            var password = $("#password").val();
-            var data = {"username": username, "password": password}
+            const username = $("#username").val();
+            const password = $("#password").val();
+            const data = {"username": username, "password": password}
             console.log(data);
 
             $.ajax({
@@ -110,7 +110,7 @@
                     redirectNext();
                 },
                 error: function(jqXHR, exception) {
-                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
                     document.getElementById("message").innerHTML = '<p style="color:red">' + responseJson['message'] + '</p>';
                 }
             });

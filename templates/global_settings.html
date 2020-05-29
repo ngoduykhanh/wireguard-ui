@@ -106,12 +106,12 @@ Global Settings
 {{define "bottom_js"}}
     <script>
         function submitGlobalSettings() {
-            var endpoint_address = $("#endpoint_address").val();
-            var dns_servers = $("#dns_servers").val().split(",");
-            var mtu = $("#mtu").val();
-            var persistent_keepalive = $("#persistent_keepalive").val();
-            var config_file_path = $("#config_file_path").val();
-            var data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "config_file_path": config_file_path};
+            const endpoint_address = $("#endpoint_address").val();
+            const dns_servers = $("#dns_servers").val().split(",");
+            const mtu = $("#mtu").val();
+            const persistent_keepalive = $("#persistent_keepalive").val();
+            const config_file_path = $("#config_file_path").val();
+            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "config_file_path": config_file_path};
 
             $.ajax({
                 cache: false,
@@ -125,7 +125,7 @@ Global Settings
                     toastr.success('Update global settings successfully');
                 },
                 error: function(jqXHR, exception) {
-                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
                     toastr.error(responseJson['message']);
                 }
             });
@@ -223,7 +223,7 @@ Global Settings
         // Use selected IP address from suggestion form
         $(document).ready(function () {
             $('#btn_use_ip').click(function () {
-                var ip = $('#ip_suggestion').select2('val');
+                const ip = $('#ip_suggestion').select2('val');
                 $('#endpoint_address').val(ip);
                 $('#modal_endpoint_address_suggestion').modal('hide');
             });

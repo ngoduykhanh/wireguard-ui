@@ -121,7 +121,7 @@ Wireguard Clients
 {{define "bottom_js"}}
     <script>
         function setClientStatus(clientID, status) {
-            var data = {"id": clientID, "status": status}
+            const data = {"id": clientID, "status": status};
             $.ajax({
                 cache: false,
                 method: 'POST',
@@ -133,7 +133,7 @@ Wireguard Clients
                     console.log("Set client " + clientID + " status to " + status)
                 },
                 error: function (jqXHR, exception) {
-                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
                     toastr.error(responseJson['message']);
                 }
             });
@@ -141,23 +141,23 @@ Wireguard Clients
 
         function resumeClient(clientID) {
             setClientStatus(clientID, true);
-            var divElement = document.getElementById("paused_" + clientID);
+            const divElement = document.getElementById("paused_" + clientID);
             divElement.style.visibility = "hidden";
         }
 
         function pauseClient(clientID) {
             setClientStatus(clientID, false);
-            var divElement = document.getElementById("paused_" + clientID);
+            const divElement = document.getElementById("paused_" + clientID);
             divElement.style.visibility = "visible";
         }
     </script>
     <script>
         // modal_pause_client modal event
         $('#modal_pause_client').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var client_id = button.data('clientid');
-            var client_name = button.data('clientname');
-            var modal = $(this);
+            const button = $(event.relatedTarget);
+            const client_id = button.data('clientid');
+            const client_name = button.data('clientname');
+            const modal = $(this);
             modal.find('.modal-body').text("You are about to disable client " + client_name);
             modal.find('#pause_client_confirm').val(client_id);
         })
@@ -165,7 +165,7 @@ Wireguard Clients
         // pause_client_confirm button event
         $(document).ready(function () {
             $('#pause_client_confirm').click(function () {
-                var client_id = $(this).val();
+                const client_id = $(this).val();
                 pauseClient(client_id);
                 $('#modal_pause_client').modal('hide');
             });
@@ -173,10 +173,10 @@ Wireguard Clients
 
         // modal_remove_client modal event
         $('#modal_remove_client').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var client_id = button.data('clientid');
-            var client_name = button.data('clientname');
-            var modal = $(this);
+            const button = $(event.relatedTarget);
+            const client_id = button.data('clientid');
+            const client_name = button.data('clientname');
+            const modal = $(this);
             modal.find('.modal-body').text("You are about to remove client " + client_name);
             modal.find('#remove_client_confirm').val(client_id);
         })
@@ -184,8 +184,8 @@ Wireguard Clients
         // remove_client_confirm button event
         $(document).ready(function () {
             $('#remove_client_confirm').click(function () {
-                var client_id = $(this).val();
-                var data = {"id": client_id};
+                const client_id = $(this).val();
+                const data = {"id": client_id};
                 $.ajax({
                     cache: false,
                     method: 'POST',
@@ -196,11 +196,11 @@ Wireguard Clients
                     success: function(data) {
                         $('#modal_remove_client').modal('hide');
                         toastr.success('Removed client successfully');
-                        var divElement = document.getElementById('client_' + client_id);
+                        const divElement = document.getElementById('client_' + client_id);
                         divElement.style.display = "none";
                     },
                     error: function(jqXHR, exception) {
-                        var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
                         toastr.error(responseJson['message']);
                     }
                 });
