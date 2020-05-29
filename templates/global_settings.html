@@ -121,7 +121,7 @@ Global Settings
                 contentType: "application/json",
                 data: JSON.stringify(data),
                 success: function(data) {
-                    $('#modal_new_client').modal('hide');
+                    $("#modal_new_client").modal('hide');
                     toastr.success('Update global settings successfully');
                 },
                 error: function(jqXHR, exception) {
@@ -147,7 +147,7 @@ Global Settings
     </script>
     <script>
         // Wireguard Interface DNS server tag input
-        $('#dns_servers').tagsInput({
+        $("#dns_servers").tagsInput({
             'width': '100%',
             'height': '75%',
             'interactive': true,
@@ -160,7 +160,7 @@ Global Settings
 
         // Load DNS server to the form
         {{range .globalSettings.DNSServers}}
-        $('#dns_servers').addTag('{{.}}');
+        $("#dns_servers").addTag('{{.}}');
         {{end}}
 
         // Global setting form validation
@@ -170,7 +170,7 @@ Global Settings
                     submitGlobalSettings();
                 }
             });
-            $('#frm_global_settings').validate({
+            $("#frm_global_settings").validate({
                 rules: {
                     mtu: {
                         required: true,
@@ -215,17 +215,17 @@ Global Settings
 
         // Endpoint IP suggestion modal event
         $(document).ready(function () {
-            $('#modal_endpoint_address_suggestion').on('shown.bs.modal', function (e) {
+            $("#modal_endpoint_address_suggestion").on('shown.bs.modal', function (e) {
                 updateEndpointSuggestionIP();
             });
         });
 
         // Use selected IP address from suggestion form
         $(document).ready(function () {
-            $('#btn_use_ip').click(function () {
-                const ip = $('#ip_suggestion').select2('val');
-                $('#endpoint_address').val(ip);
-                $('#modal_endpoint_address_suggestion').modal('hide');
+            $("#btn_use_ip").click(function () {
+                const ip = $("#ip_suggestion").select2('val');
+                $("#endpoint_address").val(ip);
+                $("#modal_endpoint_address_suggestion").modal('hide');
             });
         });
     </script>

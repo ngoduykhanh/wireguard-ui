@@ -129,7 +129,7 @@ Wireguard Server Settings
                 contentType: "application/json",
                 data: JSON.stringify(data),
                 success: function(data) {
-                    $('#modal_new_client').modal('hide');
+                    $("#modal_new_client").modal('hide');
                     toastr.success('Updated Wireguard server interface addresses successfully');
                 },
                 error: function(jqXHR, exception) {
@@ -141,7 +141,7 @@ Wireguard Server Settings
     </script>
     <script>
         // Wireguard Interface Addresses tag input
-        $('#addresses').tagsInput({
+        $("#addresses").tagsInput({
             'width': '100%',
             // 'height': '75%',
             'interactive': true,
@@ -154,7 +154,7 @@ Wireguard Server Settings
 
         // Load server addresses to the form
         {{range .serverInterface.Addresses}}
-        $('#addresses').addTag('{{.}}');
+        $("#addresses").addTag('{{.}}');
         {{end}}
 
         // Wireguard Interface Addresses form validation
@@ -164,7 +164,7 @@ Wireguard Server Settings
                     submitServerInterfaceSetting();
                 }
             });
-            $('#frm_server_interface').validate({
+            $("#frm_server_interface").validate({
                 rules: {
                     listen_port: {
                         required: true,
@@ -195,7 +195,7 @@ Wireguard Server Settings
 
         // Wireguard Key Pair generation confirmation button
         $(document).ready(function () {
-            $('#btn_generate_confirm').click(function () {
+            $("#btn_generate_confirm").click(function () {
                 $.ajax({
                     cache: false,
                     method: 'POST',
@@ -203,11 +203,11 @@ Wireguard Server Settings
                     dataType: 'json',
                     contentType: "application/json",
                     success: function(data) {
-                        $('#modal_keypair_confirmation').modal('hide');
+                        $("#modal_keypair_confirmation").modal('hide');
                         toastr.success('Generate new key pair successfully');
                         // update the UI
-                        $('#private_key').val(data['private_key']);
-                        $('#public_key').val(data['public_key']);
+                        $("#private_key").val(data['private_key']);
+                        $("#public_key").val(data['public_key']);
                     },
                     error: function(jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -219,7 +219,7 @@ Wireguard Server Settings
 
         // Show private key button event
         $(document).ready(function () {
-            $('#btn_show_private_key').click(function () {
+            $("#btn_show_private_key").click(function () {
                 const privateElement = document.getElementById("private_key");
                 const btnElement = document.getElementById("btn_show_private_key");
                 if (privateElement.type === 'password') {

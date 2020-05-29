@@ -55,11 +55,11 @@ Wireguard Clients
                             {{ .Client.UpdatedAt.Format "2 Jan 2006 15:04" }}</span>
                         <span class="info-box-text"><strong>IP Allocation</strong></span>
                         {{range .Client.AllocatedIPs}}
-                        <small class="badge badge-secondary"></i>{{.}}</small>
+                        <small class="badge badge-secondary">{{.}}</small>
                         {{end}}
                         <span class="info-box-text"><strong>Allowed IPs</strong></span>
                         {{range .Client.AllowedIPs}}
-                        <small class="badge badge-secondary"></i>{{.}}</small>
+                        <small class="badge badge-secondary">{{.}}</small>
                         {{end}}
                     </div>
                     <!-- /.info-box-content -->
@@ -153,7 +153,7 @@ Wireguard Clients
     </script>
     <script>
         // modal_pause_client modal event
-        $('#modal_pause_client').on('show.bs.modal', function (event) {
+        $("#modal_pause_client").on('show.bs.modal', function (event) {
             const button = $(event.relatedTarget);
             const client_id = button.data('clientid');
             const client_name = button.data('clientname');
@@ -164,15 +164,15 @@ Wireguard Clients
 
         // pause_client_confirm button event
         $(document).ready(function () {
-            $('#pause_client_confirm').click(function () {
+            $("#pause_client_confirm").click(function () {
                 const client_id = $(this).val();
                 pauseClient(client_id);
-                $('#modal_pause_client').modal('hide');
+                $("#modal_pause_client").modal('hide');
             });
         });
 
         // modal_remove_client modal event
-        $('#modal_remove_client').on('show.bs.modal', function (event) {
+        $("#modal_remove_client").on('show.bs.modal', function (event) {
             const button = $(event.relatedTarget);
             const client_id = button.data('clientid');
             const client_name = button.data('clientname');
@@ -183,7 +183,7 @@ Wireguard Clients
 
         // remove_client_confirm button event
         $(document).ready(function () {
-            $('#remove_client_confirm').click(function () {
+            $("#remove_client_confirm").click(function () {
                 const client_id = $(this).val();
                 const data = {"id": client_id};
                 $.ajax({
@@ -194,7 +194,7 @@ Wireguard Clients
                     contentType: "application/json",
                     data: JSON.stringify(data),
                     success: function(data) {
-                        $('#modal_remove_client').modal('hide');
+                        $("#modal_remove_client").modal('hide');
                         toastr.success('Removed client successfully');
                         const divElement = document.getElementById('client_' + client_id);
                         divElement.style.display = "none";

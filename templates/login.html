@@ -31,7 +31,7 @@
                 <p class="login-box-msg">Sign in to start your session</p>
                 <form action="" method="post">
                     <div class="input-group mb-3">
-                        <input id="username" type="username" class="form-control" placeholder="Username">
+                        <input id="username" type="text" class="form-control" placeholder="Username">
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-envelope"></span>
@@ -91,7 +91,7 @@
 </script>
 <script>
     $(document).ready(function () {
-        $('#btn_login').click(function () {
+        $("#btn_login").click(function () {
             const username = $("#username").val();
             const password = $("#password").val();
             const data = {"username": username, "password": password}
@@ -105,13 +105,13 @@
                 contentType: "application/json",
                 data: JSON.stringify(data),
                 success: function(data) {
-                    document.getElementById("message").innerHTML = '<p style="color:green">' + data['message'] + '</p>';
+                    document.getElementById("message").innerHTML = `<p style="color:green">${data['message']}</p>`;
                     // redirect after logging in successfully
                     redirectNext();
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    document.getElementById("message").innerHTML = '<p style="color:red">' + responseJson['message'] + '</p>';
+                    document.getElementById("message").innerHTML = `<p style="color:#ff0000">${responseJson['message']}</p>`;
                 }
             });
         });

@@ -67,7 +67,6 @@
             <button onclick="location.href='/logout';" style="margin-left: 0.5em;" type="button"
                 class="btn btn-outline-danger btn-sm"><i class="nav-icon fas fa-sign-out-alt"></i> Logout</button>
         </nav>
-        </nav>
         <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
@@ -271,7 +270,7 @@
                 contentType: "application/json",
                 data: JSON.stringify(data),
                 success: function(data) {
-                    $('#modal_new_client').modal('hide');
+                    $("#modal_new_client").modal('hide');
                     toastr.success('Created new client successfully');
                     // TODO: trigger reloading the dashboard
                 },
@@ -305,10 +304,10 @@
     </script>
     <script>
         //Initialize Select2 Elements
-        $('.select2').select2()
+        $(".select2").select2()
 
         // IP Allocation tag input
-        $('#client_allocated_ips').tagsInput({
+        $("#client_allocated_ips").tagsInput({
             'width': '100%',
             'height': '75%',
             'interactive': true,
@@ -320,7 +319,7 @@
         });
 
         // AllowedIPs tag input
-        $('#client_allowed_ips').tagsInput({
+        $("#client_allowed_ips").tagsInput({
             'width': '100%',
             'height': '75%',
             'interactive': true,
@@ -338,7 +337,7 @@
                     submitNewClient();
                 }
             });
-            $('#frm_new_client').validate({
+            $("#frm_new_client").validate({
                 rules: {
                     client_name: {
                         required: true,
@@ -373,15 +372,15 @@
 
         // New Client modal event
         $(document).ready(function () {
-            $('#modal_new_client').on('shown.bs.modal', function (e) {
-                $('#client_allocated_ips').importTags('');
+            $("#modal_new_client").on('shown.bs.modal', function (e) {
+                $("#client_allocated_ips").importTags('');
                 updateIPAllocationSuggestion();
             });
         });
 
         // apply_config_confirm button event
         $(document).ready(function () {
-            $('#apply_config_confirm').click(function () {
+            $("#apply_config_confirm").click(function () {
                 $.ajax({
                     cache: false,
                     method: 'GET',
@@ -389,7 +388,7 @@
                     dataType: 'json',
                     contentType: "application/json",
                     success: function(data) {
-                        $('#modal_apply_config').modal('hide');
+                        $("#modal_apply_config").modal('hide');
                         toastr.success('Applied config successfully');
                     },
                     error: function(jqXHR, exception) {
