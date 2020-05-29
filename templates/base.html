@@ -246,19 +246,19 @@
     <!-- AdminLTE App -->
     <script src="static/dist/js/adminlte.min.js"></script>
     <script>
-        // submitNewClient function for new client form submition
+        // submitNewClient function for new client form submission
         function submitNewClient() {
-            var name = $("#client_name").val();
-            var email = $("#client_email").val();
-            var allocated_ips = $("#client_allocated_ips").val().split(",");
-            var allowed_ips = $("#client_allowed_ips").val().split(",");
-            var enabled = false;
+            const name = $("#client_name").val();
+            const email = $("#client_email").val();
+            const allocated_ips = $("#client_allocated_ips").val().split(",");
+            const allowed_ips = $("#client_allowed_ips").val().split(",");
+            let enabled = false;
 
             if ($("#enabled").is(':checked')){
                 enabled = true;
             }
 
-            var data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
+            const data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
             "enabled": enabled};
             console.log(data);
 
@@ -272,10 +272,13 @@
                 success: function(data) {
                     $("#modal_new_client").modal('hide');
                     toastr.success('Created new client successfully');
-                    // TODO: trigger reloading the dashboard
+                    // Refresh the home page (clients page) after adding successfully
+                    if (window.location.pathname === "/") {
+                        location.reload();
+                    }
                 },
                 error: function(jqXHR, exception) {
-                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
                     toastr.error(responseJson['message']);
                 }
             });
@@ -296,7 +299,7 @@
                     })
                 },
                 error: function(jqXHR, exception) {
-                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
                     toastr.error(responseJson['message']);
                 }
             });
@@ -392,7 +395,7 @@
                         toastr.success('Applied config successfully');
                     },
                     error: function(jqXHR, exception) {
-                        var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
                         toastr.error(responseJson['message']);
                     }
                 });
