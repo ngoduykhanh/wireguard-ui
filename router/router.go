@@ -3,6 +3,7 @@ package router
 import (
 	"errors"
 	"io"
+	"reflect"
 	"text/template"
 
 	"github.com/GeertJohan/go.rice"
@@ -16,6 +17,7 @@ import (
 // TemplateRegistry is a custom html/template renderer for Echo framework
 type TemplateRegistry struct {
 	templates map[string]*template.Template
+	extraData map[string]string
 }
 
 // Render e.Renderer interface
@@ -25,15 +27,24 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 		err := errors.New("Template not found -> " + name)
 		return err
 	}
+
+	// inject more app data information. E.g. appVersion
+	if reflect.TypeOf(data).Kind() == reflect.Map {
+		for k, v := range t.extraData {
+			data.(map[string]interface{})[k] = v
+		}
+	}
+
 	// login page does not need the base layout
 	if name == "login.html" {
 		return tmpl.Execute(w, data)
 	}
+
 	return tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 // New function
-func New(tmplBox *rice.Box) *echo.Echo {
+func New(tmplBox *rice.Box, extraData map[string]string) *echo.Echo {
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
 
@@ -82,6 +93,7 @@ func New(tmplBox *rice.Box) *echo.Echo {
 	e.Validator = NewValidator()
 	e.Renderer = &TemplateRegistry{
 		templates: templates,
+		extraData: extraData,
 	}
 
 	return e

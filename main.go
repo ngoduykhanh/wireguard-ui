@@ -25,6 +25,10 @@ func main() {
 	fmt.Println("Build Time\t:", buildTime)
 	fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
 
+	// set app extra data
+	extraData := make(map[string]string)
+	extraData["appVersion"] = appVersion
+
 	// initialize DB
 	err := util.InitDB()
 	if err != nil {
@@ -38,7 +42,7 @@ func main() {
 	assetHandler := http.FileServer(rice.MustFindBox("assets").HTTPBox())
 
 	// register routes
-	app := router.New(tmplBox)
+	app := router.New(tmplBox, extraData)
 
 	app.GET("/", handler.WireGuardClients())
 	app.GET("/login", handler.LoginPage())
