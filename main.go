@@ -8,9 +8,23 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/router"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 	"net/http"
+	"time"
 )
 
+var appVersion = "development"
+var gitCommit  = "N/A"
+var gitRef     = "N/A"
+var buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
+
 func main() {
+	// print app information
+	fmt.Println("Wireguard UI")
+	fmt.Println("App Version\t:", appVersion)
+	fmt.Println("Git Commit\t:", gitCommit)
+	fmt.Println("Git Ref\t\t:", gitRef)
+	fmt.Println("Build Time\t:", buildTime)
+	fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
+
 	// initialize DB
 	err := util.InitDB()
 	if err != nil {
