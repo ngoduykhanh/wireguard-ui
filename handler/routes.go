@@ -107,6 +107,22 @@ func GetClients() echo.HandlerFunc {
 	}
 }
 
+// GetClient handler return a of Wireguard client data
+func GetClient() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
+		clientID := c.Param("id")
+		clientData, err := util.GetClientByID(clientID, true)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
+		}
+
+		return c.JSON(http.StatusOK, clientData)
+	}
+}
+
 // NewClient handler
 func NewClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -215,15 +231,16 @@ func DownloadClient() echo.HandlerFunc {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Missing clientid parameter"})
 		}
 
-		client, err := util.GetClientByID(clientID)
+		clientData, err := util.GetClientByID(clientID, false)
 		if err != nil {
 			log.Errorf("Cannot generate client id %s config file for downloading: %v", clientID, err)
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
+
 		// build config
 		server, _ := util.GetServer()
 		globalSettings, _ := util.GetGlobalSettings()
-		config := util.BuildClientConfig(client, server, globalSettings)
+		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
 		// create io reader from string
 		reader := strings.NewReader(config)

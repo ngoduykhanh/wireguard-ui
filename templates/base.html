@@ -246,7 +246,28 @@
     <script src="static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.js"></script>
     <!-- AdminLTE App -->
     <script src="static/dist/js/adminlte.min.js"></script>
+    <!-- Custom js -->
+    <script src="static/custom/js/helper.js"></script>
     <script>
+        // populateClient function for render new client info
+        // on the client page.
+        function populateClient(client_id) {
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '/api/client/' + client_id,
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (resp) {
+                    renderClientList([resp]);
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
         // submitNewClient function for new client form submission
         function submitNewClient() {
             const name = $("#client_name").val();
@@ -261,7 +282,6 @@
 
             const data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
             "enabled": enabled};
-            console.log(data);
 
             $.ajax({
                 cache: false,
@@ -270,12 +290,12 @@
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
-                success: function(data) {
+                success: function(resp) {
                     $("#modal_new_client").modal('hide');
                     toastr.success('Created new client successfully');
-                    // Refresh the home page (clients page) after adding successfully
+                    // Update the home page (clients page) after adding successfully
                     if (window.location.pathname === "/") {
-                        location.reload();
+                        populateClient(resp.id);
                     }
                 },
                 error: function(jqXHR, exception) {
@@ -377,6 +397,8 @@
         // New Client modal event
         $(document).ready(function () {
             $("#modal_new_client").on('shown.bs.modal', function (e) {
+                $("#client_name").val("");
+                $("#client_email").val("");
                 $("#client_allocated_ips").importTags('');
                 updateIPAllocationSuggestion();
             });

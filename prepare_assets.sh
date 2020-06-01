@@ -11,6 +11,9 @@ mkdir -p "${DIR}/assets/dist/js" "${DIR}/assets/dist/css" && \
   cp -r "${DIR}/node_modules/admin-lte/dist/js/adminlte.min.js" "${DIR}/assets/dist/js/adminlte.min.js" && \
   cp -r "${DIR}/node_modules/admin-lte/dist/css/adminlte.min.css" "${DIR}/assets/dist/css/adminlte.min.css"
 
+# Copy helper js
+cp -r "${DIR}/custom" "${DIR}/assets"
+
 # Copy plugins
 mkdir -p "${DIR}/assets/plugins" && \
   cp -r "${DIR}/node_modules/admin-lte/plugins/jquery" \

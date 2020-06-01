@@ -58,6 +58,7 @@ func main() {
 	app.GET("/global-settings", handler.GlobalSettings())
 	app.POST("/global-settings", handler.GlobalSettingSubmit())
 	app.GET("/api/clients", handler.GetClients())
+	app.GET("/api/client/:id", handler.GetClient())
 	app.GET("/api/machine-ips", handler.MachineIPAddresses())
 	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation())
 	app.GET("/api/apply-wg-config", handler.ApplyServerConfig(tmplBox))

@@ -209,7 +209,7 @@ func GetClients(hasQRCode bool) ([]model.ClientData, error) {
 			server, _ := GetServer()
 			globalSettings, _ := GetGlobalSettings()
 
-			png, _ := qrcode.Encode(BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
+			png, err := qrcode.Encode(BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
 			if err == nil {
 				clientData.QRCode = "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
 			} else {
@@ -226,18 +226,34 @@ func GetClients(hasQRCode bool) ([]model.ClientData, error) {
 }
 
 // GetClientByID func to query a client from the database
-func GetClientByID(clientID string) (model.Client, error) {
+func GetClientByID(clientID string, hasQRCode bool) (model.ClientData, error) {
 	client := model.Client{}
+	clientData := model.ClientData{}
 
 	db, err := DBConn()
 	if err != nil {
-		return client, err
+		return clientData, err
 	}
 
 	// read client information
 	if err := db.Read("clients", clientID, &client); err != nil {
-		return client, err
+		return clientData, err
 	}
 
-	return client, nil
+	// generate client qrcode image in base64
+	if hasQRCode {
+		server, _ := GetServer()
+		globalSettings, _ := GetGlobalSettings()
+
+		png, err := qrcode.Encode(BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
+		if err == nil {
+			clientData.QRCode = "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
+		} else {
+			fmt.Print("Cannot generate QR code: ", err)
+		}
+	}
+
+	clientData.Client = &client
+
+	return clientData, nil
 }

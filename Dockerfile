@@ -35,6 +35,9 @@ RUN mkdir -p assets/plugins && \
     /build/node_modules/jquery-tags-input/ \
     assets/plugins/
 
+# Move custom assets
+RUN cp -r /build/custom/ assets/
+
 # Get go modules and build tool
 RUN go mod download && \
     go get github.com/GeertJohan/go.rice/rice
