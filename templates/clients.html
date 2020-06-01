@@ -24,54 +24,60 @@ Wireguard Clients
 <section class="content">
     <div class="container-fluid">
         <!-- <h5 class="mt-4 mb-2">Wireguard Clients</h5> -->
-        <div class="row">
-            {{range .clientDataList}}
-            <div class="col-sm-6" id="client_{{.Client.ID}}">
-                <div class="info-box">
-                    <div class="overlay" id="paused_{{.Client.ID}}"
-                        {{if eq .Client.Enabled true}}style="visibility: hidden;" {{end}}>
-                        <i class="paused-client fas fa-3x fa-play" onclick="resumeClient('{{.Client.ID}}')"></i>
-                    </div>
-                    <img
-                        src="{{ .QRCode }}" />
-                    <div class="info-box-content">
-                        <div class="btn-group">
-                            <button onclick="location.href='/download?clientid={{ .Client.ID }}'" type="button"
-                                class="btn btn-outline-success btn-sm">Download</button>
-                            <!-- <button type="button" class="btn btn-outline-primary btn-sm">Edit</button> -->
-                            <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal"
-                                data-target="#modal_pause_client" data-clientid="{{ .Client.ID }}"
-                                data-clientname="{{ .Client.Name }}">Disable</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
-                                data-target="#modal_remove_client" data-clientid="{{ .Client.ID }}"
-                                data-clientname="{{ .Client.Name }}">Remove</button>
-                        </div>
-                        <hr>
-                        <span class="info-box-text"><i class="fas fa-user"></i> {{ .Client.Name }}</span>
-                        <span class="info-box-text"><i class="fas fa-envelope"></i> {{ .Client.Email }}</span>
-                        <span class="info-box-text"><i class="fas fa-clock"></i>
-                            {{ .Client.CreatedAt.Format "2 Jan 2006 15:04" }}</span>
-                        <span class="info-box-text"><i class="fas fa-history"></i>
-                            {{ .Client.UpdatedAt.Format "2 Jan 2006 15:04" }}</span>
-                        <span class="info-box-text"><strong>IP Allocation</strong></span>
-                        {{range .Client.AllocatedIPs}}
-                        <small class="badge badge-secondary">{{.}}</small>
-                        {{end}}
-                        <span class="info-box-text"><strong>Allowed IPs</strong></span>
-                        {{range .Client.AllowedIPs}}
-                        <small class="badge badge-secondary">{{.}}</small>
-                        {{end}}
-                    </div>
-                    <!-- /.info-box-content -->
-                </div>
-                <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-            {{end}}
+        <div class="row" id="client-list">
         </div>
         <!-- /.row -->
     </div>
 </section>
+
+<div class="modal fade" id="modal_edit_client">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit Wireguard Client</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="frm_new_client" id="frm_new_client">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="client_name" class="control-label">Name</label>
+                        <input type="text" class="form-control" id="client_name" name="client_name">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_email" class="control-label">Email</label>
+                        <input type="text" class="form-control" id="client_email" name="client_email">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_allocated_ips" class="control-label">IP Allocation</label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="client_allocated_ips">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_allowed_ips" class="control-label">Allowed IPs</label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="client_allowed_ips"
+                            value="0.0.0.0/0">
+                    </div>
+                    <div class="form-group">
+                        <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="enabled" checked>
+                            <label for="enabled">
+                                Enable after creation
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
 
 <div class="modal fade" id="modal_pause_client">
     <div class="modal-dialog">
@@ -119,7 +125,88 @@ Wireguard Clients
 {{end}}
 
 {{define "bottom_js"}}
+<script type="text/html" id="template">
+
+
+</script>
+
     <script>
+        function renderClient(data) {
+            $.each(data, function(index, obj) {
+                // render client status css tag style
+                let clientStatusHtml = '>'
+                if (obj.Client.enabled) {
+                    clientStatusHtml = `style="visibility: hidden;">`
+                }
+
+                // render client allocated ip addresses
+                let allocatedIpsHtml = "";
+                $.each(obj.Client.allocated_ips, function(index, obj) {
+                    allocatedIpsHtml += `<small class="badge badge-secondary">${obj}</small>`;
+                })
+
+                // render client allowed ip addresses
+                let allowedIpsHtml = "";
+                $.each(obj.Client.allowed_ips, function(index, obj) {
+                    allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>`;
+                })
+
+                // render client html content
+                let html = `<div class="col-sm-6" id="client_${obj.Client.id}">
+                                <div class="info-box">
+                                    <div class="overlay" id="paused_${obj.Client.id}"` + clientStatusHtml
+                                        + `<i class="paused-client fas fa-3x fa-play" onclick="resumeClient('${obj.Client.id}')"></i>
+                                    </div>
+                                    <img src="${obj.QRCode}" />
+                                    <div class="info-box-content">
+                                        <div class="btn-group">
+                                            <button onclick="location.href='/download?clientid=${obj.Client.id}'" type="button"
+                                                class="btn btn-outline-success btn-sm">Download</button>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
+                                                    data-target="#modal_edit_client">Edit</button>
+                                            <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal"
+                                                data-target="#modal_pause_client" data-clientid="${obj.Client.id}"
+                                                data-clientname="${obj.Client.name}">Disable</button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
+                                                data-target="#modal_remove_client" data-clientid="${obj.Client.id}"
+                                                data-clientname="${obj.Client.name}">Remove</button>
+                                        </div>
+                                        <hr>
+                                        <span class="info-box-text"><i class="fas fa-user"></i> ${obj.Client.name}</span>
+                                        <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
+                                        <span class="info-box-text"><i class="fas fa-clock"></i>
+                                            ${obj.Client.created_at}</span>
+                                        <span class="info-box-text"><i class="fas fa-history"></i>
+                                            ${obj.Client.updated_at}</span>
+                                        <span class="info-box-text"><strong>IP Allocation</strong></span>`
+                                        + allocatedIpsHtml
+                                        + `<span class="info-box-text"><strong>Allowed IPs</strong></span>`
+                                        + allowedIpsHtml
+                                    +`</div>
+                                </div>
+                            </div>`
+
+                // add the client html elements to the list
+                $('#client-list').append(html);
+            });
+        }
+        function populateClientList() {
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '/api/clients',
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (data) {
+                    renderClient(data);
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
         function setClientStatus(clientID, status) {
             const data = {"id": clientID, "status": status};
             $.ajax({
@@ -130,7 +217,7 @@ Wireguard Clients
                 contentType: "application/json",
                 data: JSON.stringify(data),
                 success: function (data) {
-                    console.log("Set client " + clientID + " status to " + status)
+                    console.log("Set client " + clientID + " status to " + status);
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -152,6 +239,11 @@ Wireguard Clients
         }
     </script>
     <script>
+        // load client list
+        $(document).ready(function () {
+            populateClientList();
+        })
+
         // modal_pause_client modal event
         $("#modal_pause_client").on('show.bs.modal', function (event) {
             const button = $(event.relatedTarget);

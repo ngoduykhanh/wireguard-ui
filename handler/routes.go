@@ -92,6 +92,21 @@ func WireGuardClients() echo.HandlerFunc {
 	}
 }
 
+// GetClients handler return a list of Wireguard client data
+func GetClients() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
+		clientDataList, err := util.GetClients(true)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot get client list: %v", err)})
+		}
+
+		return c.JSON(http.StatusOK, clientDataList)
+	}
+}
+
 // NewClient handler
 func NewClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
