@@ -34,42 +34,41 @@ Wireguard Clients
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Edit Wireguard Client</h4>
+                <h4 class="modal-title">Edit Client</h4>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form name="frm_new_client" id="frm_new_client">
+            <form name="frm_edit_client" id="frm_edit_client">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="client_name" class="control-label">Name</label>
-                        <input type="text" class="form-control" id="client_name" name="client_name">
+                        <label for="_client_name" class="control-label">Name</label>
+                        <input type="text" class="form-control" id="_client_name" name="_client_name">
                     </div>
                     <div class="form-group">
-                        <label for="client_email" class="control-label">Email</label>
-                        <input type="text" class="form-control" id="client_email" name="client_email">
+                        <label for="_client_email" class="control-label">Email</label>
+                        <input type="text" class="form-control" id="_client_email" name="client_email">
                     </div>
                     <div class="form-group">
-                        <label for="client_allocated_ips" class="control-label">IP Allocation</label>
-                        <input type="text" data-role="tagsinput" class="form-control" id="client_allocated_ips">
+                        <label for="_client_allocated_ips" class="control-label">IP Allocation</label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="_client_allocated_ips">
                     </div>
                     <div class="form-group">
-                        <label for="client_allowed_ips" class="control-label">Allowed IPs</label>
-                        <input type="text" data-role="tagsinput" class="form-control" id="client_allowed_ips"
-                            value="0.0.0.0/0">
+                        <label for="_client_allowed_ips" class="control-label">Allowed IPs</label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="_client_allowed_ips">
                     </div>
                     <div class="form-group">
                         <div class="icheck-primary d-inline">
-                            <input type="checkbox" id="enabled" checked>
-                            <label for="enabled">
-                                Enable after creation
+                            <input type="checkbox" id="_enabled">
+                            <label for="_enabled">
+                                Enable this client
                             </label>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="submit" class="btn btn-success">Save</button>
                 </div>
             </form>
         </div>
@@ -228,6 +227,71 @@ Wireguard Clients
                         divElement.style.display = "none";
                     },
                     error: function(jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
+            });
+        });
+
+        // Edit client modal event
+        $(document).ready(function () {
+            $("#modal_edit_client").on('shown.bs.modal', function (event) {
+                let modal = $(this);
+                const button = $(event.relatedTarget);
+                const client_id = button.data('clientid');
+
+                // IP Allocation tag input
+                modal.find("#_client_allocated_ips").tagsInput({
+                    'width': '100%',
+                    'height': '75%',
+                    'interactive': true,
+                    'defaultText': 'Add More',
+                    'removeWithBackspace': true,
+                    'minChars': 0,
+                    'maxChars': 18,
+                    'placeholderColor': '#666666'
+                });
+
+                // AllowedIPs tag input
+                modal.find("#_client_allowed_ips").tagsInput({
+                    'width': '100%',
+                    'height': '75%',
+                    'interactive': true,
+                    'defaultText': 'Add More',
+                    'removeWithBackspace': true,
+                    'minChars': 0,
+                    'maxChars': 18,
+                    'placeholderColor': '#666666'
+                });
+
+                // update client modal data
+                $.ajax({
+                    cache: false,
+                    method: 'GET',
+                    url: '/api/client/' + client_id,
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function (resp) {
+                        const client = resp.Client;
+
+                        modal.find(".modal-title").text("Edit Client " + client.name);
+                        modal.find("#_client_name").val(client.name);
+                        modal.find("#_client_email").val(client.email);
+
+                        modal.find("#_client_allocated_ips").importTags('');
+                        client.allocated_ips.forEach(function (obj) {
+                            modal.find("#_client_allocated_ips").addTag(obj);
+                        });
+
+                        modal.find("#_client_allowed_ips").importTags('');
+                        client.allowed_ips.forEach(function (obj) {
+                            modal.find("#_client_allowed_ips").addTag(obj);
+                        });
+
+                        modal.find("#_enabled").prop("checked", client.enabled);
+                    },
+                    error: function (jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
                         toastr.error(responseJson['message']);
                     }

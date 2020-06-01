@@ -30,7 +30,8 @@ function renderClientList(data) {
                                     <button onclick="location.href='/download?clientid=${obj.Client.id}'" type="button"
                                         class="btn btn-outline-success btn-sm">Download</button>
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
-                                            data-target="#modal_edit_client">Edit</button>
+                                        data-target="#modal_edit_client" data-clientid="${obj.Client.id}"
+                                        data-clientname="${obj.Client.name}">Edit</button>
                                     <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal"
                                         data-target="#modal_pause_client" data-clientid="${obj.Client.id}"
                                         data-clientname="${obj.Client.name}">Disable</button>
