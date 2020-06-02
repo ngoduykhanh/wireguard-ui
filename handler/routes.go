@@ -145,7 +145,7 @@ func NewClient() echo.HandlerFunc {
 		}
 
 		// validate the input Allocation IPs
-		allocatedIPs, err := util.GetAllocatedIPs()
+		allocatedIPs, err := util.GetAllocatedIPs("")
 		check, err := util.ValidateIPAllocation(serverInterface.Addresses, allocatedIPs, client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
@@ -188,6 +188,63 @@ func NewClient() echo.HandlerFunc {
 	}
 }
 
+// UpdateClient handler to update client information
+func UpdateClient() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+
+		_client := new(model.Client)
+		c.Bind(_client)
+
+		db, err := util.DBConn()
+		if err != nil {
+			log.Error("Cannot initialize database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+		}
+
+		// validate client existence
+		client := model.Client{}
+		if err := db.Read("clients", _client.ID, &client); err != nil {
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
+		}
+
+		// read server information
+		serverInterface := model.ServerInterface{}
+		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+			log.Error("Cannot fetch server interface config from database: ", err)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("Cannot fetch server config: %s", err)})
+		}
+
+		// validate the input Allocation IPs
+		allocatedIPs, err := util.GetAllocatedIPs(client.ID)
+		check, err := util.ValidateIPAllocation(serverInterface.Addresses, allocatedIPs, _client.AllocatedIPs)
+		if !check {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
+		}
+
+		// validate the input AllowedIPs
+		if util.ValidateAllowedIPs(_client.AllowedIPs) == false {
+			log.Warnf("Invalid Allowed IPs input from user: %v", _client.AllowedIPs)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
+		}
+
+		// map new data
+		client.Name = _client.Name
+		client.Email = _client.Email
+		client.Enabled = _client.Enabled
+		client.AllocatedIPs = _client.AllocatedIPs
+		client.AllowedIPs = _client.AllowedIPs
+		client.UpdatedAt = time.Now().UTC()
+
+		// write to the database
+		db.Write("clients", client.ID, &client)
+		log.Infof("Updated client information successfully => %v", client)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated client successfully"})
+	}
+}
+
 // SetClientStatus handler to enable / disable a client
 func SetClientStatus() echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -212,7 +269,7 @@ func SetClientStatus() echo.HandlerFunc {
 
 		client := model.Client{}
 		if err := db.Read("clients", clientID, &client); err != nil {
-			log.Error("Cannot fetch server interface config from database: ", err)
+			log.Error("Cannot get client from database: ", err)
 		}
 
 		client.Enabled = status
@@ -451,7 +508,7 @@ func SuggestIPAllocation() echo.HandlerFunc {
 		// we take the first available ip address from
 		// each server's network addresses.
 		suggestedIPs := make([]string, 0)
-		allocatedIPs, err := util.GetAllocatedIPs()
+		allocatedIPs, err := util.GetAllocatedIPs("")
 		if err != nil {
 			log.Error("Cannot suggest ip allocation. Failed to get list of allocated ip addresses: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot suggest ip allocation: failed to get list of allocated ip addresses"})

@@ -49,6 +49,7 @@ func main() {
 	app.POST("/login", handler.Login())
 	app.GET("/logout", handler.Logout())
 	app.POST("/new-client", handler.NewClient())
+	app.POST("/update-client", handler.UpdateClient())
 	app.POST("/client/set-status", handler.SetClientStatus())
 	app.POST("/remove-client", handler.RemoveClient())
 	app.GET("/download", handler.DownloadClient())

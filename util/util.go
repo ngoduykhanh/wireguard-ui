@@ -173,7 +173,7 @@ func GetIPFromCIDR(cidr string) (string, error) {
 }
 
 // GetAllocatedIPs to get all ip addresses allocated to clients and server
-func GetAllocatedIPs() ([]string, error) {
+func GetAllocatedIPs(ignoreClientID string) ([]string, error) {
 	allocatedIPs := make([]string, 0)
 
 	// initialize database directory
@@ -211,12 +211,14 @@ func GetAllocatedIPs() ([]string, error) {
 			return nil, err
 		}
 
-		for _, cidr := range client.AllocatedIPs {
-			ip, err := GetIPFromCIDR(cidr)
-			if err != nil {
-				return nil, err
+		if client.ID != ignoreClientID {
+			for _, cidr := range client.AllocatedIPs {
+				ip, err := GetIPFromCIDR(cidr)
+				if err != nil {
+					return nil, err
+				}
+				allocatedIPs = append(allocatedIPs, ip)
 			}
-			allocatedIPs = append(allocatedIPs, ip)
 		}
 	}
 

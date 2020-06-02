@@ -41,6 +41,7 @@ Wireguard Clients
             </div>
             <form name="frm_edit_client" id="frm_edit_client">
                 <div class="modal-body">
+                    <input type="hidden" id="_client_id" name="_client_id">
                     <div class="form-group">
                         <label for="_client_name" class="control-label">Name</label>
                         <input type="text" class="form-control" id="_client_name" name="_client_name">
@@ -276,6 +277,7 @@ Wireguard Clients
                         const client = resp.Client;
 
                         modal.find(".modal-title").text("Edit Client " + client.name);
+                        modal.find("#_client_id").val(client.id);
                         modal.find("#_client_name").val(client.name);
                         modal.find("#_client_email").val(client.email);
 
@@ -296,6 +298,82 @@ Wireguard Clients
                         toastr.error(responseJson['message']);
                     }
                 });
+            });
+        });
+
+        // submitEditClient function for updating an existing client
+        function submitEditClient() {
+            const client_id = $("#_client_id").val();
+            const name = $("#_client_name").val();
+            const email = $("#_client_email").val();
+            const allocated_ips = $("#_client_allocated_ips").val().split(",");
+            const allowed_ips = $("#_client_allowed_ips").val().split(",");
+            let enabled = false;
+
+            if ($("#_enabled").is(':checked')){
+                enabled = true;
+            }
+
+            const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
+                "allowed_ips": allowed_ips, "enabled": enabled};
+
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '/update-client',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function(resp) {
+                    $("#modal_edit_client").modal('hide');
+                    toastr.success('Updated client successfully');
+                     // Refresh the home page (clients page) after updating successfully
+                    location.reload();
+                },
+                error: function(jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
+        // Edit client form validation
+        $(document).ready(function () {
+            $.validator.setDefaults({
+                submitHandler: function () {
+                    submitEditClient();
+                }
+            });
+            $("#frm_edit_client").validate({
+                rules: {
+                    client_name: {
+                        required: true,
+                    },
+                    client_email: {
+                        required: true,
+                        email: true,
+                    },
+                },
+                messages: {
+                    client_name: {
+                        required: "Please enter a name"
+                    },
+                    client_email: {
+                        required: "Please enter an email address",
+                        email: "Please enter a valid email address"
+                    },
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
             });
         });
     </script>

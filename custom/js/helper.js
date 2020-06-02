@@ -9,13 +9,13 @@ function renderClientList(data) {
         // render client allocated ip addresses
         let allocatedIpsHtml = "";
         $.each(obj.Client.allocated_ips, function(index, obj) {
-            allocatedIpsHtml += `<small class="badge badge-secondary">${obj}</small>`;
+            allocatedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
         })
 
         // render client allowed ip addresses
         let allowedIpsHtml = "";
         $.each(obj.Client.allowed_ips, function(index, obj) {
-            allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>`;
+            allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
         })
 
         // render client html content
