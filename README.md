@@ -33,6 +33,8 @@ Download the binary file from the release and run it with command:
 ## Auto restart WireGuard daemon
 WireGuard-UI only takes care of configuration generation. You can use systemd to watch for the changes and restart the service. Following is an example:
 
+### systemd
+
 Create /etc/systemd/system/wgui.service
 
 ```
@@ -59,9 +61,36 @@ WantedBy=multi-user.target
 ```
 
 Apply it
+
 ```
 systemctl enable wgui.{path,service}
 systemctl start wgui.{path,service}
+```
+
+### openrc
+
+Create and `chmod +x` /usr/local/bin/wgui
+```
+#!/bin/sh
+wg-quick down wg0
+wg-quick up wg0
+```
+
+Create and `chmod +x` /etc/init.d/wgui
+```
+#!/sbin/openrc-run
+
+command=/sbin/inotifyd
+command_args="/usr/local/bin/wgui /etc/wireguard/wg0.conf:w"
+pidfile=/run/${RC_SVCNAME}.pid
+command_background=yes
+```
+
+Apply it
+
+```
+rc-service wgui start
+rc-update add wgui default
 ```
 
 ## Build
