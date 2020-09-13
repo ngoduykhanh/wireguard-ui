@@ -44,10 +44,10 @@ func InitDB() error {
 
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
-		os.Mkdir(clientPath, os.ModePerm)
+		os.MkdirAll(clientPath, os.ModePerm)
 	}
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
-		os.Mkdir(serverPath, os.ModePerm)
+		os.MkdirAll(serverPath, os.ModePerm)
 	}
 
 	// server's interface
