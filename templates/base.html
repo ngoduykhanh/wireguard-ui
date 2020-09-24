@@ -154,6 +154,10 @@
                                     value="0.0.0.0/0">
                             </div>
                             <div class="form-group">
+                                <label for="client_private_subnets" class="control-label">Allowed IPs</label>
+                                <input type="text" data-role="tagsinput" class="form-control" id="client_private_subnets">
+                            </div>
+                            <div class="form-group">
                                 <div class="icheck-primary d-inline">
                                     <input type="checkbox" id="enabled" checked>
                                     <label for="enabled">
@@ -274,13 +278,14 @@
             const email = $("#client_email").val();
             const allocated_ips = $("#client_allocated_ips").val().split(",");
             const allowed_ips = $("#client_allowed_ips").val().split(",");
+            const private_subnets = $("#client_private_subnets").val().split(",");
             let enabled = false;
 
             if ($("#enabled").is(':checked')){
                 enabled = true;
             }
 
-            const data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
+            const data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips, "private_subnets": private_subnets,
             "enabled": enabled};
 
             $.ajax({
@@ -344,6 +349,18 @@
 
         // AllowedIPs tag input
         $("#client_allowed_ips").tagsInput({
+            'width': '100%',
+            'height': '75%',
+            'interactive': true,
+            'defaultText': 'Add More',
+            'removeWithBackspace': true,
+            'minChars': 0,
+            'maxChars': 18,
+            'placeholderColor': '#666666'
+        });
+
+        // PrivateSubnets tag input
+        $("#client_private_subnets").tagsInput({
             'width': '100%',
             'height': '75%',
             'interactive': true,

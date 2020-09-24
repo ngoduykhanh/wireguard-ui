@@ -18,6 +18,12 @@ function renderClientList(data) {
             allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
         })
 
+        // render client private subnets
+        let privateSubnetsHtml = "";
+        $.each(obj.Client.private_subnets, function(index, obj) {
+            privateSubnetsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
+        })
+
         // render client html content
         let html = `<div class="col-sm-6" id="client_${obj.Client.id}">
                         <div class="info-box">
@@ -50,6 +56,8 @@ function renderClientList(data) {
                                 + allocatedIpsHtml
                                 + `<span class="info-box-text"><strong>Allowed IPs</strong></span>`
                                 + allowedIpsHtml
+                                + `<span class="info-box-text"><strong>Private Subnets</strong></span>`
+                                + privateSubnetsHtml
                             +`</div>
                         </div>
                     </div>`
