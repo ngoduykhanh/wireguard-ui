@@ -3,10 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	rice "github.com/GeertJohan/go.rice"
 	"net/http"
 	"strings"
 	"time"
+
+	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -192,7 +193,6 @@ func NewClient() echo.HandlerFunc {
 				client.HasPrivateSubnet = true
 			}
 		}
-		
 
 		// write client to the database
 		db.Write("clients", client.ID, client)
@@ -256,6 +256,8 @@ func UpdateClient() echo.HandlerFunc {
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
 		client.PrivateSubnets = _client.PrivateSubnets
+		client.PostUp = _client.PostUp
+		client.PostDown = _client.PostDown
 		client.UpdatedAt = time.Now().UTC()
 
 		client.HasPrivateSubnet = false

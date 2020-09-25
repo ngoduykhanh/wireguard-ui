@@ -19,6 +19,8 @@ type Client struct {
 	Enabled          bool      `json:"enabled"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
+	PostUp           string    `json:"post_up"`
+	PostDown         string    `json:"post_down"`
 }
 
 // ClientData includes the Client and extra data

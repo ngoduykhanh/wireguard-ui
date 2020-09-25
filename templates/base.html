@@ -158,6 +158,16 @@
                                 <input type="text" data-role="tagsinput" class="form-control" id="client_private_subnets">
                             </div>
                             <div class="form-group">
+                                <label for="client_post_up">Post Up Script</label>
+                                <input type="text" class="form-control" id="client_post_up" name="client_post_up"
+                                       placeholder="Post Up Script">
+                            </div>
+                            <div class="form-group">
+                                <label for="client_post_down">Post Down Script</label>
+                                <input type="text" class="form-control" id="client_post_down" name="client_post_down"
+                                       placeholder="Post Down Script">
+                            </div>
+                            <div class="form-group">
                                 <div class="icheck-primary d-inline">
                                     <input type="checkbox" id="enabled" checked>
                                     <label for="enabled">
@@ -279,6 +289,8 @@
             const allocated_ips = $("#client_allocated_ips").val().split(",");
             const allowed_ips = $("#client_allowed_ips").val().split(",");
             const private_subnets = $("#client_private_subnets").val().split(",");
+            const post_up = $("#client_post_up").val();
+            const post_down = $("#client_post_down").val();
             let enabled = false;
 
             if ($("#enabled").is(':checked')){
@@ -286,7 +298,7 @@
             }
 
             const data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips, "private_subnets": private_subnets,
-            "enabled": enabled};
+            "post_up": post_up, "post_down": post_down, "enabled": enabled};
 
             $.ajax({
                 cache: false,
