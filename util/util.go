@@ -57,7 +57,7 @@ func ValidateCIDR(cidr string) bool {
 // ValidateCIDRList to validate a list of network CIDR
 func ValidateCIDRList(cidrs []string) bool {
 	for _, cidr := range cidrs {
-		if ValidateCIDR(cidr) == false {
+		if cidr != "" && ValidateCIDR(cidr) == false {
 			return false
 		}
 	}
@@ -66,6 +66,14 @@ func ValidateCIDRList(cidrs []string) bool {
 
 // ValidateAllowedIPs to validate allowed ip addresses in CIDR format
 func ValidateAllowedIPs(cidrs []string) bool {
+	if ValidateCIDRList(cidrs) == false {
+		return false
+	}
+	return true
+}
+
+// ValidatePrivateSubnets to validate allowed ip addresses in CIDR format
+func ValidatePrivateSubnets(cidrs []string) bool {
 	if ValidateCIDRList(cidrs) == false {
 		return false
 	}
