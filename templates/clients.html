@@ -59,6 +59,18 @@ Wireguard Clients
                         <input type="text" data-role="tagsinput" class="form-control" id="_client_allowed_ips">
                     </div>
                     <div class="form-group">
+                        <label for="_client_private_subnets" class="control-label">Private Subnet</label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="_client_private_subnets">
+                    </div>
+                    <div class="form-group">
+                        <label for="_client_post_up" class="control-label">Post Up</label>
+                        <input type="text" class="form-control" id="_client_post_up" name="_client_post_up">
+                    </div>
+                    <div class="form-group">
+                        <label for="_client_post_down" class="control-label">Post Down</label>
+                        <input type="text" class="form-control" id="_client_post_down" name="_client_post_down">
+                    </div>
+                    <div class="form-group">
                         <div class="icheck-primary d-inline">
                             <input type="checkbox" id="_enabled">
                             <label for="_enabled">
@@ -266,6 +278,18 @@ Wireguard Clients
                     'placeholderColor': '#666666'
                 });
 
+                // PrivateSubnet tag input
+                modal.find("#_client_private_subnets").tagsInput({
+                    'width': '100%',
+                    'height': '75%',
+                    'interactive': true,
+                    'defaultText': 'Add More',
+                    'removeWithBackspace': true,
+                    'minChars': 0,
+                    'maxChars': 18,
+                    'placeholderColor': '#666666'
+                });
+
                 // update client modal data
                 $.ajax({
                     cache: false,
@@ -291,6 +315,13 @@ Wireguard Clients
                             modal.find("#_client_allowed_ips").addTag(obj);
                         });
 
+                        modal.find("#_client_private_subnets").importTags('');
+                        client.private_subnets.forEach(function (obj) {
+                            modal.find("#_client_private_subnets").addTag(obj);
+                        });
+
+                        modal.find("#_client_post_up").val(client.post_up);
+                        modal.find("#_client_post_down").val(client.post_down);
                         modal.find("#_enabled").prop("checked", client.enabled);
                     },
                     error: function (jqXHR, exception) {
@@ -308,14 +339,17 @@ Wireguard Clients
             const email = $("#_client_email").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
             const allowed_ips = $("#_client_allowed_ips").val().split(",");
+            const private_subnets = $("#_client_private_subnets").val().split(",");
+            const post_up = $("#_client_post_up").val();
+            const post_down = $("#_client_post_down").val();
             let enabled = false;
 
             if ($("#_enabled").is(':checked')){
                 enabled = true;
             }
 
-            const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
-                "allowed_ips": allowed_ips, "enabled": enabled};
+            const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips, "private_subnets": private_subnets,
+                "allowed_ips": allowed_ips, "post_up": post_up, "post_down": post_down, "enabled": enabled};
 
             $.ajax({
                 cache: false,

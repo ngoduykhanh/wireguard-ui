@@ -3,10 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	rice "github.com/GeertJohan/go.rice"
 	"net/http"
 	"strings"
 	"time"
+
+	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -157,6 +158,12 @@ func NewClient() echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
 		}
 
+		// validate the input PrivateSubnets
+		if util.ValidatePrivateSubnets(client.PrivateSubnets) == false {
+			log.Warnf("Invalid Private Subnets input from user: %v", client.PrivateSubnets)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Private Subnets must be in CIDR format"})
+		}
+
 		// gen ID
 		guid := xid.New()
 		client.ID = guid.String()
@@ -179,6 +186,13 @@ func NewClient() echo.HandlerFunc {
 		client.PresharedKey = presharedKey.String()
 		client.CreatedAt = time.Now().UTC()
 		client.UpdatedAt = client.CreatedAt
+
+		client.HasPrivateSubnet = false
+		for _, privateSubnet := range client.PrivateSubnets {
+			if privateSubnet != "" {
+				client.HasPrivateSubnet = true
+			}
+		}
 
 		// write client to the database
 		db.Write("clients", client.ID, client)
@@ -229,13 +243,29 @@ func UpdateClient() echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
 		}
 
+		// validate the input PrivateSubnets
+		if util.ValidatePrivateSubnets(_client.PrivateSubnets) == false {
+			log.Warnf("Invalid Private Subnets input from user: %v", _client.PrivateSubnets)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Private Subnets must be in CIDR format"})
+		}
+
 		// map new data
 		client.Name = _client.Name
 		client.Email = _client.Email
 		client.Enabled = _client.Enabled
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
+		client.PrivateSubnets = _client.PrivateSubnets
+		client.PostUp = _client.PostUp
+		client.PostDown = _client.PostDown
 		client.UpdatedAt = time.Now().UTC()
+
+		client.HasPrivateSubnet = false
+		for _, privateSubnet := range client.PrivateSubnets {
+			if privateSubnet != "" {
+				client.HasPrivateSubnet = true
+			}
+		}
 
 		// write to the database
 		db.Write("clients", client.ID, &client)

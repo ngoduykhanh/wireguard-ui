@@ -34,8 +34,19 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	strConfig := "[Interface]\n" +
 		clientAddress + "\n" +
 		clientPrivateKey + "\n" +
-		clientDNS + "\n\n" +
-		"[Peer]" + "\n" +
+		clientDNS + "\n\n"
+
+	if client.PostUp != "" {
+		clientPostUp := fmt.Sprintf("PostUp = %s", client.PostUp)
+		strConfig += clientPostUp + "\n"
+	}
+
+	if client.PostDown != "" {
+		clientPostDown := fmt.Sprintf("PostDown = %s", client.PostDown)
+		strConfig += clientPostDown + "\n\n"
+	}
+
+	strConfig += "[Peer]" + "\n" +
 		peerPublicKey + "\n" +
 		peerPresharedKey + "\n" +
 		peerAllowedIPs + "\n" +
@@ -57,7 +68,7 @@ func ValidateCIDR(cidr string) bool {
 // ValidateCIDRList to validate a list of network CIDR
 func ValidateCIDRList(cidrs []string) bool {
 	for _, cidr := range cidrs {
-		if ValidateCIDR(cidr) == false {
+		if cidr != "" && ValidateCIDR(cidr) == false {
 			return false
 		}
 	}
@@ -66,6 +77,14 @@ func ValidateCIDRList(cidrs []string) bool {
 
 // ValidateAllowedIPs to validate allowed ip addresses in CIDR format
 func ValidateAllowedIPs(cidrs []string) bool {
+	if ValidateCIDRList(cidrs) == false {
+		return false
+	}
+	return true
+}
+
+// ValidatePrivateSubnets to validate allowed ip addresses in CIDR format
+func ValidatePrivateSubnets(cidrs []string) bool {
 	if ValidateCIDRList(cidrs) == false {
 		return false
 	}

@@ -18,14 +18,22 @@ function renderClientList(data) {
             allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
         })
 
+        // render client private subnets
+        let privateSubnetsHtml = "";
+        $.each(obj.Client.private_subnets, function(index, obj) {
+            privateSubnetsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
+        })
+
         // render client html content
         let html = `<div class="col-sm-6" id="client_${obj.Client.id}">
                         <div class="info-box">
                             <div class="overlay" id="paused_${obj.Client.id}"` + clientStatusHtml
                                 + `<i class="paused-client fas fa-3x fa-play" onclick="resumeClient('${obj.Client.id}')"></i>
-                            </div>
-                            <img src="${obj.QRCode}" />
-                            <div class="info-box-content">
+                            </div>`
+        if (obj.Client.hasPrivateSubnet == false) {
+            html = html + `<img src="${obj.QRCode}" />`
+        }
+        html = html +       `<div class="info-box-content">
                                 <div class="btn-group">
                                     <button onclick="location.href='/download?clientid=${obj.Client.id}'" type="button"
                                         class="btn btn-outline-success btn-sm">Download</button>
@@ -50,6 +58,8 @@ function renderClientList(data) {
                                 + allocatedIpsHtml
                                 + `<span class="info-box-text"><strong>Allowed IPs</strong></span>`
                                 + allowedIpsHtml
+                                + `<span class="info-box-text"><strong>Private Subnets</strong></span>`
+                                + privateSubnetsHtml
                             +`</div>
                         </div>
                     </div>`
