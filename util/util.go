@@ -36,11 +36,14 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		clientPrivateKey + "\n" +
 		clientDNS + "\n\n"
 
-	if client.HasPrivateSubnet {
+	if client.PostUp != "" {
 		clientPostUp := fmt.Sprintf("PostUp = %s", client.PostUp)
+		strConfig += clientPostUp + "\n"
+	}
+
+	if client.PostDown != "" {
 		clientPostDown := fmt.Sprintf("PostDown = %s", client.PostDown)
-		strConfig += clientPostUp + "\n" +
-			clientPostDown + "\n\n"
+		strConfig += clientPostDown + "\n\n"
 	}
 
 	strConfig += "[Peer]" + "\n" +
