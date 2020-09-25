@@ -22,8 +22,6 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	clientAddress := fmt.Sprintf("Address = %s", strings.Join(client.AllocatedIPs, ","))
 	clientPrivateKey := fmt.Sprintf("PrivateKey = %s", client.PrivateKey)
 	clientDNS := fmt.Sprintf("DNS = %s", strings.Join(setting.DNSServers, ","))
-	clientPostUp := fmt.Sprintf("PostUp = %s", client.PostUp)
-	clientPostDown := fmt.Sprintf("PostDown = %s", client.PostDown)
 
 	// Peer section
 	peerPublicKey := fmt.Sprintf("PublicKey = %s", server.KeyPair.PublicKey)
@@ -36,10 +34,16 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	strConfig := "[Interface]\n" +
 		clientAddress + "\n" +
 		clientPrivateKey + "\n" +
-		clientDNS + "\n" +
-		clientPostUp + "\n" +
-		clientPostDown + "\n\n" +
-		"[Peer]" + "\n" +
+		clientDNS + "\n\n"
+
+	if client.HasPrivateSubnet {
+		clientPostUp := fmt.Sprintf("PostUp = %s", client.PostUp)
+		clientPostDown := fmt.Sprintf("PostDown = %s", client.PostDown)
+		strConfig += clientPostUp + "\n" +
+			clientPostDown + "\n\n"
+	}
+
+	strConfig += "[Peer]" + "\n" +
 		peerPublicKey + "\n" +
 		peerPresharedKey + "\n" +
 		peerAllowedIPs + "\n" +

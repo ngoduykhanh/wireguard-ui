@@ -29,9 +29,11 @@ function renderClientList(data) {
                         <div class="info-box">
                             <div class="overlay" id="paused_${obj.Client.id}"` + clientStatusHtml
                                 + `<i class="paused-client fas fa-3x fa-play" onclick="resumeClient('${obj.Client.id}')"></i>
-                            </div>
-                            <img src="${obj.QRCode}" />
-                            <div class="info-box-content">
+                            </div>`
+        if (obj.Client.hasPrivateSubnet == false) {
+            html = html + `<img src="${obj.QRCode}" />`
+        }
+        html = html +       `<div class="info-box-content">
                                 <div class="btn-group">
                                     <button onclick="location.href='/download?clientid=${obj.Client.id}'" type="button"
                                         class="btn btn-outline-success btn-sm">Download</button>
