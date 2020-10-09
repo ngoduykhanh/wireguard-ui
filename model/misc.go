@@ -8,5 +8,6 @@ type Interface struct {
 
 // BaseData struct to pass value to the base template
 type BaseData struct {
-	Active string
+	Active      string
+	CurrentUser string
 }

@@ -3,10 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	rice "github.com/GeertJohan/go.rice"
 	"net/http"
 	"strings"
 	"time"
+
+	rice "github.com/GeertJohan/go.rice"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -81,12 +82,13 @@ func WireGuardClients() echo.HandlerFunc {
 
 		clientDataList, err := util.GetClients(true)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot get client list: %v", err)})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot get client list: %v", err),
+			})
 		}
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: ""},
-			"username":       currentUser(c),
+			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c)},
 			"clientDataList": clientDataList,
 		})
 	}
@@ -100,7 +102,9 @@ func GetClients() echo.HandlerFunc {
 
 		clientDataList, err := util.GetClients(true)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot get client list: %v", err)})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot get client list: %v", err),
+			})
 		}
 
 		return c.JSON(http.StatusOK, clientDataList)
@@ -171,7 +175,9 @@ func NewClient() echo.HandlerFunc {
 		presharedKey, err := wgtypes.GenerateKey()
 		if err != nil {
 			log.Error("Cannot generated preshared key: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard preshared key"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, "Cannot generate Wireguard preshared key",
+			})
 		}
 
 		client.PrivateKey = key.String()
@@ -213,7 +219,9 @@ func UpdateClient() echo.HandlerFunc {
 		serverInterface := model.ServerInterface{}
 		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
 			log.Error("Cannot fetch server interface config from database: ", err)
-			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("Cannot fetch server config: %s", err)})
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot fetch server config: %s", err),
+			})
 		}
 
 		// validate the input Allocation IPs
@@ -346,8 +354,7 @@ func WireGuardServer() echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
-			"baseData":        model.BaseData{Active: "wg-server"},
-			"username":        currentUser(c),
+			"baseData":        model.BaseData{Active: "wg-server", CurrentUser: currentUser(c)},
 			"serverInterface": server.Interface,
 			"serverKeyPair":   server.KeyPair,
 		})
@@ -429,8 +436,7 @@ func GlobalSettings() echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "global-settings"},
-			"username":       currentUser(c),
+			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c)},
 			"globalSettings": globalSettings,
 		})
 	}
@@ -511,13 +517,18 @@ func SuggestIPAllocation() echo.HandlerFunc {
 		allocatedIPs, err := util.GetAllocatedIPs("")
 		if err != nil {
 			log.Error("Cannot suggest ip allocation. Failed to get list of allocated ip addresses: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot suggest ip allocation: failed to get list of allocated ip addresses"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, "Cannot suggest ip allocation: failed to get list of allocated ip addresses",
+			})
 		}
 		for _, cidr := range server.Interface.Addresses {
 			ip, err := util.GetAvailableIP(cidr, allocatedIPs)
 			if err != nil {
 				log.Error("Failed to get available ip from a CIDR: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot suggest ip allocation: failed to get available ip from network %s", cidr)})
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+					false,
+					fmt.Sprintf("Cannot suggest ip allocation: failed to get available ip from network %s", cidr),
+				})
 			}
 			suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
 		}
@@ -554,7 +565,9 @@ func ApplyServerConfig(tmplBox *rice.Box) echo.HandlerFunc {
 		err = util.WriteWireGuardServerConfig(tmplBox, server, clients, settings)
 		if err != nil {
 			log.Error("Cannot apply server config: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, fmt.Sprintf("Cannot apply server config: %v", err)})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot apply server config: %v", err),
+			})
 		}
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
