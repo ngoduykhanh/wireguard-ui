@@ -24,7 +24,7 @@ var (
 func init() {
 	// command-line flags
 	flagDisableLogin := flag.Bool("disable-login", false, "Disable login page. Turn off authentication.")
-        flagBindAddress := flag.String("bind-address", "0.0.0.0:5000", "Address:Port to which the app will be bound.")
+	flagBindAddress := flag.String("bind-address", "0.0.0.0:5000", "Address:Port to which the app will be bound.")
 	flag.Parse()
 
 	// update runtime config
@@ -39,7 +39,7 @@ func init() {
 	fmt.Println("Build Time\t:", buildTime)
 	fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
 	fmt.Println("Authentication\t:", !util.DisableLogin)
-        fmt.Println("Bind address\t:", util.BindAddress)
+	fmt.Println("Bind address\t:", util.BindAddress)
 
 	// initialize DB
 	err := util.InitDB()
