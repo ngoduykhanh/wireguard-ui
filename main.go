@@ -1,22 +1,34 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"net/http"
+	"time"
+
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/labstack/echo/v4"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
 	"github.com/ngoduykhanh/wireguard-ui/util"
-	"net/http"
-	"time"
 )
 
-var appVersion = "development"
-var gitCommit  = "N/A"
-var gitRef     = "N/A"
-var buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
+// command-line banner information
+var (
+	appVersion = "development"
+	gitCommit  = "N/A"
+	gitRef     = "N/A"
+	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
+)
 
-func main() {
+func init() {
+	// command-line flags
+	flagDisableLogin := flag.Bool("disable-login", false, "Disable login page. Turn off authentication.")
+	flag.Parse()
+
+	// update runtime config
+	util.DisableLogin = *flagDisableLogin
+
 	// print app information
 	fmt.Println("Wireguard UI")
 	fmt.Println("App Version\t:", appVersion)
@@ -24,16 +36,19 @@ func main() {
 	fmt.Println("Git Ref\t\t:", gitRef)
 	fmt.Println("Build Time\t:", buildTime)
 	fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
-
-	// set app extra data
-	extraData := make(map[string]string)
-	extraData["appVersion"] = appVersion
+	fmt.Println("Authentication\t:", !util.DisableLogin)
 
 	// initialize DB
 	err := util.InitDB()
 	if err != nil {
 		fmt.Print("Cannot init database: ", err)
 	}
+}
+
+func main() {
+	// set app extra data
+	extraData := make(map[string]string)
+	extraData["appVersion"] = appVersion
 
 	// create rice box for embedded template
 	tmplBox := rice.MustFindBox("templates")
@@ -45,8 +60,12 @@ func main() {
 	app := router.New(tmplBox, extraData)
 
 	app.GET("/", handler.WireGuardClients())
-	app.GET("/login", handler.LoginPage())
-	app.POST("/login", handler.Login())
+
+	if !util.DisableLogin {
+		app.GET("/login", handler.LoginPage())
+		app.POST("/login", handler.Login())
+	}
+
 	app.GET("/logout", handler.Logout())
 	app.POST("/new-client", handler.NewClient())
 	app.POST("/update-client", handler.UpdateClient())

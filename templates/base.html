@@ -64,8 +64,10 @@
                 <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
                     data-target="#modal_apply_config"><i class="nav-icon fas fa-check"></i> Apply
                     Config</button>
+                {{if .baseData.CurrentUser}}
                 <button onclick="location.href='/logout';" style="margin-left: 0.5em;" type="button"
                     class="btn btn-outline-danger btn-sm"><i class="nav-icon fas fa-sign-out-alt"></i> Logout</button>
+                {{end}}
             </div>
         </nav>
         <!-- /.navbar -->
@@ -87,7 +89,7 @@
                         <i class="nav-icon fas fa-2x fa-user"></i>
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block">{{template "username" .}}</a>
+                        <a href="#" class="d-block">{{if .baseData.CurrentUser}} {{.baseData.CurrentUser}} {{else}} Administrator {{end}}</a>
                     </div>
                 </div>
 
@@ -95,7 +97,7 @@
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                         <li class="nav-item">
-                            <a href="/" class="nav-link {{if eq .baseData.Active "" }}active{{end}}">
+                            <a href="/" class="nav-link {{if eq .baseData.Active ""}}active{{end}}">
                                 <i class="nav-icon fas fa-user-secret"></i>
                                 <p>
                                     Wireguard Clients
