@@ -27,6 +27,10 @@ func validSession(c echo.Context) {
 
 // currentUser to get username of logged in user
 func currentUser(c echo.Context) string {
+	if util.DisableLogin {
+		return ""
+	}
+
 	sess, _ := session.Get("session", c)
 	username := fmt.Sprintf("%s", sess.Values["username"])
 	return username
