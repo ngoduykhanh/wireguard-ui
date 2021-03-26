@@ -9,6 +9,8 @@ import (
 
 	rice "github.com/GeertJohan/go.rice"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -37,32 +39,37 @@ func Login() echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot query user from DB"})
 		}
 
-		if user.Username == dbuser.Username && user.Password == dbuser.Password {
-			// TODO: refresh the token
-			sess, _ := session.Get("session", c)
-			sess.Options = &sessions.Options{
-				Path:     "/",
-				MaxAge:   86400,
-				HttpOnly: true,
-			}
-
-			// set session_token
-			tokenUID := xid.New().String()
-			sess.Values["username"] = user.Username
-			sess.Values["session_token"] = tokenUID
-			sess.Save(c.Request(), c.Response())
-
-			// set session_token in cookie
-			cookie := new(http.Cookie)
-			cookie.Name = "session_token"
-			cookie.Value = tokenUID
-			cookie.Expires = time.Now().Add(24 * time.Hour)
-			c.SetCookie(cookie)
-
-			return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Logged in successfully"})
+		// Check if the username matches
+		if user.Username != dbuser.Username {
+			return c.JSON(http.StatusUnauthorized, jsonHTTPResponse(false, "Invalid credentials"))
 		}
 
-		return c.JSON(http.StatusUnauthorized, jsonHTTPResponse{false, "Invalid credentials"})
+		if err := bcrypt.CompareHashAndPassword(dbuser.Password, user.Password); err != nil {
+			return c.JSON(http.StatusUnauthorized, jsonHTTPResponse(false, "Invalid credentials"))
+		}
+
+		// TODO: refresh the token
+		sess, _ := session.Get("session", c)
+		sess.Options = &sessions.Options{
+			Path:     "/",
+			MaxAge:   86400,
+			HttpOnly: true,
+		}
+
+		// set session_token
+		tokenUID := xid.New().String()
+		sess.Values["username"] = user.Username
+		sess.Values["session_token"] = tokenUID
+		sess.Save(c.Request(), c.Response())
+
+		// set session_token in cookie
+		cookie := new(http.Cookie)
+		cookie.Name = "session_token"
+		cookie.Value = tokenUID
+		cookie.Expires = time.Now().Add(24 * time.Hour)
+		c.SetCookie(cookie)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Logged in successfully"})
 	}
 }
 

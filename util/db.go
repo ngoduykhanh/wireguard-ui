@@ -11,6 +11,7 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/sdomino/scribble"
 	"github.com/skip2/go-qrcode"
+	"golang.org/x/crypto/bcrypt"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
@@ -113,7 +114,10 @@ func InitDB() error {
 
 		user := new(model.User)
 		user.Username = defaultUsername
-		user.Password = defaultPassword
+		user.Password, err = bcrypt.GenerateFromPassword(defaultPassword, bcrypt.MaxCost)
+		if err != nil {
+			return err
+		}
 		db.Write("server", "users", user)
 	}
 
