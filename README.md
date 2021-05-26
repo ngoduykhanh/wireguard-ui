@@ -4,6 +4,10 @@
 
 A web user interface to manage your WireGuard setup.
 
+## Screenshot
+
+![wireguard-ui](https://user-images.githubusercontent.com/6447444/80270680-76adf980-86e4-11ea-8ca1-9237f0dfa249.png)
+
 ## Features
 - Friendly UI
 - Authentication
@@ -124,10 +128,6 @@ Or, append resources to executable as zip file
 go build -o wireguard-ui
 rice append --exec wireguard-ui
 ```
-
-## Screenshot
-
-![wireguard-ui](https://user-images.githubusercontent.com/6447444/80270680-76adf980-86e4-11ea-8ca1-9237f0dfa249.png)
 
 ## License
 MIT. See [LICENSE](https://github.com/ngoduykhanh/wireguard-ui/blob/master/LICENSE).
