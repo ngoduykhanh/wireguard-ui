@@ -18,7 +18,7 @@ import (
 
 // command-line banner information
 var (
-	appVersion = "development"
+	appVersion = "v0.2.7-1"
 	gitCommit  = "N/A"
 	gitRef     = "N/A"
 	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
@@ -53,7 +53,7 @@ func init() {
 	fmt.Println("Git Commit\t:", gitCommit)
 	fmt.Println("Git Ref\t\t:", gitRef)
 	fmt.Println("Build Time\t:", buildTime)
-	fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
+	fmt.Println("Git Repo\t:", "https://github.com/catmandx/wireguard-ui")
 	fmt.Println("Authentication\t:", !util.DisableLogin)
 	fmt.Println("Bind address\t:", util.BindAddress)
 
