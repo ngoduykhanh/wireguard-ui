@@ -21,3 +21,5 @@ rice-box.go
 # IDEs
 .vscode
 .idea
+package-lock.json
+yarn.lock
