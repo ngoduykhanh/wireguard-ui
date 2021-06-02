@@ -6,7 +6,7 @@ ARG BUILD_DEPENDENCIES="npm \
 
 # Get dependencies
 RUN apk add --update --no-cache ${BUILD_DEPENDENCIES}
-
+ENV USER=admin PASS=admin
 WORKDIR /build
 
 # Add sources

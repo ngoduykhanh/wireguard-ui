@@ -15,8 +15,8 @@ import (
 )
 
 const dbPath = "./db"
-const defaultUsername = "admin"
-const defaultPassword = "admin"
+const defaultUsername = os.Getenv("USER")
+const defaultPassword = os.Getenv("PASSS")
 const defaultServerAddress = "10.252.1.0/24"
 const defaultServerPort = 51820
 const defaultDNS = "1.1.1.1"
