@@ -13,6 +13,7 @@ import (
 
 	rice "github.com/GeertJohan/go.rice"
 	externalip "github.com/glendc/go-external-ip"
+	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/sdomino/scribble"
 )
@@ -36,6 +37,8 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		desiredHost = split[0]
 		if n, err := strconv.Atoi(split[1]); err == nil {
 			desiredPort = n
+		} else {
+			log.Error("Endpoint appears to be incorrectly formated: ", err)
 		}
 	}
 	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", desiredHost, desiredPort)
