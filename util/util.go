@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -27,7 +28,18 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	peerPublicKey := fmt.Sprintf("PublicKey = %s", server.KeyPair.PublicKey)
 	peerPresharedKey := fmt.Sprintf("PresharedKey = %s", client.PresharedKey)
 	peerAllowedIPs := fmt.Sprintf("AllowedIPs = %s", strings.Join(client.AllowedIPs, ","))
-	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", setting.EndpointAddress, server.Interface.ListenPort)
+
+	desiredHost := setting.EndpointAddress
+	desiredPort := server.Interface.ListenPort
+	if strings.Contains(desiredHost, ":") {
+		split := strings.Split(desiredHost, ":")
+		desiredHost = split[0]
+		if n, err := strconv.Atoi(split[1]); err == nil {
+			desiredPort = n
+		}
+	}
+	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", desiredHost, desiredPort)
+
 	peerPersistentKeepalive := fmt.Sprintf("PersistentKeepalive = %d", setting.PersistentKeepalive)
 
 	// build the config as string
