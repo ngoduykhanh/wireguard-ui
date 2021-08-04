@@ -241,6 +241,7 @@ func UpdateClient() echo.HandlerFunc {
 		client.Name = _client.Name
 		client.Email = _client.Email
 		client.Enabled = _client.Enabled
+		client.UseServerDNS = _client.UseServerDNS
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
 		client.UpdatedAt = time.Now().UTC()

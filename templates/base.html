@@ -157,6 +157,14 @@
                             </div>
                             <div class="form-group">
                                 <div class="icheck-primary d-inline">
+                                    <input type="checkbox" id="use_server_dns" checked>
+                                    <label for="use_server_dns">
+                                        Use server DNS
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="icheck-primary d-inline">
                                     <input type="checkbox" id="enabled" checked>
                                     <label for="enabled">
                                         Enable after creation
@@ -276,6 +284,12 @@
             const email = $("#client_email").val();
             const allocated_ips = $("#client_allocated_ips").val().split(",");
             const allowed_ips = $("#client_allowed_ips").val().split(",");
+            let use_server_dns = false;
+
+            if ($("#use_server_dns").is(':checked')){
+                use_server_dns = true;
+            }
+
             let enabled = false;
 
             if ($("#enabled").is(':checked')){
@@ -283,7 +297,7 @@
             }
 
             const data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
-            "enabled": enabled};
+                "use_server_dns": use_server_dns, "enabled": enabled};
 
             $.ajax({
                 cache: false,

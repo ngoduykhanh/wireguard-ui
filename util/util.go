@@ -21,7 +21,10 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	// Interface section
 	clientAddress := fmt.Sprintf("Address = %s", strings.Join(client.AllocatedIPs, ","))
 	clientPrivateKey := fmt.Sprintf("PrivateKey = %s", client.PrivateKey)
-	clientDNS := fmt.Sprintf("DNS = %s", strings.Join(setting.DNSServers, ","))
+	clientDNS := ""
+	if client.UseServerDNS {
+		clientDNS = fmt.Sprintf("DNS = %s", strings.Join(setting.DNSServers, ","))
+	}
 
 	// Peer section
 	peerPublicKey := fmt.Sprintf("PublicKey = %s", server.KeyPair.PublicKey)

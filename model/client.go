@@ -14,6 +14,7 @@ type Client struct {
 	Email        string    `json:"email"`
 	AllocatedIPs []string  `json:"allocated_ips"`
 	AllowedIPs   []string  `json:"allowed_ips"`
+	UseServerDNS bool      `json:"use_server_dns"`
 	Enabled      bool      `json:"enabled"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
