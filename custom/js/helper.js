@@ -46,6 +46,8 @@ function renderClientList(data) {
                                     ${obj.Client.created_at}</span>
                                 <span class="info-box-text"><i class="fas fa-history"></i>
                                     ${obj.Client.updated_at}</span>
+                                <span class="info-box-text"><i class="fas fa-server" style="${obj.Client.use_server_dns ? "opacity: 1.0" : "opacity: 0.5"}"></i>
+                                    ${obj.Client.use_server_dns ? 'DNS enabled' : 'DNS disabled'}</span>
                                 <span class="info-box-text"><strong>IP Allocation</strong></span>`
                                 + allocatedIpsHtml
                                 + `<span class="info-box-text"><strong>Allowed IPs</strong></span>`

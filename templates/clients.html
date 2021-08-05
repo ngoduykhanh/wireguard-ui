@@ -60,6 +60,14 @@ Wireguard Clients
                     </div>
                     <div class="form-group">
                         <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="_use_server_dns">
+                            <label for="_use_server_dns">
+                                Use server DNS
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="icheck-primary d-inline">
                             <input type="checkbox" id="_enabled">
                             <label for="_enabled">
                                 Enable this client
@@ -291,6 +299,7 @@ Wireguard Clients
                             modal.find("#_client_allowed_ips").addTag(obj);
                         });
 
+                        modal.find("#_use_server_dns").prop("checked", client.use_server_dns);
                         modal.find("#_enabled").prop("checked", client.enabled);
                     },
                     error: function (jqXHR, exception) {
@@ -308,6 +317,12 @@ Wireguard Clients
             const email = $("#_client_email").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
             const allowed_ips = $("#_client_allowed_ips").val().split(",");
+            let use_server_dns = false;
+
+            if ($("#_use_server_dns").is(':checked')){
+                use_server_dns = true;
+            }
+
             let enabled = false;
 
             if ($("#_enabled").is(':checked')){
@@ -315,7 +330,7 @@ Wireguard Clients
             }
 
             const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
-                "allowed_ips": allowed_ips, "enabled": enabled};
+                "allowed_ips": allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled};
 
             $.ajax({
                 cache: false,
