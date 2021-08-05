@@ -28,9 +28,9 @@ jobs:
 
     # set environment
     - name: Set APP_VERSION env
-      run: echo ::set-env name=APP_VERSION::$(echo ${GITHUB_REF} | rev | cut -d'/' -f 1 | rev )
+      run: echo "APP_VERSION=$(echo ${GITHUB_REF} | rev | cut -d'/' -f 1 | rev )" >> $GITHUB_ENV
     - name: Set BUILD_TIME env
-      run: echo ::set-env name=BUILD_TIME::$(date)
+      run: echo "BUILD_TIME=$(date)" >> $GITHUB_ENV
     - name: Environment Printer
       uses: managedkaos/print-env@v1.0
 
