@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
 	externalip "github.com/glendc/go-external-ip"
+	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/sdomino/scribble"
 )
@@ -27,7 +29,20 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	peerPublicKey := fmt.Sprintf("PublicKey = %s", server.KeyPair.PublicKey)
 	peerPresharedKey := fmt.Sprintf("PresharedKey = %s", client.PresharedKey)
 	peerAllowedIPs := fmt.Sprintf("AllowedIPs = %s", strings.Join(client.AllowedIPs, ","))
-	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", setting.EndpointAddress, server.Interface.ListenPort)
+
+	desiredHost := setting.EndpointAddress
+	desiredPort := server.Interface.ListenPort
+	if strings.Contains(desiredHost, ":") {
+		split := strings.Split(desiredHost, ":")
+		desiredHost = split[0]
+		if n, err := strconv.Atoi(split[1]); err == nil {
+			desiredPort = n
+		} else {
+			log.Error("Endpoint appears to be incorrectly formated: ", err)
+		}
+	}
+	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", desiredHost, desiredPort)
+
 	peerPersistentKeepalive := fmt.Sprintf("PersistentKeepalive = %d", setting.PersistentKeepalive)
 
 	// build the config as string
