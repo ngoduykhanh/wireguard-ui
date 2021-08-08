@@ -9,20 +9,30 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
-// validSession to redirect user to the login page if they are not authenticated or session expired.
-func validSession(c echo.Context) {
-	if !util.DisableLogin {
-		sess, _ := session.Get("session", c)
-		cookie, err := c.Cookie("session_token")
-		if err != nil || sess.Values["session_token"] != cookie.Value {
+func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if !isValidSession(c) {
 			nextURL := c.Request().URL
-			if nextURL != nil {
-				c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/login?next=%s", c.Request().URL))
+			if nextURL != nil && c.Request().Method == http.MethodGet {
+				return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/login?next=%s", c.Request().URL))
 			} else {
-				c.Redirect(http.StatusTemporaryRedirect, "/login")
+				return c.Redirect(http.StatusTemporaryRedirect, "/login")
 			}
 		}
+		return next(c)
 	}
+}
+
+func isValidSession(c echo.Context) bool {
+	if util.DisableLogin {
+		return true
+	}
+	sess, _ := session.Get("session", c)
+	cookie, err := c.Cookie("session_token")
+	if err != nil || sess.Values["session_token"] != cookie.Value {
+		return false
+	}
+	return true
 }
 
 // currentUser to get username of logged in user

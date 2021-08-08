@@ -7,4 +7,5 @@ var (
 	SendgridApiKey string
 	EmailFrom      string
 	EmailFromName  string
+	SessionSecret  []byte
 )
