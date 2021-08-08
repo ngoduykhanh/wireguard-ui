@@ -9,6 +9,7 @@ services:
       - SENDGRID_API_KEY
       - EMAIL_FROM
       - EMAIL_FROM_NAME
+      - SESSION_SECRET
     ports:
       - 5000:5000
     logging:

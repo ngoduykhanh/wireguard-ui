@@ -36,6 +36,7 @@ func init() {
 	util.SendgridApiKey = os.Getenv("SENDGRID_API_KEY")
 	util.EmailFrom = os.Getenv("EMAIL_FROM")
 	util.EmailFromName = os.Getenv("EMAIL_FROM_NAME")
+	util.SessionSecret = []byte(os.Getenv("SESSION_SECRET"))
 
 	// print app information
 	fmt.Println("Wireguard UI")
@@ -66,9 +67,9 @@ func main() {
 	assetHandler := http.FileServer(rice.MustFindBox("assets").HTTPBox())
 
 	// register routes
-	app := router.New(tmplBox, extraData)
+	app := router.New(tmplBox, extraData, util.SessionSecret)
 
-	app.GET("/", handler.WireGuardClients())
+	app.GET("/", handler.WireGuardClients(), handler.ValidSession)
 
 	if !util.DisableLogin {
 		app.GET("/login", handler.LoginPage())
@@ -77,23 +78,23 @@ func main() {
 
 	sendmail := emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
 
-	app.GET("/logout", handler.Logout())
-	app.POST("/new-client", handler.NewClient())
-	app.POST("/update-client", handler.UpdateClient())
-	app.POST("/email-client", handler.EmailClient(sendmail))
-	app.POST("/client/set-status", handler.SetClientStatus())
-	app.POST("/remove-client", handler.RemoveClient())
-	app.GET("/download", handler.DownloadClient())
-	app.GET("/wg-server", handler.WireGuardServer())
-	app.POST("wg-server/interfaces", handler.WireGuardServerInterfaces())
-	app.POST("wg-server/keypair", handler.WireGuardServerKeyPair())
-	app.GET("/global-settings", handler.GlobalSettings())
-	app.POST("/global-settings", handler.GlobalSettingSubmit())
-	app.GET("/api/clients", handler.GetClients())
-	app.GET("/api/client/:id", handler.GetClient())
-	app.GET("/api/machine-ips", handler.MachineIPAddresses())
-	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation())
-	app.GET("/api/apply-wg-config", handler.ApplyServerConfig(tmplBox))
+	app.GET("/logout", handler.Logout(), handler.ValidSession)
+	app.POST("/new-client", handler.NewClient(), handler.ValidSession)
+	app.POST("/update-client", handler.UpdateClient(), handler.ValidSession)
+	app.POST("/email-client", handler.EmailClient(sendmail), handler.ValidSession)
+	app.POST("/client/set-status", handler.SetClientStatus(), handler.ValidSession)
+	app.POST("/remove-client", handler.RemoveClient(), handler.ValidSession)
+	app.GET("/download", handler.DownloadClient(), handler.ValidSession)
+	app.GET("/wg-server", handler.WireGuardServer(), handler.ValidSession)
+	app.POST("wg-server/interfaces", handler.WireGuardServerInterfaces(), handler.ValidSession)
+	app.POST("wg-server/keypair", handler.WireGuardServerKeyPair(), handler.ValidSession)
+	app.GET("/global-settings", handler.GlobalSettings(), handler.ValidSession)
+	app.POST("/global-settings", handler.GlobalSettingSubmit(), handler.ValidSession)
+	app.GET("/api/clients", handler.GetClients(), handler.ValidSession)
+	app.GET("/api/client/:id", handler.GetClient(), handler.ValidSession)
+	app.GET("/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)
+	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation(), handler.ValidSession)
+	app.GET("/api/apply-wg-config", handler.ApplyServerConfig(tmplBox), handler.ValidSession)
 
 	// servers other static files
 	app.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))

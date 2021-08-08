@@ -79,8 +79,6 @@ func Logout() echo.HandlerFunc {
 // WireGuardClients handler
 func WireGuardClients() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		clientDataList, err := util.GetClients(true)
 		if err != nil {
@@ -99,8 +97,6 @@ func WireGuardClients() echo.HandlerFunc {
 // GetClients handler return a list of Wireguard client data
 func GetClients() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		clientDataList, err := util.GetClients(true)
 		if err != nil {
@@ -116,8 +112,6 @@ func GetClients() echo.HandlerFunc {
 // GetClient handler return a of Wireguard client data
 func GetClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		clientID := c.Param("id")
 		clientData, err := util.GetClientByID(clientID, true)
@@ -132,8 +126,6 @@ func GetClient() echo.HandlerFunc {
 // NewClient handler
 func NewClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		client := new(model.Client)
 		c.Bind(client)
@@ -204,8 +196,6 @@ func EmailClient(mailer emailer.Emailer) echo.HandlerFunc {
 	}
 
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 		var payload clientIdEmailPayload
 		c.Bind(&payload)
 		// TODO validate email
@@ -245,8 +235,6 @@ func EmailClient(mailer emailer.Emailer) echo.HandlerFunc {
 // UpdateClient handler to update client information
 func UpdateClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		_client := new(model.Client)
 		c.Bind(_client)
@@ -305,8 +293,6 @@ func UpdateClient() echo.HandlerFunc {
 // SetClientStatus handler to enable / disable a client
 func SetClientStatus() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		data := make(map[string]interface{})
 		err := json.NewDecoder(c.Request().Body).Decode(&data)
@@ -368,8 +354,6 @@ func DownloadClient() echo.HandlerFunc {
 // RemoveClient handler
 func RemoveClient() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		client := new(model.Client)
 		c.Bind(client)
@@ -394,8 +378,6 @@ func RemoveClient() echo.HandlerFunc {
 // WireGuardServer handler
 func WireGuardServer() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		server, err := util.GetServer()
 		if err != nil {
@@ -413,8 +395,6 @@ func WireGuardServer() echo.HandlerFunc {
 // WireGuardServerInterfaces handler
 func WireGuardServerInterfaces() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		serverInterface := new(model.ServerInterface)
 		c.Bind(serverInterface)
@@ -444,8 +424,6 @@ func WireGuardServerInterfaces() echo.HandlerFunc {
 // WireGuardServerKeyPair handler to generate private and public keys
 func WireGuardServerKeyPair() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		// gen Wireguard key pair
 		key, err := wgtypes.GeneratePrivateKey()
@@ -476,8 +454,6 @@ func WireGuardServerKeyPair() echo.HandlerFunc {
 // GlobalSettings handler
 func GlobalSettings() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		globalSettings, err := util.GetGlobalSettings()
 		if err != nil {
@@ -494,8 +470,6 @@ func GlobalSettings() echo.HandlerFunc {
 // GlobalSettingSubmit handler to update the global settings
 func GlobalSettingSubmit() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		globalSettings := new(model.GlobalSetting)
 		c.Bind(globalSettings)
@@ -525,8 +499,6 @@ func GlobalSettingSubmit() echo.HandlerFunc {
 // MachineIPAddresses handler to get local interface ip addresses
 func MachineIPAddresses() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		// get private ip addresses
 		interfaceList, err := util.GetInterfaceIPs()
@@ -551,8 +523,6 @@ func MachineIPAddresses() echo.HandlerFunc {
 // SuggestIPAllocation handler to get the list of ip address for client
 func SuggestIPAllocation() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		server, err := util.GetServer()
 		if err != nil {
@@ -589,8 +559,6 @@ func SuggestIPAllocation() echo.HandlerFunc {
 // ApplyServerConfig handler to write config file and restart Wireguard server
 func ApplyServerConfig(tmplBox *rice.Box) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// access validation
-		validSession(c)
 
 		server, err := util.GetServer()
 		if err != nil {
