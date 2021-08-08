@@ -189,7 +189,7 @@ func NewClient() echo.HandlerFunc {
 }
 
 // EmailClient handler to sent the configuration via email
-func EmailClient(mailer emailer.Emailer) echo.HandlerFunc {
+func EmailClient(mailer emailer.Emailer, emailSubject, emailContent string) echo.HandlerFunc {
 	type clientIdEmailPayload struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
@@ -220,8 +220,8 @@ func EmailClient(mailer emailer.Emailer) echo.HandlerFunc {
 		err = mailer.Send(
 			clientData.Client.Name,
 			payload.Email,
-			"Your Wireguard configuration",
-			"instructions here",
+			emailSubject,
+			emailContent,
 			[]emailer.Attachment{cfg_att, qr_att},
 		)
 		if err != nil {

@@ -24,6 +24,15 @@ var (
 	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
 )
 
+const (
+	defaultEmailSubject = "Your wireguard configuration"
+	defaultEmailContent = `Hi,</br>
+<p>in this email you can file your personal configuration for our wireguard server.</p>
+
+<p>Best</p>
+`
+)
+
 func init() {
 	// command-line flags
 	flagDisableLogin := flag.Bool("disable-login", false, "Disable login page. Turn off authentication.")
@@ -81,7 +90,7 @@ func main() {
 	app.GET("/logout", handler.Logout(), handler.ValidSession)
 	app.POST("/new-client", handler.NewClient(), handler.ValidSession)
 	app.POST("/update-client", handler.UpdateClient(), handler.ValidSession)
-	app.POST("/email-client", handler.EmailClient(sendmail), handler.ValidSession)
+	app.POST("/email-client", handler.EmailClient(sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession)
 	app.POST("/client/set-status", handler.SetClientStatus(), handler.ValidSession)
 	app.POST("/remove-client", handler.RemoveClient(), handler.ValidSession)
 	app.GET("/download", handler.DownloadClient(), handler.ValidSession)
