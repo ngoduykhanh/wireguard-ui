@@ -4,10 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/labstack/echo/v4"
+
+	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
 	"github.com/ngoduykhanh/wireguard-ui/util"
@@ -30,6 +33,9 @@ func init() {
 	// update runtime config
 	util.DisableLogin = *flagDisableLogin
 	util.BindAddress = *flagBindAddress
+	util.SendgridApiKey = os.Getenv("SENDGRID_API_KEY")
+	util.EmailFrom = os.Getenv("EMAIL_FROM")
+	util.EmailFromName = os.Getenv("EMAIL_FROM_NAME")
 
 	// print app information
 	fmt.Println("Wireguard UI")
@@ -69,9 +75,12 @@ func main() {
 		app.POST("/login", handler.Login())
 	}
 
+	sendmail := emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
+
 	app.GET("/logout", handler.Logout())
 	app.POST("/new-client", handler.NewClient())
 	app.POST("/update-client", handler.UpdateClient())
+	app.POST("/email-client", handler.EmailClient(sendmail))
 	app.POST("/client/set-status", handler.SetClientStatus())
 	app.POST("/remove-client", handler.RemoveClient())
 	app.GET("/download", handler.DownloadClient())
