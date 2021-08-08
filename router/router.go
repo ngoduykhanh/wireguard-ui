@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"text/template"
 
-	"github.com/GeertJohan/go.rice"
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -44,9 +44,9 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 }
 
 // New function
-func New(tmplBox *rice.Box, extraData map[string]string) *echo.Echo {
+func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Echo {
 	e := echo.New()
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secret"))))
+	e.Use(session.Middleware(sessions.NewCookieStore(secret)))
 
 	// read html template file to string
 	tmplBaseString, err := tmplBox.String("base.html")

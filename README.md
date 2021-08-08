@@ -21,6 +21,18 @@ You can take a look at this example of [docker-compose.yml](https://github.com/n
 ```
 docker-compose up
 ```
+### Environment Variables
+
+
+Set the `SESSION_SECRET` environment variable to a random value.
+
+In order to sent the wireguard configuration to clients via email (using sendgrid api) set the following environment variables
+
+```
+SENDGRID_API_KEY: Your sendgrid api key
+EMAIL_FROM: the email address you registered on sendgrid
+EMAIL_FROM_NAME: the sender's email address
+```
 
 ### Using binary file
 
