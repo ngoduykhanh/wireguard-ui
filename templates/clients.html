@@ -30,6 +30,34 @@ Wireguard Clients
     </div>
 </section>
 
+<div class="modal fade" id="modal_email_client">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Email Configuration</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="frm_email_client" id="frm_email_client">
+                <div class="modal-body">
+                    <input type="hidden" id="_client_id" name="_client_id">
+                    <div class="form-group">
+                        <label for="_client_email" class="control-label">Email</label>
+                        <input type="text" class="form-control" id="_client_email" name="client_email">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Send</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
 <div class="modal fade" id="modal_edit_client">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -243,6 +271,8 @@ Wireguard Clients
             });
         });
 
+
+
         // Edit client modal event
         $(document).ready(function () {
             $("#modal_edit_client").on('shown.bs.modal', function (event) {
@@ -308,6 +338,31 @@ Wireguard Clients
             });
         });
 
+        // submitEmailClient function for sending an email to the client with the configuration
+        function submitEmailClient() {
+            const client_id = $("#_client_id").val();
+            const email = $("#_client_email").val();
+            const data = {"id": client_id, "email": email};
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '/email-client',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function(resp) {
+                    $("#modal_email_client").modal('hide');
+                    toastr.success('Sent email to client successfully');
+                     // Refresh the home page (clients page) after sending email successfully
+                    location.reload();
+                },
+                error: function(jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
         // submitEditClient function for updating an existing client
         function submitEditClient() {
             const client_id = $("#_client_id").val();
@@ -350,27 +405,89 @@ Wireguard Clients
             });
         }
 
-        // Edit client form validation
-        $(document).ready(function () {
-            $.validator.setDefaults({
-                submitHandler: function () {
-                    submitEditClient();
+        // submitHandler
+        function submitHandler(form) {
+            const formId = $(form).attr('id');
+            if (formId === "frm_edit_client") {
+                submitEditClient();
+            }else if (formId === "frm_email_client") {
+                submitEmailClient();
+            }
+        }
+
+        $("#modal_email_client").on('shown.bs.modal', function (event) {
+            let modal = $(this);
+            const button = $(event.relatedTarget);
+            const client_id = button.data('clientid');
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '/api/client/' + client_id,
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (resp) {
+                    const client = resp.Client;
+
+                    modal.find(".modal-title").text("Email Client " + client.name);
+                    modal.find("#_client_id").val(client.id);
+                    modal.find("#_client_email").val(client.email);
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
                 }
             });
-            $("#frm_edit_client").validate({
-                rules: {
-                    client_name: {
-                        required: true,
+        });
+
+        $(document).ready(function () {
+            $.validator.setDefaults({
+                submitHandler: function (form) {
+                    //submitEditClient();
+                    submitHandler(form);
+                }
+            });
+            // Edit client form validation
+                $("#frm_edit_client").validate({
+                    rules: {
+                        client_name: {
+                            required: true,
+                        },
+                        client_email: {
+                            required: true,
+                            email: true,
+                        },
                     },
+                    messages: {
+                        client_name: {
+                            required: "Please enter a name"
+                        },
+                        client_email: {
+                            required: "Please enter an email address",
+                            email: "Please enter a valid email address"
+                        },
+                    },
+                    errorElement: 'span',
+                    errorPlacement: function (error, element) {
+                        error.addClass('invalid-feedback');
+                        element.closest('.form-group').append(error);
+                    },
+                    highlight: function (element, errorClass, validClass) {
+                        $(element).addClass('is-invalid');
+                    },
+                    unhighlight: function (element, errorClass, validClass) {
+                        $(element).removeClass('is-invalid');
+                    }
+                });
+
+                // Email client form validation
+                $("#frm_email_client").validate({
+                rules: {
                     client_email: {
                         required: true,
                         email: true,
                     },
                 },
                 messages: {
-                    client_name: {
-                        required: "Please enter a name"
-                    },
                     client_email: {
                         required: "Please enter an email address",
                         email: "Please enter a valid email address"

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 	"github.com/rs/xid"
@@ -191,6 +193,52 @@ func NewClient() echo.HandlerFunc {
 		log.Infof("Created wireguard client: %v", client)
 
 		return c.JSON(http.StatusOK, client)
+	}
+}
+
+// EmailClient handler to sent the configuration via email
+func EmailClient(mailer emailer.Emailer) echo.HandlerFunc {
+	type clientIdEmailPayload struct {
+		ID    string `json:"id"`
+		Email string `json:"email"`
+	}
+
+	return func(c echo.Context) error {
+		// access validation
+		validSession(c)
+		var payload clientIdEmailPayload
+		c.Bind(&payload)
+		// TODO validate email
+
+		clientData, err := util.GetClientByID(payload.ID, true)
+		if err != nil {
+			log.Errorf("Cannot generate client id %s config file for downloading: %v", payload.ID, err)
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
+		}
+
+		// build config
+		server, _ := util.GetServer()
+		globalSettings, _ := util.GetGlobalSettings()
+		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
+
+		cfg_att := emailer.Attachment{"wg0.conf", []byte(config)}
+		qrdata, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(clientData.QRCode, "data:image/png;base64,"))
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "decoding: " + err.Error()})
+		}
+		qr_att := emailer.Attachment{"wg.png", qrdata}
+		err = mailer.Send(
+			clientData.Client.Name,
+			payload.Email,
+			"Your Wireguard configuration",
+			"instructions here",
+			[]emailer.Attachment{cfg_att, qr_att},
+		)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Email sent successfully"})
 	}
 }
 

@@ -2,8 +2,13 @@ version: '3'
 
 services:
   wg:
-    image: ngoduykhanh/wireguard-ui:latest
+    build: .
+    #image: ngoduykhanh/wireguard-ui:latest
     container_name: wgui
+    environment:
+      - SENDGRID_API_KEY
+      - EMAIL_FROM
+      - EMAIL_FROM_NAME
     ports:
       - 5000:5000
     logging:
