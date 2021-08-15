@@ -74,12 +74,18 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 		log.Fatal(err)
 	}
 
+	tmplStatusString, err := tmplBox.String("status.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// create template list
 	templates := make(map[string]*template.Template)
 	templates["login.html"] = template.Must(template.New("login").Parse(tmplLoginString))
 	templates["clients.html"] = template.Must(template.New("clients").Parse(tmplBaseString + tmplClientsString))
 	templates["server.html"] = template.Must(template.New("server").Parse(tmplBaseString + tmplServerString))
 	templates["global_settings.html"] = template.Must(template.New("global_settings").Parse(tmplBaseString + tmplGlobalSettingsString))
+	templates["status.html"] = template.Must(template.New("status").Parse(tmplBaseString + tmplStatusString))
 
 	e.Logger.SetLevel(log.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())
