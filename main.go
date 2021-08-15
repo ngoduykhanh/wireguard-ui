@@ -102,6 +102,7 @@ func main() {
 	app.POST("wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession)
 	app.GET("/global-settings", handler.GlobalSettings(db), handler.ValidSession)
 	app.POST("/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession)
+	app.GET("/status", handler.Status(db), handler.ValidSession)
 	app.GET("/api/clients", handler.GetClients(db), handler.ValidSession)
 	app.GET("/api/client/:id", handler.GetClient(db), handler.ValidSession)
 	app.GET("/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)

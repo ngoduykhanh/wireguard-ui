@@ -21,6 +21,13 @@ You can take a look at this example of [docker-compose.yml](https://github.com/n
 ```
 docker-compose up
 ```
+
+Note:
+
+There is a Status option that needs docker to be able to access the network of the host in order to read the 
+wireguard interface stats. See the `cap_add` and `network_mode` options on the docker-compose.yaml
+
+
 ### Environment Variables
 
 
