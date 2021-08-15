@@ -9,16 +9,17 @@ import (
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
-
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"github.com/ngoduykhanh/wireguard-ui/emailer"
-	"github.com/ngoduykhanh/wireguard-ui/model"
-	"github.com/ngoduykhanh/wireguard-ui/util"
 	"github.com/rs/xid"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
+	"github.com/ngoduykhanh/wireguard-ui/emailer"
+	"github.com/ngoduykhanh/wireguard-ui/model"
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
 // LoginPage handler
@@ -29,12 +30,12 @@ func LoginPage() echo.HandlerFunc {
 }
 
 // Login for signing in handler
-func Login() echo.HandlerFunc {
+func Login(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		user := new(model.User)
 		c.Bind(user)
 
-		dbuser, err := util.GetUser()
+		dbuser, err := db.GetUser()
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot query user from DB"})
 		}
@@ -77,10 +78,10 @@ func Logout() echo.HandlerFunc {
 }
 
 // WireGuardClients handler
-func WireGuardClients() echo.HandlerFunc {
+func WireGuardClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		clientDataList, err := util.GetClients(true)
+		clientDataList, err := db.GetClients(true)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
 				false, fmt.Sprintf("Cannot get client list: %v", err),
@@ -95,10 +96,10 @@ func WireGuardClients() echo.HandlerFunc {
 }
 
 // GetClients handler return a list of Wireguard client data
-func GetClients() echo.HandlerFunc {
+func GetClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		clientDataList, err := util.GetClients(true)
+		clientDataList, err := db.GetClients(true)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
 				false, fmt.Sprintf("Cannot get client list: %v", err),
@@ -110,11 +111,11 @@ func GetClients() echo.HandlerFunc {
 }
 
 // GetClient handler return a of Wireguard client data
-func GetClient() echo.HandlerFunc {
+func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		clientID := c.Param("id")
-		clientData, err := util.GetClientByID(clientID, true)
+		clientData, err := db.GetClientByID(clientID, true)
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
@@ -124,27 +125,22 @@ func GetClient() echo.HandlerFunc {
 }
 
 // NewClient handler
-func NewClient() echo.HandlerFunc {
+func NewClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		client := new(model.Client)
-		c.Bind(client)
-
-		db, err := util.DBConn()
-		if err != nil {
-			log.Error("Cannot initialize database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
-		}
+		var client model.Client
+		c.Bind(&client)
 
 		// read server information
-		serverInterface := model.ServerInterface{}
-		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
-			log.Error("Cannot fetch server interface config from database: ", err)
+		server, err := db.GetServer()
+		if err != nil {
+			log.Error("Cannot fetch server from database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
 		}
 
 		// validate the input Allocation IPs
 		allocatedIPs, err := util.GetAllocatedIPs("")
-		check, err := util.ValidateIPAllocation(serverInterface.Addresses, allocatedIPs, client.AllocatedIPs)
+		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
 		}
@@ -181,7 +177,11 @@ func NewClient() echo.HandlerFunc {
 		client.UpdatedAt = client.CreatedAt
 
 		// write client to the database
-		db.Write("clients", client.ID, client)
+		if err := db.SaveClient(client); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, err.Error(),
+			})
+		}
 		log.Infof("Created wireguard client: %v", client)
 
 		return c.JSON(http.StatusOK, client)
@@ -189,7 +189,7 @@ func NewClient() echo.HandlerFunc {
 }
 
 // EmailClient handler to sent the configuration via email
-func EmailClient(mailer emailer.Emailer, emailSubject, emailContent string) echo.HandlerFunc {
+func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailContent string) echo.HandlerFunc {
 	type clientIdEmailPayload struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
@@ -200,15 +200,15 @@ func EmailClient(mailer emailer.Emailer, emailSubject, emailContent string) echo
 		c.Bind(&payload)
 		// TODO validate email
 
-		clientData, err := util.GetClientByID(payload.ID, true)
+		clientData, err := db.GetClientByID(payload.ID, true)
 		if err != nil {
 			log.Errorf("Cannot generate client id %s config file for downloading: %v", payload.ID, err)
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
 
 		// build config
-		server, _ := util.GetServer()
-		globalSettings, _ := util.GetGlobalSettings()
+		server, _ := db.GetServer()
+		globalSettings, _ := db.GetGlobalSettings()
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
 		cfg_att := emailer.Attachment{"wg0.conf", []byte(config)}
@@ -233,36 +233,28 @@ func EmailClient(mailer emailer.Emailer, emailSubject, emailContent string) echo
 }
 
 // UpdateClient handler to update client information
-func UpdateClient() echo.HandlerFunc {
+func UpdateClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		_client := new(model.Client)
-		c.Bind(_client)
-
-		db, err := util.DBConn()
-		if err != nil {
-			log.Error("Cannot initialize database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
-		}
+		var _client model.Client
+		c.Bind(&_client)
 
 		// validate client existence
-		client := model.Client{}
-		if err := db.Read("clients", _client.ID, &client); err != nil {
+		clientData, err := db.GetClientByID(_client.ID, false)
+		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
 
-		// read server information
-		serverInterface := model.ServerInterface{}
-		if err := db.Read("server", "interfaces", &serverInterface); err != nil {
-			log.Error("Cannot fetch server interface config from database: ", err)
+		server, err := db.GetServer()
+		if err != nil {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{
 				false, fmt.Sprintf("Cannot fetch server config: %s", err),
 			})
 		}
-
+		client := *clientData.Client
 		// validate the input Allocation IPs
 		allocatedIPs, err := util.GetAllocatedIPs(client.ID)
-		check, err := util.ValidateIPAllocation(serverInterface.Addresses, allocatedIPs, _client.AllocatedIPs)
+		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, _client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
 		}
@@ -283,7 +275,9 @@ func UpdateClient() echo.HandlerFunc {
 		client.UpdatedAt = time.Now().UTC()
 
 		// write to the database
-		db.Write("clients", client.ID, &client)
+		if err := db.SaveClient(client); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
 		log.Infof("Updated client information successfully => %v", client)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated client successfully"})
@@ -291,7 +285,7 @@ func UpdateClient() echo.HandlerFunc {
 }
 
 // SetClientStatus handler to enable / disable a client
-func SetClientStatus() echo.HandlerFunc {
+func SetClientStatus(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		data := make(map[string]interface{})
@@ -304,19 +298,17 @@ func SetClientStatus() echo.HandlerFunc {
 		clientID := data["id"].(string)
 		status := data["status"].(bool)
 
-		db, err := util.DBConn()
+		clientdata, err := db.GetClientByID(clientID, false)
 		if err != nil {
-			log.Error("Cannot initialize database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
 		}
 
-		client := model.Client{}
-		if err := db.Read("clients", clientID, &client); err != nil {
-			log.Error("Cannot get client from database: ", err)
-		}
+		client := *clientdata.Client
 
 		client.Enabled = status
-		db.Write("clients", clientID, &client)
+		if err := db.SaveClient(client); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
 		log.Infof("Changed client %s enabled status to %v", client.ID, status)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Changed client status successfully"})
@@ -324,22 +316,28 @@ func SetClientStatus() echo.HandlerFunc {
 }
 
 // DownloadClient handler
-func DownloadClient() echo.HandlerFunc {
+func DownloadClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clientID := c.QueryParam("clientid")
 		if clientID == "" {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Missing clientid parameter"})
 		}
 
-		clientData, err := util.GetClientByID(clientID, false)
+		clientData, err := db.GetClientByID(clientID, false)
 		if err != nil {
 			log.Errorf("Cannot generate client id %s config file for downloading: %v", clientID, err)
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
 
 		// build config
-		server, _ := util.GetServer()
-		globalSettings, _ := util.GetGlobalSettings()
+		server, err := db.GetServer()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+		globalSettings, err := db.GetGlobalSettings()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
 		// create io reader from string
@@ -352,20 +350,15 @@ func DownloadClient() echo.HandlerFunc {
 }
 
 // RemoveClient handler
-func RemoveClient() echo.HandlerFunc {
+func RemoveClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		client := new(model.Client)
 		c.Bind(client)
 
 		// delete client from database
-		db, err := util.DBConn()
-		if err != nil {
-			log.Error("Cannot initialize database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
-		}
 
-		if err := db.Delete("clients", client.ID); err != nil {
+		if err := db.DeleteClient(client.ID); err != nil {
 			log.Error("Cannot delete wireguard client: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot delete client from database"})
 		}
@@ -376,10 +369,10 @@ func RemoveClient() echo.HandlerFunc {
 }
 
 // WireGuardServer handler
-func WireGuardServer() echo.HandlerFunc {
+func WireGuardServer(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		server, err := util.GetServer()
+		server, err := db.GetServer()
 		if err != nil {
 			log.Error("Cannot get server config: ", err)
 		}
@@ -393,11 +386,11 @@ func WireGuardServer() echo.HandlerFunc {
 }
 
 // WireGuardServerInterfaces handler
-func WireGuardServerInterfaces() echo.HandlerFunc {
+func WireGuardServerInterfaces(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		serverInterface := new(model.ServerInterface)
-		c.Bind(serverInterface)
+		var serverInterface model.ServerInterface
+		c.Bind(&serverInterface)
 
 		// validate the input addresses
 		if util.ValidateServerAddresses(serverInterface.Addresses) == false {
@@ -408,13 +401,10 @@ func WireGuardServerInterfaces() echo.HandlerFunc {
 		serverInterface.UpdatedAt = time.Now().UTC()
 
 		// write config to the database
-		db, err := util.DBConn()
-		if err != nil {
-			log.Error("Cannot initialize database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
-		}
 
-		db.Write("server", "interfaces", serverInterface)
+		if err := db.SaveServerInterface(serverInterface); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Interface IP address must be in CIDR format"})
+		}
 		log.Infof("Updated wireguard server interfaces settings: %v", serverInterface)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated interface addresses successfully"})
@@ -422,7 +412,7 @@ func WireGuardServerInterfaces() echo.HandlerFunc {
 }
 
 // WireGuardServerKeyPair handler to generate private and public keys
-func WireGuardServerKeyPair() echo.HandlerFunc {
+func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		// gen Wireguard key pair
@@ -432,19 +422,14 @@ func WireGuardServerKeyPair() echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
 		}
 
-		serverKeyPair := new(model.ServerKeypair)
+		var serverKeyPair model.ServerKeypair
 		serverKeyPair.PrivateKey = key.String()
 		serverKeyPair.PublicKey = key.PublicKey().String()
 		serverKeyPair.UpdatedAt = time.Now().UTC()
 
-		// write config to the database
-		db, err := util.DBConn()
-		if err != nil {
-			log.Error("Cannot initialize database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+		if err := db.SaveServerKeyPair(serverKeyPair); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
 		}
-
-		db.Write("server", "keypair", serverKeyPair)
 		log.Infof("Updated wireguard server interfaces settings: %v", serverKeyPair)
 
 		return c.JSON(http.StatusOK, serverKeyPair)
@@ -452,10 +437,10 @@ func WireGuardServerKeyPair() echo.HandlerFunc {
 }
 
 // GlobalSettings handler
-func GlobalSettings() echo.HandlerFunc {
+func GlobalSettings(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		globalSettings, err := util.GetGlobalSettings()
+		globalSettings, err := db.GetGlobalSettings()
 		if err != nil {
 			log.Error("Cannot get global settings: ", err)
 		}
@@ -468,11 +453,11 @@ func GlobalSettings() echo.HandlerFunc {
 }
 
 // GlobalSettingSubmit handler to update the global settings
-func GlobalSettingSubmit() echo.HandlerFunc {
+func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		globalSettings := new(model.GlobalSetting)
-		c.Bind(globalSettings)
+		var globalSettings model.GlobalSetting
+		c.Bind(&globalSettings)
 
 		// validate the input dns server list
 		if util.ValidateIPAddressList(globalSettings.DNSServers) == false {
@@ -483,13 +468,10 @@ func GlobalSettingSubmit() echo.HandlerFunc {
 		globalSettings.UpdatedAt = time.Now().UTC()
 
 		// write config to the database
-		db, err := util.DBConn()
-		if err != nil {
-			log.Error("Cannot initialize database: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot access database"})
+		if err := db.SaveGlobalSettings(globalSettings); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
 		}
 
-		db.Write("server", "global_settings", globalSettings)
 		log.Infof("Updated global settings: %v", globalSettings)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated global settings successfully"})
@@ -521,12 +503,13 @@ func MachineIPAddresses() echo.HandlerFunc {
 }
 
 // SuggestIPAllocation handler to get the list of ip address for client
-func SuggestIPAllocation() echo.HandlerFunc {
+func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		server, err := util.GetServer()
+		server, err := db.GetServer()
 		if err != nil {
 			log.Error("Cannot fetch server config from database: ", err)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, err.Error()})
 		}
 
 		// return the list of suggestedIPs
@@ -557,22 +540,22 @@ func SuggestIPAllocation() echo.HandlerFunc {
 }
 
 // ApplyServerConfig handler to write config file and restart Wireguard server
-func ApplyServerConfig(tmplBox *rice.Box) echo.HandlerFunc {
+func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		server, err := util.GetServer()
+		server, err := db.GetServer()
 		if err != nil {
 			log.Error("Cannot get server config: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get server config"})
 		}
 
-		clients, err := util.GetClients(false)
+		clients, err := db.GetClients(false)
 		if err != nil {
 			log.Error("Cannot get client config: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get client config"})
 		}
 
-		settings, err := util.GetGlobalSettings()
+		settings, err := db.GetGlobalSettings()
 		if err != nil {
 			log.Error("Cannot get global settings: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
