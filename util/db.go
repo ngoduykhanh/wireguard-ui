@@ -15,6 +15,8 @@ import (
 )
 
 const dbPath = "./db"
+const username_env_var = "WGUI_USERNAME"
+const password_env_var = "WGUI_PASSWORD"
 const defaultUsername = "admin"
 const defaultPassword = "admin"
 const defaultServerAddress = "10.252.1.0/24"
@@ -31,6 +33,13 @@ func DBConn() (*scribble.Driver, error) {
 		return nil, err
 	}
 	return db, nil
+}
+
+func getCredVar(key, fallback string) string {
+    if value, ok := os.LookupEnv(key); ok {
+		return value
+    }
+    return fallback
 }
 
 // InitDB to create the default database
@@ -112,8 +121,8 @@ func InitDB() error {
 		}
 
 		user := new(model.User)
-		user.Username = defaultUsername
-		user.Password = defaultPassword
+		user.Username = getCredVar(username_env_var, defaultUsername)
+		user.Password = getCredVar(password_env_var, defaultPassword)
 		db.Write("server", "users", user)
 	}
 
