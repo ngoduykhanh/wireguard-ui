@@ -1,4 +1,4 @@
-package util
+package jsondb
 
 import (
 	"encoding/base64"
@@ -8,49 +8,40 @@ import (
 	"path"
 	"time"
 
-	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/sdomino/scribble"
 	"github.com/skip2/go-qrcode"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
+	"github.com/ngoduykhanh/wireguard-ui/model"
+	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
-const dbPath = "./db"
-const username_env_var = "WGUI_USERNAME"
-const password_env_var = "WGUI_PASSWORD"
-const defaultUsername = "admin"
-const defaultPassword = "admin"
-const defaultServerAddress = "10.252.1.0/24"
-const defaultServerPort = 51820
-const defaultDNS = "1.1.1.1"
-const defaultMTU = 1450
-const defaultPersistentKeepalive = 15
-const defaultConfigFilePath = "/etc/wireguard/wg0.conf"
+type JsonDB struct {
+	conn   *scribble.Driver
+	dbPath string
+}
 
-// DBConn to initialize the database connection
-func DBConn() (*scribble.Driver, error) {
-	db, err := scribble.New(dbPath, nil)
+// New returns a new pointer JsonDB
+func New(dbPath string) (*JsonDB, error) {
+	conn, err := scribble.New(dbPath, nil)
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+	ans := JsonDB{
+		conn:   conn,
+		dbPath: dbPath,
+	}
+	return &ans, nil
+
 }
 
-func getCredVar(key, fallback string) string {
-    if value, ok := os.LookupEnv(key); ok {
-		return value
-    }
-    return fallback
-}
-
-// InitDB to create the default database
-func InitDB() error {
-	var clientPath string = path.Join(dbPath, "clients")
-	var serverPath string = path.Join(dbPath, "server")
+func (o *JsonDB) Init() error {
+	var clientPath string = path.Join(o.dbPath, "clients")
+	var serverPath string = path.Join(o.dbPath, "server")
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
 	var userPath string = path.Join(serverPath, "users.json")
-
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
 		os.MkdirAll(clientPath, os.ModePerm)
@@ -61,24 +52,15 @@ func InitDB() error {
 
 	// server's interface
 	if _, err := os.Stat(serverInterfacePath); os.IsNotExist(err) {
-		db, err := DBConn()
-		if err != nil {
-			return err
-		}
-
 		serverInterface := new(model.ServerInterface)
-		serverInterface.Addresses = []string{defaultServerAddress}
-		serverInterface.ListenPort = defaultServerPort
+		serverInterface.Addresses = []string{util.DefaultServerAddress}
+		serverInterface.ListenPort = util.DefaultServerPort
 		serverInterface.UpdatedAt = time.Now().UTC()
-		db.Write("server", "interfaces", serverInterface)
+		o.conn.Write("server", "interfaces", serverInterface)
 	}
 
 	// server's key pair
 	if _, err := os.Stat(serverKeyPairPath); os.IsNotExist(err) {
-		db, err := DBConn()
-		if err != nil {
-			return err
-		}
 
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
@@ -88,97 +70,62 @@ func InitDB() error {
 		serverKeyPair.PrivateKey = key.String()
 		serverKeyPair.PublicKey = key.PublicKey().String()
 		serverKeyPair.UpdatedAt = time.Now().UTC()
-		db.Write("server", "keypair", serverKeyPair)
+		o.conn.Write("server", "keypair", serverKeyPair)
 	}
 
 	// global settings
 	if _, err := os.Stat(globalSettingPath); os.IsNotExist(err) {
-		db, err := DBConn()
-		if err != nil {
-			return err
-		}
 
-		publicInterface, err := GetPublicIP()
+		publicInterface, err := util.GetPublicIP()
 		if err != nil {
 			return err
 		}
 
 		globalSetting := new(model.GlobalSetting)
 		globalSetting.EndpointAddress = publicInterface.IPAddress
-		globalSetting.DNSServers = []string{defaultDNS}
-		globalSetting.MTU = defaultMTU
-		globalSetting.PersistentKeepalive = defaultPersistentKeepalive
-		globalSetting.ConfigFilePath = defaultConfigFilePath
+		globalSetting.DNSServers = []string{util.DefaultDNS}
+		globalSetting.MTU = util.DefaultMTU
+		globalSetting.PersistentKeepalive = util.DefaultPersistentKeepalive
+		globalSetting.ConfigFilePath = util.DefaultConfigFilePath
 		globalSetting.UpdatedAt = time.Now().UTC()
-		db.Write("server", "global_settings", globalSetting)
+		o.conn.Write("server", "global_settings", globalSetting)
 	}
 
 	// user info
 	if _, err := os.Stat(userPath); os.IsNotExist(err) {
-		db, err := DBConn()
-		if err != nil {
-			return err
-		}
-
 		user := new(model.User)
-		user.Username = getCredVar(username_env_var, defaultUsername)
-		user.Password = getCredVar(password_env_var, defaultPassword)
-		db.Write("server", "users", user)
+		user.Username = util.GetCredVar(util.UsernameEnvVar, util.DefaultUsername)
+		user.Password = util.GetCredVar(util.PasswordEnvVar, util.DefaultPassword)
+		o.conn.Write("server", "users", user)
 	}
 
 	return nil
 }
 
 // GetUser func to query user info from the database
-func GetUser() (model.User, error) {
+func (o *JsonDB) GetUser() (model.User, error) {
 	user := model.User{}
-
-	db, err := DBConn()
-	if err != nil {
-		return user, err
-	}
-
-	if err := db.Read("server", "users", &user); err != nil {
-		return user, err
-	}
-
-	return user, nil
+	return user, o.conn.Read("server", "users", &user)
 }
 
 // GetGlobalSettings func to query global settings from the database
-func GetGlobalSettings() (model.GlobalSetting, error) {
+func (o *JsonDB) GetGlobalSettings() (model.GlobalSetting, error) {
 	settings := model.GlobalSetting{}
-
-	db, err := DBConn()
-	if err != nil {
-		return settings, err
-	}
-
-	if err := db.Read("server", "global_settings", &settings); err != nil {
-		return settings, err
-	}
-
-	return settings, nil
+	return settings, o.conn.Read("server", "global_settings", &settings)
 }
 
 // GetServer func to query Server setting from the database
-func GetServer() (model.Server, error) {
+func (o *JsonDB) GetServer() (model.Server, error) {
 	server := model.Server{}
-
-	db, err := DBConn()
-	if err != nil {
-		return server, err
-	}
-
 	// read server interface information
 	serverInterface := model.ServerInterface{}
-	if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+	if err := o.conn.Read("server", "interfaces", &serverInterface); err != nil {
 		return server, err
 	}
 
 	// read server key pair information
 	serverKeyPair := model.ServerKeypair{}
-	if err := db.Read("server", "keypair", &serverKeyPair); err != nil {
+	if err := o.conn.Read("server", "keypair", &serverKeyPair); err != nil {
 		return server, err
 	}
 
@@ -188,17 +135,11 @@ func GetServer() (model.Server, error) {
 	return server, nil
 }
 
-// GetClients to get all clients from the database
-func GetClients(hasQRCode bool) ([]model.ClientData, error) {
+func (o *JsonDB) GetClients(hasQRCode bool) ([]model.ClientData, error) {
 	var clients []model.ClientData
 
-	db, err := DBConn()
-	if err != nil {
-		return clients, err
-	}
-
 	// read all client json file in "clients" directory
-	records, err := db.ReadAll("clients")
+	records, err := o.conn.ReadAll("clients")
 	if err != nil {
 		return clients, err
 	}
@@ -215,10 +156,10 @@ func GetClients(hasQRCode bool) ([]model.ClientData, error) {
 
 		// generate client qrcode image in base64
 		if hasQRCode {
-			server, _ := GetServer()
-			globalSettings, _ := GetGlobalSettings()
+			server, _ := o.GetServer()
+			globalSettings, _ := o.GetGlobalSettings()
 
-			png, err := qrcode.Encode(BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
+			png, err := qrcode.Encode(util.BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
 			if err == nil {
 				clientData.QRCode = "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
 			} else {
@@ -234,27 +175,21 @@ func GetClients(hasQRCode bool) ([]model.ClientData, error) {
 	return clients, nil
 }
 
-// GetClientByID func to query a client from the database
-func GetClientByID(clientID string, hasQRCode bool) (model.ClientData, error) {
+func (o *JsonDB) GetClientByID(clientID string, hasQRCode bool) (model.ClientData, error) {
 	client := model.Client{}
 	clientData := model.ClientData{}
 
-	db, err := DBConn()
-	if err != nil {
-		return clientData, err
-	}
-
 	// read client information
-	if err := db.Read("clients", clientID, &client); err != nil {
+	if err := o.conn.Read("clients", clientID, &client); err != nil {
 		return clientData, err
 	}
 
 	// generate client qrcode image in base64
 	if hasQRCode {
-		server, _ := GetServer()
-		globalSettings, _ := GetGlobalSettings()
+		server, _ := o.GetServer()
+		globalSettings, _ := o.GetGlobalSettings()
 
-		png, err := qrcode.Encode(BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
+		png, err := qrcode.Encode(util.BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
 		if err == nil {
 			clientData.QRCode = "data:image/png;base64," + base64.StdEncoding.EncodeToString([]byte(png))
 		} else {
@@ -265,4 +200,24 @@ func GetClientByID(clientID string, hasQRCode bool) (model.ClientData, error) {
 	clientData.Client = &client
 
 	return clientData, nil
+}
+
+func (o *JsonDB) SaveClient(client model.Client) error {
+	return o.conn.Write("clients", client.ID, client)
+}
+
+func (o *JsonDB) DeleteClient(clientID string) error {
+	return o.conn.Delete("clients", clientID)
+}
+
+func (o *JsonDB) SaveServerInterface(serverInterface model.ServerInterface) error {
+	return o.conn.Write("server", "interfaces", serverInterface)
+}
+
+func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
+	return o.conn.Write("server", "keypair", serverKeyPair)
+}
+
+func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
+	return o.conn.Write("server", "global_settings", globalSettings)
 }

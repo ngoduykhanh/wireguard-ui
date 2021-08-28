@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.14.2-alpine3.11 as builder
+FROM golang:1.16.7-alpine3.14 as builder
 LABEL maintainer="Khanh Ngo <k@ndk.name"
 ARG BUILD_DEPENDENCIES="npm \
     yarn"

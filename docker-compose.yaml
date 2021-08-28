@@ -5,6 +5,9 @@ services:
     build: .
     #image: ngoduykhanh/wireguard-ui:latest
     container_name: wgui
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
     environment:
       - SENDGRID_API_KEY
       - EMAIL_FROM
@@ -12,9 +15,6 @@ services:
       - SESSION_SECRET
       - WGUI_USERNAME=alpha
       - WGUI_PASSWORD=this-unusual-password
-
-    ports:
-      - 5000:5000
     logging:
       driver: json-file
       options:

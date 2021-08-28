@@ -368,3 +368,11 @@ func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, cl
 
 	return nil
 }
+
+// GetCredVar reads value from environment variable or returns fallback
+func GetCredVar(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
