@@ -1,0 +1,57 @@
+{{define "title"}}
+Connected Peers
+{{end}}
+
+{{define "top_css"}}
+{{end}}
+
+{{define "username"}}
+{{ .username }}
+{{end}}
+
+{{define "page_title"}}
+Connected Peers
+{{end}}
+
+{{define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        {{ if .error }}
+        <div class="alert alert-warning" role="alert">{{.error}}</div>
+        {{ end}}
+        {{ range $dev := .devices }}
+            <table class="table table-sm">
+                <caption>List of connected peers for device with name {{ $dev.Name }} </caption>
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Public Key</th>
+                  <th scope="col">ReceiveBytes</th>
+                  <th scope="col">TransmitBytes</th>
+                  <th scope="col">Connected (Approximation)</th>
+                  <th scope="col">LastHandshakeTime</th>
+                </tr>
+              </thead>
+              <tbody>
+              {{ range $idx, $peer := $dev.Peers }}
+              <tr {{ if $peer.Connected }} class="table-success" {{ end }}>
+                <th scope="row">{{ $idx }}</th>
+                <td>{{ $peer.Name }}</td>
+                <td>{{ $peer.Email }}</td>
+                <td>{{ $peer.PublicKey }}</td>
+                <td>{{ $peer.ReceivedBytes }}</td>
+                <td>{{ $peer.TransmitBytes }}</td>
+                <td>{{ $peer.Connected }}</td>
+                <td>{{ $peer.LastHandshakeTime }}</td>
+               </tr>
+              {{ end }}
+              </tbody>
+            </table>
+        {{ end }}
+    </div>
+</section>
+{{end}}
+{{define "bottom_js"}}
+{{end}}

@@ -1,17 +1,20 @@
-version: '3'
+version: "3"
 
 services:
   wg:
     build: .
     #image: ngoduykhanh/wireguard-ui:latest
     container_name: wgui
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
     environment:
       - SENDGRID_API_KEY
       - EMAIL_FROM
       - EMAIL_FROM_NAME
       - SESSION_SECRET
-    ports:
-      - 5000:5000
+      - WGUI_USERNAME=alpha
+      - WGUI_PASSWORD=this-unusual-password
     logging:
       driver: json-file
       options:

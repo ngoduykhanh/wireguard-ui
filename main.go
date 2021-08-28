@@ -12,6 +12,7 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
+	"github.com/ngoduykhanh/wireguard-ui/store/jsondb"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
@@ -72,14 +73,16 @@ func init() {
 	fmt.Println("Email from name\t:", util.EmailFromName)
 	//fmt.Println("Session secret\t:", util.SessionSecret)
 
-	// initialize DB
-	err := util.InitDB()
-	if err != nil {
-		fmt.Print("Cannot init database: ", err)
-	}
 }
 
 func main() {
+	db, err := jsondb.New("./db")
+	if err != nil {
+		panic(err)
+	}
+	if err := db.Init(); err != nil {
+		panic(err)
+	}
 	// set app extra data
 	extraData := make(map[string]string)
 	extraData["appVersion"] = appVersion
@@ -93,32 +96,33 @@ func main() {
 	// register routes
 	app := router.New(tmplBox, extraData, util.SessionSecret)
 
-	app.GET("/", handler.WireGuardClients(), handler.ValidSession)
+	app.GET("/", handler.WireGuardClients(db), handler.ValidSession)
 
 	if !util.DisableLogin {
 		app.GET("/login", handler.LoginPage())
-		app.POST("/login", handler.Login())
+		app.POST("/login", handler.Login(db))
 	}
 
 	sendmail := emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
 
 	app.GET("/logout", handler.Logout(), handler.ValidSession)
-	app.POST("/new-client", handler.NewClient(), handler.ValidSession)
-	app.POST("/update-client", handler.UpdateClient(), handler.ValidSession)
-	app.POST("/email-client", handler.EmailClient(sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession)
-	app.POST("/client/set-status", handler.SetClientStatus(), handler.ValidSession)
-	app.POST("/remove-client", handler.RemoveClient(), handler.ValidSession)
-	app.GET("/download", handler.DownloadClient(), handler.ValidSession)
-	app.GET("/wg-server", handler.WireGuardServer(), handler.ValidSession)
-	app.POST("wg-server/interfaces", handler.WireGuardServerInterfaces(), handler.ValidSession)
-	app.POST("wg-server/keypair", handler.WireGuardServerKeyPair(), handler.ValidSession)
-	app.GET("/global-settings", handler.GlobalSettings(), handler.ValidSession)
-	app.POST("/global-settings", handler.GlobalSettingSubmit(), handler.ValidSession)
-	app.GET("/api/clients", handler.GetClients(), handler.ValidSession)
-	app.GET("/api/client/:id", handler.GetClient(), handler.ValidSession)
+	app.POST("/new-client", handler.NewClient(db), handler.ValidSession)
+	app.POST("/update-client", handler.UpdateClient(db), handler.ValidSession)
+	app.POST("/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession)
+	app.POST("/client/set-status", handler.SetClientStatus(db), handler.ValidSession)
+	app.POST("/remove-client", handler.RemoveClient(db), handler.ValidSession)
+	app.GET("/download", handler.DownloadClient(db), handler.ValidSession)
+	app.GET("/wg-server", handler.WireGuardServer(db), handler.ValidSession)
+	app.POST("wg-server/interfaces", handler.WireGuardServerInterfaces(db), handler.ValidSession)
+	app.POST("wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession)
+	app.GET("/global-settings", handler.GlobalSettings(db), handler.ValidSession)
+	app.POST("/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession)
+	app.GET("/status", handler.Status(db), handler.ValidSession)
+	app.GET("/api/clients", handler.GetClients(db), handler.ValidSession)
+	app.GET("/api/client/:id", handler.GetClient(db), handler.ValidSession)
 	app.GET("/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)
-	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation(), handler.ValidSession)
-	app.GET("/api/apply-wg-config", handler.ApplyServerConfig(tmplBox), handler.ValidSession)
+	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation(db), handler.ValidSession)
+	app.GET("/api/apply-wg-config", handler.ApplyServerConfig(db, tmplBox), handler.ValidSession)
 
 	// servers other static files
 	app.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
