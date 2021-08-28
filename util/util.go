@@ -396,6 +396,7 @@ func LookupEnvOrInt(key string, defaultVal int) int {
 		return v
 	}
 	return defaultVal
+}
 
 // GetCredVar reads value from environment variable or returns fallback
 func GetCredVar(key, fallback string) string {
