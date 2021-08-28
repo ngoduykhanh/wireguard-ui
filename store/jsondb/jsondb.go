@@ -8,11 +8,12 @@ import (
 	"path"
 	"time"
 
-	"github.com/ngoduykhanh/wireguard-ui/model"
-	"github.com/ngoduykhanh/wireguard-ui/util"
 	"github.com/sdomino/scribble"
 	"github.com/skip2/go-qrcode"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+
+	"github.com/ngoduykhanh/wireguard-ui/model"
+	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
 type JsonDB struct {
@@ -93,8 +94,8 @@ func (o *JsonDB) Init() error {
 	// user info
 	if _, err := os.Stat(userPath); os.IsNotExist(err) {
 		user := new(model.User)
-		user.Username = util.DefaultUsername
-		user.Password = util.DefaultPassword
+		user.Username = util.GetCredVar(util.UsernameEnvVar, util.DefaultUsername)
+		user.Password = util.GetCredVar(util.PasswordEnvVar, util.DefaultPassword)
 		o.conn.Write("server", "users", user)
 	}
 

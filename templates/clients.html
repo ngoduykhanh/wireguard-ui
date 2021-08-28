@@ -41,10 +41,10 @@ Wireguard Clients
             </div>
             <form name="frm_email_client" id="frm_email_client">
                 <div class="modal-body">
-                    <input type="hidden" id="_client_email_id" name="_client_email_id">
+                    <input type="hidden" id="e_client_id" name="e_client_id">
                     <div class="form-group">
-                        <label for="_client_email_email" class="control-label">Email</label>
-                        <input type="text" class="form-control" id="_client_email_email" name="client_email_email">
+                        <label for="e_client_email" class="control-label">Email</label>
+                        <input type="text" class="form-control" id="e_client_email" name="client_email">
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -340,8 +340,8 @@ Wireguard Clients
 
         // submitEmailClient function for sending an email to the client with the configuration
         function submitEmailClient() {
-            const client_id = $("#_client_email_id").val();
-            const email = $("#_client_email_email").val();
+            const client_id = $("#e_client_id").val();
+            const email = $("#e_client_email").val();
             const data = {"id": client_id, "email": email};
             $.ajax({
                 cache: false,
@@ -429,8 +429,8 @@ Wireguard Clients
                     const client = resp.Client;
 
                     modal.find(".modal-title").text("Email Client " + client.name);
-                    modal.find("#_client_id").val(client.id);
-                    modal.find("#_client_email").val(client.email);
+                    modal.find("#e_client_id").val(client.id);
+                    modal.find("#e_client_email").val(client.email);
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);

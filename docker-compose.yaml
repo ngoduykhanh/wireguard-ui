@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   wg:
@@ -13,6 +13,8 @@ services:
       - EMAIL_FROM
       - EMAIL_FROM_NAME
       - SESSION_SECRET
+      - WGUI_USERNAME=alpha
+      - WGUI_PASSWORD=this-unusual-password
     logging:
       driver: json-file
       options:

@@ -21,4 +21,6 @@ const (
 	DefaultMTU                 = 1450
 	DefaultPersistentKeepalive = 15
 	DefaultConfigFilePath      = "/etc/wireguard/wg0.conf"
+	UsernameEnvVar             = "WGUI_USERNAME"
+	PasswordEnvVar             = "WGUI_PASSWORD"
 )
