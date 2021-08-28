@@ -368,3 +368,32 @@ func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, cl
 
 	return nil
 }
+
+func LookupEnvOrString(key string, defaultVal string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		return val
+	}
+	return defaultVal
+}
+
+func LookupEnvOrBool(key string, defaultVal bool) bool {
+	if val, ok := os.LookupEnv(key); ok {
+		v, err := strconv.ParseBool(val)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "LookupEnvOrInt[%s]: %v\n", key, err)
+		}
+		return v
+	}
+	return defaultVal
+}
+
+func LookupEnvOrInt(key string, defaultVal int) int {
+	if val, ok := os.LookupEnv(key); ok {
+		v, err := strconv.Atoi(val)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "LookupEnvOrInt[%s]: %v\n", key, err)
+		}
+		return v
+	}
+	return defaultVal
+}
