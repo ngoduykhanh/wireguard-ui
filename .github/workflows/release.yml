@@ -35,9 +35,9 @@ jobs:
       uses: managedkaos/print-env@v1.0
 
     # setup node
-    - uses: actions/setup-node@v1
+    - uses: actions/setup-node@v2
       with:
-        node-version: '10.x'
+        node-version: '14'
         registry-url: 'https://registry.npmjs.org'
 
     # prepare assets for go rice
@@ -61,7 +61,7 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
-        goversion: "https://dl.google.com/go/go1.14.2.linux-amd64.tar.gz"
+        goversion: "https://dl.google.com/go/go1.16.1.linux-amd64.tar.gz"
         binary_name: "wireguard-ui"
         build_flags: -v
         ldflags: -X "main.appVersion=${{ env.APP_VERSION }}" -X "main.buildTime=${{ env.BUILD_TIME }}" -X main.gitCommit=${{ github.sha }} -X main.gitRef=${{ github.ref }}
