@@ -621,7 +621,11 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 					fmt.Sprintf("Cannot suggest ip allocation: failed to get available ip from network %s", cidr),
 				})
 			}
-			suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
+			if (strings.Contains(ip, ":")) {
+				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/128", ip))
+			} else {
+				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
+			}
 		}
 
 		return c.JSON(http.StatusOK, suggestedIPs)
