@@ -34,7 +34,7 @@ var (
 const (
 	defaultEmailSubject = "Your wireguard configuration"
 	defaultEmailContent = `Hi,</br>
-<p>in this email you can file your personal configuration for our wireguard server.</p>
+<p>In this email you can find your personal configuration for our wireguard server.</p>
 
 <p>Best</p>
 `
