@@ -91,6 +91,11 @@
 </script>
 <script>
     $(document).ready(function () {
+        $('form').on('submit', function(e) {
+            e.preventDefault();
+            $("#btn_login").trigger('click');
+        });
+
         $("#btn_login").click(function () {
             const username = $("#username").val();
             const password = $("#password").val();
