@@ -43,9 +43,9 @@ function renderClientList(data) {
                                 <span class="info-box-text"><i class="fas fa-user"></i> ${obj.Client.name}</span>
                                 <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
-                                    ${obj.Client.created_at}</span>
+                                    ${prettyDateTime(obj.Client.created_at)}</span>
                                 <span class="info-box-text"><i class="fas fa-history"></i>
-                                    ${obj.Client.updated_at}</span>
+                                    ${prettyDateTime(obj.Client.updated_at)}</span>
                                 <span class="info-box-text"><i class="fas fa-server" style="${obj.Client.use_server_dns ? "opacity: 1.0" : "opacity: 0.5"}"></i>
                                     ${obj.Client.use_server_dns ? 'DNS enabled' : 'DNS disabled'}</span>
                                 <span class="info-box-text"><strong>IP Allocation</strong></span>`
@@ -59,4 +59,11 @@ function renderClientList(data) {
         // add the client html elements to the list
         $('#client-list').append(html);
     });
+}
+
+function prettyDateTime(timeStr) {
+    const dt = new Date(timeStr);
+    const offsetMs = dt.getTimezoneOffset() * 60 * 1000;
+    const dateLocal = new Date(dt.getTime() - offsetMs);
+    return dateLocal.toISOString().slice(0, 19).replace(/-/g, "/").replace("T", " ");
 }
