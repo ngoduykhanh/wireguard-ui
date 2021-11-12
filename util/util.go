@@ -380,7 +380,7 @@ func LookupEnvOrBool(key string, defaultVal bool) bool {
 	if val, ok := os.LookupEnv(key); ok {
 		v, err := strconv.ParseBool(val)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "LookupEnvOrInt[%s]: %v\n", key, err)
+			fmt.Fprintf(os.Stderr, "LookupEnvOrBool[%s]: %v\n", key, err)
 		}
 		return v
 	}
