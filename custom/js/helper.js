@@ -29,6 +29,9 @@ function renderClientList(data) {
                                 <div class="btn-group">
                                     <a href="/download?clientid=${obj.Client.id}"
                                         class="btn btn-outline-success btn-sm">Download</a>
+                                    <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal"
+                                        data-target="#modal_email_client" data-clientid="${obj.Client.id}"
+                                        data-clientname="${obj.Client.name}">Email</button>
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_edit_client" data-clientid="${obj.Client.id}"
                                         data-clientname="${obj.Client.name}">Edit</button>
