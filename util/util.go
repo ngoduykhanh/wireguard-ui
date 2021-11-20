@@ -41,12 +41,15 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		if n, err := strconv.Atoi(split[1]); err == nil {
 			desiredPort = n
 		} else {
-			log.Error("Endpoint appears to be incorrectly formated: ", err)
+			log.Error("Endpoint appears to be incorrectly formatted: ", err)
 		}
 	}
 	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d", desiredHost, desiredPort)
 
-	peerPersistentKeepalive := fmt.Sprintf("PersistentKeepalive = %d", setting.PersistentKeepalive)
+	peerPersistentKeepalive := ""
+	if setting.PersistentKeepalive > 0 {
+		peerPersistentKeepalive = fmt.Sprintf("PersistentKeepalive = %d", setting.PersistentKeepalive)
+	}
 
 	// build the config as string
 	strConfig := "[Interface]\n" +
