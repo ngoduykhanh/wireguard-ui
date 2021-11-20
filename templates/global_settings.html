@@ -47,13 +47,13 @@ Global Settings
                             <div class="form-group">
                                 <label for="mtu">MTU</label>
                                 <input type="text" class="form-control" id="mtu" name="mtu" placeholder="MTU"
-                                    value="{{ .globalSettings.MTU }}">
+                                    value="{{if .globalSettings.MTU}}{{ .globalSettings.MTU }}{{end}}">
                             </div>
                             <div class="form-group">
                                 <label for="persistent_keepalive">Persistent Keepalive</label>
                                 <input type="text" class="form-control" id="persistent_keepalive"
                                     name="persistent_keepalive" placeholder="Persistent Keepalive"
-                                    value="{{ .globalSettings.PersistentKeepalive }}">
+                                    value="{{if .globalSettings.PersistentKeepalive }}{{ .globalSettings.PersistentKeepalive }}{{end}}">
                             </div>
                             <div class="form-group">
                                 <label for="config_file_path">Wireguard Config File Path</label>
@@ -68,6 +68,37 @@ Global Settings
                             <button type="submit" class="btn btn-success">Save</button>
                         </div>
                     </form>
+                </div>
+                <!-- /.card -->
+            </div>
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Help</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <dl>
+                            <dt>1. Endpoint Address</dt>
+                            <dd>The public IP address of your Wireguard server that the client will connect to. Click on
+                                <strong>Suggest</strong> button to auto detect the public IP address of your server.</dd>
+                            <dt>2. DNS Servers</dt>
+                            <dd>The DNS servers will be set to client config.</dd>
+                            <dt>3. MTU</dt>
+                            <dd>The MTU will be set to server config. By default it is <code>1420</code>. You might want
+                                to adjust the MTU size if your connection (e.g PPPoE, 3G, satellite network, etc) has a low MTU.</dd>
+                            <dd>Leave blank to omit this setting in the Server config.</dd>
+                            <dt>4. Persistent Keepalive</dt>
+                            <dd>By default, WireGuard peers remain silent while they do not need to communicate,
+                                so peers located behind a NAT and/or firewall may be unreachable from other peers
+                                until they reach out to other peers themselves. Adding <code>PersistentKeepalive</code>
+                                can ensure that the connection remains open.</dd>
+                            <dd>Leave blank to omit this setting in the Client config.</dd>
+                            <dt>5. Wireguard Config File Path</dt>
+                            <dd>The path of your Wireguard server config file. Please make sure the parent directory
+                                exists and is writable.</dd>
+                        </dl>
+                    </div>
                 </div>
                 <!-- /.card -->
             </div>
@@ -172,12 +203,10 @@ Global Settings
             $("#frm_global_settings").validate({
                 rules: {
                     mtu: {
-                        required: true,
                         digits: true,
                         range: [68, 65535]
                     },
                     persistent_keepalive: {
-                        required: true,
                         digits: true
                     },
                     config_file_path: {
@@ -186,12 +215,10 @@ Global Settings
                 },
                 messages: {
                     mtu: {
-                        required: "Please enter a MTU value",
                         digits: "MTU must be an integer",
                         range: "MTU must be in range 68..65535"
                     },
                     persistent_keepalive: {
-                        required: "Please enter a Persistent Keepalive value",
                         digits: "Persistent keepalive must be an integer"
                     },
                     config_file_path: {
