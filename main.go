@@ -105,6 +105,7 @@ func main() {
 
 	sendmail := emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
 
+	app.GET("/_health", handler.Health())
 	app.GET("/logout", handler.Logout(), handler.ValidSession)
 	app.POST("/new-client", handler.NewClient(db), handler.ValidSession)
 	app.POST("/update-client", handler.UpdateClient(db), handler.ValidSession)
