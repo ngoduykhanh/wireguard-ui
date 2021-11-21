@@ -24,6 +24,13 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
+// Health check handler
+func Health() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.String(http.StatusOK, "ok")
+	}
+}
+
 // LoginPage handler
 func LoginPage() echo.HandlerFunc {
 	return func(c echo.Context) error {
