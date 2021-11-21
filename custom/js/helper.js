@@ -27,17 +27,25 @@ function renderClientList(data) {
                             <img src="${obj.QRCode}" />
                             <div class="info-box-content">
                                 <div class="btn-group">
-                                    <a href="/download?clientid=${obj.Client.id}"
-                                        class="btn btn-outline-success btn-sm">Download</a>
-                                    <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal"
+                                    <a href="/download?clientid=${obj.Client.id}" class="btn btn-outline-success btn-sm">Download</a>
+                                </div>
+                                <div class="btn-group">      
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal"
                                         data-target="#modal_email_client" data-clientid="${obj.Client.id}"
                                         data-clientname="${obj.Client.name}">Email</button>
+                                </div>
+                                <div class="btn-group">        
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_edit_client" data-clientid="${obj.Client.id}"
                                         data-clientname="${obj.Client.name}">Edit</button>
+                                </div>
+                                <div class="btn-group">        
                                     <button type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal"
                                         data-target="#modal_pause_client" data-clientid="${obj.Client.id}"
                                         data-clientname="${obj.Client.name}">Disable</button>
+                                        
+                                </div>
+                                <div class="btn-group">        
                                     <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
                                         data-target="#modal_remove_client" data-clientid="${obj.Client.id}"
                                         data-clientname="${obj.Client.name}">Remove</button>
