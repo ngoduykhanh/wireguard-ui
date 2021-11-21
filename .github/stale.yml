@@ -49,6 +49,9 @@ limitPerRun: 30
 #     recent activity. It will be closed if no further activity occurs. Thank you
 #     for your contributions.
 
-# issues:
-#   exemptLabels:
-#     - confirmed
+issues:
+ exemptLabels:
+   - enhancement
+   - feature request
+   - documentation
+   - bug
