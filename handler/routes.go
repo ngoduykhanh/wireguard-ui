@@ -469,6 +469,8 @@ func Status(db store.IStore) echo.HandlerFunc {
 		PublicKey         string
 		ReceivedBytes     int64
 		TransmitBytes     int64
+		Received          string
+		Transmit          string
 		LastHandshakeTime time.Time
 		LastHandshakeRel  time.Duration
 		Connected         bool
@@ -527,6 +529,32 @@ func Status(db store.IStore) echo.HandlerFunc {
 						LastHandshakeRel:  time.Since(devices[i].Peers[j].LastHandshakeTime),
 					}
 					pVm.Connected = pVm.LastHandshakeRel.Minutes() < 3.
+
+					units := []string{" ", " K", " M", " G", " T", " P", " E", " Z", " Y"}
+
+					pow := 0
+					temporal := float64(pVm.ReceivedBytes)
+					for ; temporal > 1024; temporal /= 1024 {
+						pow += 1
+						if pow == len(units)-1 {
+							break
+						}
+					}
+					pVm.Received = fmt.Sprintf("%.3f", temporal)
+					pVm.Received = strings.TrimSuffix(strings.TrimRight(pVm.Received, "0"), ".")
+					pVm.Received = fmt.Sprintf("%s %sBytes", pVm.Received, units[pow])
+
+					pow = 0
+					temporal = float64(pVm.TransmitBytes)
+					for ; temporal > 1024; temporal /= 1024 {
+						pow += 1
+						if pow == len(units)-1 {
+							break
+						}
+					}
+					pVm.Transmit = fmt.Sprintf("%.3f", temporal)
+					pVm.Transmit = strings.TrimSuffix(strings.TrimRight(pVm.Transmit, "0"), ".")
+					pVm.Transmit = fmt.Sprintf("%s %sBytes", pVm.Transmit, units[pow])
 
 					if _client, ok := m[pVm.PublicKey]; ok {
 						pVm.Name = _client.Name

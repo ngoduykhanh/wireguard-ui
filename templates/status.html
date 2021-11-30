@@ -41,8 +41,8 @@ Connected Peers
                 <td>{{ $peer.Name }}</td>
                 <td>{{ $peer.Email }}</td>
                 <td>{{ $peer.PublicKey }}</td>
-                <td>{{ $peer.ReceivedBytes }}</td>
-                <td>{{ $peer.TransmitBytes }}</td>
+                <td title="{{ $peer.ReceivedBytes }} Bytes">{{ $peer.Received }}</td>
+                <td title="{{ $peer.TransmitBytes }} Bytes">{{ $peer.Transmit }}</td>
                 <td>{{ $peer.Connected }}</td>
                 <td>{{ $peer.LastHandshakeTime }}</td>
                </tr>
