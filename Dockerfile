@@ -1,6 +1,10 @@
 # Build stage
 FROM golang:1.16.7-alpine3.14 as builder
 LABEL maintainer="Khanh Ngo <k@ndk.name"
+
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+
 ARG BUILD_DEPENDENCIES="npm \
     yarn"
 
@@ -44,7 +48,7 @@ RUN go mod download && \
 
 # Build
 RUN rice embed-go && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o wg-ui .
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o wg-ui .
 
 # Release stage
 FROM alpine:3.11
