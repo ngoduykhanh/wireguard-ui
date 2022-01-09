@@ -10,7 +10,7 @@ services:
     network_mode: host
     environment:
       - SENDGRID_API_KEY
-      - EMAIL_FROM
+      - EMAIL_FROM_ADDRESS
       - EMAIL_FROM_NAME
       - SESSION_SECRET
       - WGUI_USERNAME=alpha

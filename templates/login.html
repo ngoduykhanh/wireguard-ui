@@ -57,7 +57,7 @@
                         </div>
                         <!-- /.col -->
                         <div class="col-4">
-                            <button id="btn_login" type="button" class="btn btn-primary btn-block">Sign In</button>
+                            <button id="btn_login" type="submit" class="btn btn-primary btn-block">Sign In</button>
                         </div>
                         <!-- /.col -->
                     </div>
@@ -91,6 +91,11 @@
 </script>
 <script>
     $(document).ready(function () {
+        $('form').on('submit', function(e) {
+            e.preventDefault();
+            $("#btn_login").trigger('click');
+        });
+
         $("#btn_login").click(function () {
             const username = $("#username").val();
             const password = $("#password").val();

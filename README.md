@@ -37,7 +37,7 @@ In order to sent the wireguard configuration to clients via email (using sendgri
 
 ```
 SENDGRID_API_KEY: Your sendgrid api key
-EMAIL_FROM: the email address you registered on sendgrid
+EMAIL_FROM_ADDRESS: the email address you registered on sendgrid
 EMAIL_FROM_NAME: the sender's email address
 ```
 

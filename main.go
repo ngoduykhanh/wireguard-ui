@@ -34,7 +34,7 @@ var (
 const (
 	defaultEmailSubject = "Your wireguard configuration"
 	defaultEmailContent = `Hi,</br>
-<p>in this email you can file your personal configuration for our wireguard server.</p>
+<p>In this email you can find your personal configuration for our wireguard server.</p>
 
 <p>Best</p>
 `
@@ -43,6 +43,7 @@ const (
 func init() {
 
 	// command-line flags and env variables
+	flag.BoolVar(&flagDisableLogin, "disable-login", util.LookupEnvOrBool("DISABLE_LOGIN", flagDisableLogin), "Disable authentication on the app. This is potentially dangerous.")
 	flag.StringVar(&flagBindAddress, "bind-address", util.LookupEnvOrString("BIND_ADDRESS", flagBindAddress), "Address:Port to which the app will be bound.")
 	flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey), "Your sendgrid api key.")
 	flag.StringVar(&flagEmailFrom, "email-from", util.LookupEnvOrString("EMAIL_FROM_ADDRESS", flagEmailFrom), "'From' email address.")
@@ -104,6 +105,7 @@ func main() {
 
 	sendmail := emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
 
+	app.GET("/_health", handler.Health())
 	app.GET("/logout", handler.Logout(), handler.ValidSession)
 	app.POST("/new-client", handler.NewClient(db), handler.ValidSession)
 	app.POST("/update-client", handler.UpdateClient(db), handler.ValidSession)

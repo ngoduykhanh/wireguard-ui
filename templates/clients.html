@@ -44,7 +44,7 @@ Wireguard Clients
                     <input type="hidden" id="e_client_id" name="e_client_id">
                     <div class="form-group">
                         <label for="e_client_email" class="control-label">Email</label>
-                        <input type="text" class="form-control" id="e_client_email" name="client_email">
+                        <input type="text" class="form-control" id="e_client_email" name="e_client_email">
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -447,50 +447,40 @@ Wireguard Clients
                 }
             });
             // Edit client form validation
-                $("#frm_edit_client").validate({
-                    rules: {
-                        client_name: {
-                            required: true,
-                        },
-                        client_email: {
-                            required: true,
-                            email: true,
-                        },
-                    },
-                    messages: {
-                        client_name: {
-                            required: "Please enter a name"
-                        },
-                        client_email: {
-                            required: "Please enter an email address",
-                            email: "Please enter a valid email address"
-                        },
-                    },
-                    errorElement: 'span',
-                    errorPlacement: function (error, element) {
-                        error.addClass('invalid-feedback');
-                        element.closest('.form-group').append(error);
-                    },
-                    highlight: function (element, errorClass, validClass) {
-                        $(element).addClass('is-invalid');
-                    },
-                    unhighlight: function (element, errorClass, validClass) {
-                        $(element).removeClass('is-invalid');
-                    }
-                });
-
-                // Email client form validation
-                $("#frm_email_client").validate({
+            $("#frm_edit_client").validate({
                 rules: {
-                    client_email: {
+                    client_name: {
+                        required: true,
+                    },
+                },
+                messages: {
+                    client_name: {
+                        required: "Please enter a name"
+                    },
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+            // Email client form validation
+            $("#frm_email_client").validate({
+                rules: {
+                    e_client_email: {
                         required: true,
                         email: true,
                     },
                 },
                 messages: {
-                    client_email: {
-                        required: "Please enter an email address",
-                        email: "Please enter a valid email address"
+                    e_client_email: {
+                        required: "Please enter an email"
                     },
                 },
                 errorElement: 'span',

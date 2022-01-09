@@ -14,6 +14,20 @@ Connected Peers
 {{end}}
 
 {{define "page_content"}}
+<script>
+  function bytesToHumanReadable(temporal) {
+    const units = [" ", " K", " M", " G", " T", " P", " E", " Z", " Y"]
+    let pow = 0
+
+    while (temporal > 1024) {
+      temporal /= 1024
+      pow ++
+      if (pow == units.length-1) break
+    }
+
+    return parseFloat(temporal.toFixed(3)) + units[pow]+"Bytes"
+  }
+</script>
 <section class="content">
     <div class="container-fluid">
         {{ if .error }}
@@ -41,8 +55,8 @@ Connected Peers
                 <td>{{ $peer.Name }}</td>
                 <td>{{ $peer.Email }}</td>
                 <td>{{ $peer.PublicKey }}</td>
-                <td>{{ $peer.ReceivedBytes }}</td>
-                <td>{{ $peer.TransmitBytes }}</td>
+                <td title="{{ $peer.ReceivedBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.ReceivedBytes }}))</script></td>
+                <td title="{{ $peer.TransmitBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.TransmitBytes }}))</script></td>
                 <td>{{ $peer.Connected }}</td>
                 <td>{{ $peer.LastHandshakeTime }}</td>
                </tr>

@@ -24,6 +24,13 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
+// Health check handler
+func Health() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.String(http.StatusOK, "ok")
+	}
+}
+
 // LoginPage handler
 func LoginPage() echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -346,7 +353,7 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 		reader := strings.NewReader(config)
 
 		// set response header for downloading
-		c.Response().Header().Set(echo.HeaderContentDisposition, "attachment; filename=wg0.conf")
+		c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%s.conf", clientData.Client.Name))
 		return c.Stream(http.StatusOK, "text/plain", reader)
 	}
 }
@@ -621,7 +628,11 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 					fmt.Sprintf("Cannot suggest ip allocation: failed to get available ip from network %s", cidr),
 				})
 			}
-			suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
+			if (strings.Contains(ip, ":")) {
+				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/128", ip))
+			} else {
+				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
+			}
 		}
 
 		return c.JSON(http.StatusOK, suggestedIPs)

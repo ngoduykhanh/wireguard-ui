@@ -44,17 +44,17 @@
             </ul>
 
             <!-- SEARCH FORM -->
-            <form class="form-inline ml-3">
-                <div class="input-group input-group-sm">
-                    <input class="form-control form-control-navbar" type="search" placeholder="Search"
-                        aria-label="Search">
-                    <div class="input-group-append">
-                        <button class="btn btn-navbar" type="submit">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
+<!--            <form class="form-inline ml-3">-->
+<!--                <div class="input-group input-group-sm">-->
+<!--                    <input class="form-control form-control-navbar" type="search" placeholder="Search"-->
+<!--                        aria-label="Search">-->
+<!--                    <div class="input-group-append">-->
+<!--                        <button class="btn btn-navbar" type="submit">-->
+<!--                            <i class="fas fa-search"></i>-->
+<!--                        </button>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </form>-->
 
             <!-- Right navbar links -->
             <div class="navbar-nav ml-auto">
@@ -238,7 +238,7 @@
             <div class="float-right d-none d-sm-block">
                 <b>Version</b> {{ .appVersion }}
             </div>
-            <strong>Copyright &copy; 2020 <a href="https://github.com/ngoduykhanh/wireguard-ui">Wireguard UI</a>.</strong> All rights
+            <strong>Copyright &copy; <script>document.write(new Date().getFullYear())</script> <a href="https://github.com/ngoduykhanh/wireguard-ui">Wireguard UI</a>.</strong> All rights
             reserved.
         </footer>
 
@@ -388,18 +388,10 @@
                     client_name: {
                         required: true,
                     },
-                    client_email: {
-                        required: true,
-                        email: true,
-                    },
                 },
                 messages: {
                     client_name: {
                         required: "Please enter a name"
-                    },
-                    client_email: {
-                        required: "Please enter an email address",
-                        email: "Please enter a valid email address"
                     },
                 },
                 errorElement: 'span',
