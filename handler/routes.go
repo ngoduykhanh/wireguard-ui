@@ -280,8 +280,6 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
 		}
 
-        log.Infof("array length: %d", len(_client.ExtraAllowedIPs) )
-        log.Infof("extraAllowedIPs: %v", _client.ExtraAllowedIPs)
         if len(_client.ExtraAllowedIPs) > 0 && util.ValidateAllowedIPs(_client.ExtraAllowedIPs) == false {
             log.Warnf("Invalid Allowed IPs input from user: %v", _client.ExtraAllowedIPs)
             return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
