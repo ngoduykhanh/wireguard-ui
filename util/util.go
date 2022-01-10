@@ -78,8 +78,10 @@ func ValidateCIDR(cidr string) bool {
 // ValidateCIDRList to validate a list of network CIDR
 func ValidateCIDRList(cidrs []string) bool {
 	for _, cidr := range cidrs {
-		if ValidateCIDR(cidr) == false {
-			return false
+	    if len(cidr) > 0 {
+            if ValidateCIDR(cidr) == false {
+                return false
+            }
 		}
 	}
 	return true
