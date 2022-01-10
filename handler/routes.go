@@ -162,8 +162,8 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 
 		// validate extra AllowedIPs
 		if util.ValidateAllowedIPs(client.ExtraAllowedIPs) == false {
-		    log.Warnf("Invalid Extra AllowedIPs input from user: %v", client.ExtraAllowedIPs)
-		    return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra AllowedIPs must be in CIDR format"})
+			log.Warnf("Invalid Extra AllowedIPs input from user: %v", client.ExtraAllowedIPs)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra AllowedIPs must be in CIDR format"})
 		}
 
 		// gen ID
@@ -280,10 +280,10 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
 		}
 
-        if util.ValidateAllowedIPs(_client.ExtraAllowedIPs) == false {
-            log.Warnf("Invalid Allowed IPs input from user: %v", _client.ExtraAllowedIPs)
-            return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
-        }
+		if util.ValidateExtraAllowedIPs(_client.ExtraAllowedIPs) == false {
+			log.Warnf("Invalid Allowed IPs input from user: %v", _client.ExtraAllowedIPs)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
+		}
 
 		// map new data
 		client.Name = _client.Name
@@ -640,7 +640,7 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 					fmt.Sprintf("Cannot suggest ip allocation: failed to get available ip from network %s", cidr),
 				})
 			}
-			if (strings.Contains(ip, ":")) {
+			if strings.Contains(ip, ":") {
 				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/128", ip))
 			} else {
 				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
