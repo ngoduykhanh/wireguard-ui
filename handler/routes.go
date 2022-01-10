@@ -160,6 +160,12 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
 		}
 
+		// validate extra AllowedIPs
+		if util.ValidateAllowedIPs(client.ExtraAllowedIPs) == false {
+		    log.Warnf("Invalid Extra AllowedIPs input from user: %v", client.ExtraAllowedIPs)
+		    return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra AllowedIPs must be in CIDR format"})
+		}
+
 		// gen ID
 		guid := xid.New()
 		client.ID = guid.String()
@@ -274,6 +280,13 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
 		}
 
+        log.Infof("array length: %d", len(_client.ExtraAllowedIPs) )
+        log.Infof("extraAllowedIPs: %v", _client.ExtraAllowedIPs)
+        if len(_client.ExtraAllowedIPs) > 0 && util.ValidateAllowedIPs(_client.ExtraAllowedIPs) == false {
+            log.Warnf("Invalid Allowed IPs input from user: %v", _client.ExtraAllowedIPs)
+            return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
+        }
+
 		// map new data
 		client.Name = _client.Name
 		client.Email = _client.Email
@@ -281,6 +294,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		client.UseServerDNS = _client.UseServerDNS
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
+		client.ExtraAllowedIPs = _client.ExtraAllowedIPs
 		client.UpdatedAt = time.Now().UTC()
 
 		// write to the database

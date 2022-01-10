@@ -164,6 +164,11 @@
                                     value="0.0.0.0/0">
                             </div>
                             <div class="form-group">
+                                <label for="client_extra_allowed_ips" class="control-label">Extra Allowed IPs</label>
+                                <input type="text" data-role="tagsinput" class="form-control"
+                                     id="client_extra_allowed_ips">
+                            </div>
+                            <div class="form-group">
                                 <div class="icheck-primary d-inline">
                                     <input type="checkbox" id="use_server_dns" checked>
                                     <label for="use_server_dns">
@@ -376,6 +381,16 @@
             'placeholderColor': '#666666'
         });
 
+        $("#client_extra_allowed_ips").tagsInput({
+            'width': '100%',
+            'height': '75%',
+            'interactive': true,
+            'defaultText': 'Add More',
+            'removeWithBackspace': true,
+            'minChars': 0,
+            'placeholderColor': '#666666'
+        });
+
         // New client form validation
         $(document).ready(function () {
             $.validator.setDefaults({
@@ -414,6 +429,7 @@
                 $("#client_name").val("");
                 $("#client_email").val("");
                 $("#client_allocated_ips").importTags('');
+                $("#client_extra_allowed_ips").importTags('');
                 updateIPAllocationSuggestion();
             });
         });

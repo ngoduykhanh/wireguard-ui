@@ -87,6 +87,11 @@ Wireguard Clients
                         <input type="text" data-role="tagsinput" class="form-control" id="_client_allowed_ips">
                     </div>
                     <div class="form-group">
+                        <label for="_client_extra_allowed_ips" class="control-label">Extra Allowed IPs</label>
+                        <input type="text" data-role="tagsinput" class="form-control"
+                               id="_client_extra_allowed_ips">
+                    </div>
+                    <div class="form-group">
                         <div class="icheck-primary d-inline">
                             <input type="checkbox" id="_use_server_dns">
                             <label for="_use_server_dns">
@@ -302,6 +307,16 @@ Wireguard Clients
                     'placeholderColor': '#666666'
                 });
 
+                modal.find("#_client_extra_allowed_ips").tagsInput({
+                    'width': '100%',
+                    'height': '75%',
+                    'interactive': true,
+                    'defaultText': 'Add More',
+                    'removeWithBackspace' : true,
+                    'minChars': 0,
+                    'placeholderColor': '#666666'
+                })
+
                 // update client modal data
                 $.ajax({
                     cache: false,
@@ -325,6 +340,11 @@ Wireguard Clients
                         modal.find("#_client_allowed_ips").importTags('');
                         client.allowed_ips.forEach(function (obj) {
                             modal.find("#_client_allowed_ips").addTag(obj);
+                        });
+
+                        modal.find("#_client_extra_allowed_ips").importTags('');
+                        client.extra_allowed_ips.forEach(function (obj) {
+                            modal.find("#_client_extra_allowed_ips").addTag(obj);
                         });
 
                         modal.find("#_use_server_dns").prop("checked", client.use_server_dns);
@@ -370,6 +390,7 @@ Wireguard Clients
             const email = $("#_client_email").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
             const allowed_ips = $("#_client_allowed_ips").val().split(",");
+            const extra_allowed_ips = $("#_client_extra_allowed_ips").val().split(",");
             let use_server_dns = false;
 
             if ($("#_use_server_dns").is(':checked')){
@@ -383,7 +404,7 @@ Wireguard Clients
             }
 
             const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
-                "allowed_ips": allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled};
+                "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled};
 
             $.ajax({
                 cache: false,
