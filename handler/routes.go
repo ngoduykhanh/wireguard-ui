@@ -161,7 +161,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 		}
 
 		// validate extra AllowedIPs
-		if util.ValidateAllowedIPs(client.ExtraAllowedIPs) == false {
+		if util.ValidateExtraAllowedIPs(client.ExtraAllowedIPs) == false {
 			log.Warnf("Invalid Extra AllowedIPs input from user: %v", client.ExtraAllowedIPs)
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra AllowedIPs must be in CIDR format"})
 		}
