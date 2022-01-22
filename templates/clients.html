@@ -57,6 +57,24 @@ Wireguard Clients
     </div>
     <!-- /.modal-dialog -->
 </div>
+<!-- /.modal -->
+
+<div class="modal fade" id="modal_qr_client">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Email Configuration</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
 
 <div class="modal fade" id="modal_edit_client">
     <div class="modal-dialog">
@@ -275,7 +293,7 @@ Wireguard Clients
 
         // Edit client modal event
         $(document).ready(function () {
-            $("#modal_edit_client").on('shown.bs.modal', function (event) {
+            $("#modal_edit_client").on('show.bs.modal', function (event) {
                 let modal = $(this);
                 const button = $(event.relatedTarget);
                 const client_id = button.data('clientid');
@@ -415,7 +433,7 @@ Wireguard Clients
             }
         }
 
-        $("#modal_email_client").on('shown.bs.modal', function (event) {
+        $("#modal_email_client").on('show.bs.modal', function (event) {
             let modal = $(this);
             const button = $(event.relatedTarget);
             const client_id = button.data('clientid');
@@ -431,6 +449,31 @@ Wireguard Clients
                     modal.find(".modal-title").text("Email Client " + client.name);
                     modal.find("#e_client_id").val(client.id);
                     modal.find("#e_client_email").val(client.email);
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        });
+
+        $("#modal_qr_client").on('show.bs.modal', function (event) {
+            let modal = $(this);
+            const button = $(event.relatedTarget);
+            const client_id = button.data('clientid');
+            const QRCodeImg = modal.find("#qr_code");
+            QRCodeImg.hide();
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '/api/client/' + client_id,
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (resp) {
+                    const client = resp.Client;
+
+                    modal.find(".modal-title").text("QR Code for " + client.name);
+                    QRCodeImg.attr('src', resp.QRCode).show();
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
