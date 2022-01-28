@@ -390,8 +390,12 @@ Wireguard Clients
             const email = $("#_client_email").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
             const allowed_ips = $("#_client_allowed_ips").val().split(",");
-            const extra_allowed_ips = $("#_client_extra_allowed_ips").val().split(",");
             let use_server_dns = false;
+            let extra_allowed_ips = [];
+
+            if( $("#_client_extra_allowed_ips").val() !== "" ) {
+                extra_allowed_ips = $("#_client_extra_allowed_ips").val().split(",");
+            }
 
             if ($("#_use_server_dns").is(':checked')){
                 use_server_dns = true;
