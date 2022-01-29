@@ -80,10 +80,18 @@ func ValidateCIDR(cidr string) bool {
 }
 
 // ValidateCIDRList to validate a list of network CIDR
-func ValidateCIDRList(cidrs []string) bool {
+func ValidateCIDRList(cidrs []string, allowEmpty bool) bool {
 	for _, cidr := range cidrs {
-		if ValidateCIDR(cidr) == false {
-			return false
+		if allowEmpty {
+			if len(cidr) > 0 {
+				if ValidateCIDR(cidr) == false {
+					return false
+				}
+			}
+		} else {
+			if ValidateCIDR(cidr) == false {
+				return false
+			}
 		}
 	}
 	return true
@@ -91,7 +99,15 @@ func ValidateCIDRList(cidrs []string) bool {
 
 // ValidateAllowedIPs to validate allowed ip addresses in CIDR format
 func ValidateAllowedIPs(cidrs []string) bool {
-	if ValidateCIDRList(cidrs) == false {
+	if ValidateCIDRList(cidrs, false) == false {
+		return false
+	}
+	return true
+}
+
+// ValidateExtraAllowedIPs to validate extra Allowed ip addresses, allowing empty strings
+func ValidateExtraAllowedIPs(cidrs []string) bool {
+	if ValidateCIDRList(cidrs, true) == false {
 		return false
 	}
 	return true
@@ -99,7 +115,7 @@ func ValidateAllowedIPs(cidrs []string) bool {
 
 // ValidateServerAddresses to validate allowed ip addresses in CIDR format
 func ValidateServerAddresses(cidrs []string) bool {
-	if ValidateCIDRList(cidrs) == false {
+	if ValidateCIDRList(cidrs, false) == false {
 		return false
 	}
 	return true

@@ -4,6 +4,12 @@ package util
 var (
 	DisableLogin   bool
 	BindAddress    string
+	SmtpHostname   string
+	SmtpPort       int
+	SmtpUsername   string
+	SmtpPassword   string
+	SmtpNoTLSCheck bool
+	SmtpAuthType   string
 	SendgridApiKey string
 	EmailFrom      string
 	EmailFromName  string
