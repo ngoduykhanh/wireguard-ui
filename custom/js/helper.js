@@ -24,10 +24,14 @@ function renderClientList(data) {
                             <div class="overlay" id="paused_${obj.Client.id}"` + clientStatusHtml
                                 + `<i class="paused-client fas fa-3x fa-play" onclick="resumeClient('${obj.Client.id}')"></i>
                             </div>
-                            <img src="${obj.QRCode}" />
                             <div class="info-box-content">
                                 <div class="btn-group">
                                     <a href="/download?clientid=${obj.Client.id}" class="btn btn-outline-success btn-sm">Download</a>
+                                </div>
+                                <div class="btn-group">      
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal"
+                                        data-target="#modal_qr_client" data-clientid="${obj.Client.id}"
+                                        data-clientname="${obj.Client.name}">Scan</button>
                                 </div>
                                 <div class="btn-group">      
                                     <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal"
