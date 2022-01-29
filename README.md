@@ -33,12 +33,26 @@ wireguard interface stats. See the `cap_add` and `network_mode` options on the d
 
 Set the `SESSION_SECRET` environment variable to a random value.
 
-In order to sent the wireguard configuration to clients via email (using sendgrid api) set the following environment variables
+In order to sent the wireguard configuration to clients via email, set the following environment variables:
+
+- using SendGrid API
 
 ```
 SENDGRID_API_KEY: Your sendgrid api key
 EMAIL_FROM_ADDRESS: the email address you registered on sendgrid
 EMAIL_FROM_NAME: the sender's email address
+```
+
+- using SMTP
+
+```
+SMTP_HOSTNAME
+SMTP_PORT
+SMTP_USERNAME
+SMTP_PASSWORD
+SMTP_AUTH_TYPE
+EMAIL_FROM_ADDRESS: the sender's email address
+EMAIL_FROM_NAME: the sender's name
 ```
 
 ### Using binary file
