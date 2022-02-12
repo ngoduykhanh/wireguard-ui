@@ -66,7 +66,7 @@ func (o *SmtpMail) Send(toName string, to string, subject string, content string
 	}
 
 	email := mail.NewMSG()
-	email.SetFrom("From "+addressField(o.from, o.fromName)).
+	email.SetFrom(addressField(o.from, o.fromName)).
 		AddTo(addressField(to, toName)).
 		SetSubject(subject).
 		SetBody(mail.TextHTML, content)
