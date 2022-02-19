@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"sort"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	"github.com/rs/xid"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -684,4 +684,30 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
 	}
+}
+
+func WakeOnLan(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var err error
+
+		hosts, err := db.GetWakeOnLanHosts()
+		if err != nil {
+			log.Errorf("WOL ERROR")
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Host not found"})
+		}
+
+		err = c.Render(http.StatusOK, "wake_on_lan_hosts.html", map[string]interface{}{
+			"baseData": model.BaseData{Active: "wake_on_lan_hosts", CurrentUser: currentUser(c)},
+			"hosts":    hosts,
+			"error":    "",
+		})
+		if err != nil {
+
+			print(err.Error() + "\n")
+			return err
+		}
+
+		return nil
+	}
+
 }

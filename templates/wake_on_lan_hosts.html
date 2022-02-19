@@ -1,0 +1,130 @@
+{{define "title"}}
+Wake On Lan Hosts
+{{end}}
+
+{{define "top_css"}}
+{{end}}
+
+{{define "username"}}
+{{ .username }}
+{{end}}
+
+{{define "page_title"}}
+Wake On Lan Hosts
+{{end}}
+
+{{define "page_content"}}
+<script>
+    // https://jqueryvalidation.org/
+    $(document).ready(function () {
+        let $modal = $("#modal_new_wake_on_lan_host");
+
+        $modal.on('shown.bs.modal', function (e) {
+            $("#client_name").val("");
+            $("#client_email").val("");
+
+        });
+
+        $("#frm_new_client").validate({
+            submitHandler: function() {
+
+            },
+            rules: {
+                client_name: {
+                    required: true,
+                },
+            },
+            messages: {
+                client_name: {
+                    required: "Please enter a name"
+                },
+            },
+            errorElement: 'span',
+            errorPlacement: function (error, element) {
+                error.addClass('invalid-feedback');
+                element.closest('.form-group').append(error);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+    });
+
+</script>
+
+<div class="modal fade" id="modal_new_wake_on_lan_host">
+<!--    MacAddress      string `json:"MacAddress"`-->
+<!--    Name            string `json:"Name"`-->
+<!--    LatestIPAddress string `json:"LatestIPAddress"`-->
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">New Wake On Lan Host</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="frm_new_client" id="frm_new_client">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal_new_wake_on_lan_host_name" class="control-label">Name</label>
+                        <input type="text" class="form-control" id="modal_new_wake_on_lan_host_name" name="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_new_wake_on_lan_host_name_mac_address" class="control-label">Mac Address</label>
+                        <input type="text" class="form-control" id="modal_new_wake_on_lan_host_name_mac_address" name="mac_address">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        {{ if .error }}
+        <div class="alert alert-warning" role="alert">{{.error}}</div>
+        {{ end}}
+        <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
+                data-target="#modal_new_wake_on_lan_host"><i class="nav-icon fas fa-plus"></i> New
+            Client</button>
+
+
+        {{ range $hosts := .devices }}
+
+        <table class="table table-sm">
+            <caption>List Devices </caption>
+            <thead>
+            <tr>
+                <th scope="col">Host Name</th>
+                <th scope="col">MAC Address</th>
+                <th scope="col">Latest Ip Address</th>
+                <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ range $idx, $host := $hosts }}
+            <tr {{ if $host.Connected }} class="table-success" {{ end }}>
+                <th scope="row">{{ $idx }}</th>
+                <td>{{ $host.Name }}</td>
+                <td>{{ $host.MacAddress }}</td>
+                <td>{{ $host.LatestIPAddress }}</td>
+                <td></td>
+            </tr>
+            {{ end }}
+            </tbody>
+        </table>
+        {{ end }}
+    </div>
+</section>
+{{end}}
+{{define "bottom_js"}}
+{{end}}

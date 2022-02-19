@@ -16,4 +16,6 @@ type IStore interface {
 	SaveServerInterface(serverInterface model.ServerInterface) error
 	SaveServerKeyPair(serverKeyPair model.ServerKeypair) error
 	SaveGlobalSettings(globalSettings model.GlobalSetting) error
+	// FIXME 완성되면 이 주석을 지워라
+	GetWakeOnLanHosts() ([]model.WakeOnLanHost, error)
 }

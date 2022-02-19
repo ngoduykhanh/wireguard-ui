@@ -38,10 +38,12 @@ func New(dbPath string) (*JsonDB, error) {
 func (o *JsonDB) Init() error {
 	var clientPath string = path.Join(o.dbPath, "clients")
 	var serverPath string = path.Join(o.dbPath, "server")
+	var wakeOnLanListPath string = path.Join(o.dbPath, model.WakeOnLanHostCollectionName)
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
 	var userPath string = path.Join(serverPath, "users.json")
+
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
 		os.MkdirAll(clientPath, os.ModePerm)
@@ -97,6 +99,10 @@ func (o *JsonDB) Init() error {
 		user.Username = util.GetCredVar(util.UsernameEnvVar, util.DefaultUsername)
 		user.Password = util.GetCredVar(util.PasswordEnvVar, util.DefaultPassword)
 		o.conn.Write("server", "users", user)
+	}
+
+	if _, err := os.Stat(wakeOnLanListPath); os.IsNotExist(err) {
+		os.MkdirAll(wakeOnLanListPath, os.ModePerm)
 	}
 
 	return nil
@@ -220,4 +226,30 @@ func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
 
 func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	return o.conn.Write("server", "global_settings", globalSettings)
+}
+
+// FIXME 완성되면 이 주석을 지워라 작업중
+func (o *JsonDB) GetWakeOnLanHosts() ([]model.WakeOnLanHost, error) {
+	var hosts []model.WakeOnLanHost
+
+	// read all client json file in "hosts" directory
+	records, err := o.conn.ReadAll(model.WakeOnLanHostCollectionName)
+	if err != nil {
+		return hosts, err
+	}
+
+	// build the ClientData list
+	for _, f := range records {
+		host := model.WakeOnLanHost{}
+
+		// get client info
+		if err := json.Unmarshal([]byte(f), &host); err != nil {
+			return hosts, fmt.Errorf("cannot decode client json structure: %v", err)
+		}
+
+		// create the list of hosts and their qrcode data
+		hosts = append(hosts, host)
+	}
+
+	return hosts, nil
 }
