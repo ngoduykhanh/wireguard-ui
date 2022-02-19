@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"sort"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	"github.com/rs/xid"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -683,5 +683,79 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 		}
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
+	}
+}
+
+func GetWakeOnLanHosts(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		var err error
+
+		hosts, err := db.GetWakeOnLanHosts()
+		if err != nil {
+			log.Errorf("WOL ERROR")
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Host not found"})
+		}
+
+		err = c.Render(http.StatusOK, "wake_on_lan_hosts.html", map[string]interface{}{
+			"baseData": model.BaseData{Active: "wake_on_lan_hosts", CurrentUser: currentUser(c)},
+			"hosts":    hosts,
+			"error":    "",
+		})
+		if err != nil {
+
+			print(err.Error() + "\n")
+			return err
+		}
+
+		return nil
+	}
+
+}
+
+func SaveWakeOnLanHost(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		type WakeOnLanHostPayload struct {
+			Name          string `json:"name"`
+			MacAddress    string `json:"mac_address"`
+			OldMacAddress string `json:"old_mac_address"`
+		}
+
+		var payload WakeOnLanHostPayload
+		err := c.Bind(&payload)
+		if err != nil {
+			log.Error("Wake On Host Bind Error: ", err)
+			return c.JSON(http.StatusInternalServerError, payload)
+		}
+
+		host := model.WakeOnLanHost{
+			MacAddress: payload.MacAddress,
+			Name:       payload.Name,
+		}
+		if len(payload.OldMacAddress) != 0 {
+			oldHost, err := db.GetWakeOnLanHost(payload.OldMacAddress)
+			if err != nil {
+				log.Error("Wake On Host Update Err: ", err)
+				return c.JSON(http.StatusInternalServerError, payload)
+			}
+
+			err = db.DeleteWakeOnHostLanHost(payload.OldMacAddress)
+			if err != nil {
+				log.Error("Wake On Host Update Err: ", err)
+				return c.JSON(http.StatusInternalServerError, payload)
+			}
+			host.LatestUsed = oldHost.LatestUsed
+			err = db.SaveWakeOnLanHost(host)
+		} else {
+			now := time.Now()
+			host.LatestUsed = &now
+			err = db.SaveWakeOnLanHost(host)
+		}
+
+		if err != nil {
+			log.Error("Wake On Host Save Error: ", err)
+			return c.JSON(http.StatusInternalServerError, payload)
+		}
+
+		return c.JSON(http.StatusOK, host)
 	}
 }
