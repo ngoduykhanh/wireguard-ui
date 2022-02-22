@@ -171,10 +171,20 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 		client.ID = guid.String()
 
 		// gen Wireguard key pair
-		key, err := wgtypes.GeneratePrivateKey()
-		if err != nil {
-			log.Error("Cannot generate wireguard key pair: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+		if client.PublicKey == "" {
+			key, err := wgtypes.GeneratePrivateKey()
+			if err != nil {
+				log.Error("Cannot generate wireguard key pair: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			}
+		    client.PrivateKey = key.String()
+		    client.PublicKey = key.PublicKey().String()
+		} else {
+			_, err := wgtypes.ParseKey(client.PublicKey)
+			if err != nil {
+				log.Error("Cannot verify wireguard public key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard public key"})
+			}
 		}
 
 		presharedKey, err := wgtypes.GenerateKey()
@@ -185,8 +195,6 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			})
 		}
 
-		client.PrivateKey = key.String()
-		client.PublicKey = key.PublicKey().String()
 		client.PresharedKey = presharedKey.String()
 		client.CreatedAt = time.Now().UTC()
 		client.UpdatedAt = client.CreatedAt

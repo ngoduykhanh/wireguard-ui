@@ -328,9 +328,12 @@
             if ($("#enabled").is(':checked')){
                 enabled = true;
             }
+            const public_key = $("#client_public_key").val();
+            const preshared_key = $("#client_preshared_key").val();
 
             const data = {"name": name, "email": email, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
-                "extra_allowed_ips": extra_allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled};
+                "extra_allowed_ips": extra_allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled,
+                "public_key": public_key, "preshared_key": preshared_key};
 
             $.ajax({
                 cache: false,
