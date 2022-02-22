@@ -67,8 +67,6 @@ function renderClientList(data) {
                                 + allocatedIpsHtml
                                 + `<span class="info-box-text"><strong>Allowed IPs</strong></span>`
                                 + allowedIpsHtml
-                                + `<span class="info-box-text"><i class="fas fa-lock" style="${obj.Client.private_key ? "opacity: 0.5" : "opacity: 1.0"}"></i>
-                                    ${obj.Client.private_key ? 'Private Key stored (insecure)' : 'No Private key'}</span>`
                             +`</div>
                         </div>
                     </div>`
