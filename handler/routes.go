@@ -187,15 +187,22 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			}
 		}
 
-		presharedKey, err := wgtypes.GenerateKey()
-		if err != nil {
-			log.Error("Cannot generated preshared key: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
-				false, "Cannot generate Wireguard preshared key",
-			})
+		if client.PresharedKey == "" {
+			presharedKey, err := wgtypes.GenerateKey()
+			if err != nil {
+				log.Error("Cannot generated preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+					false, "Cannot generate Wireguard preshared key",
+				})
+			}
+			client.PresharedKey = presharedKey.String()
+		} else {
+			_, err := wgtypes.ParseKey(client.PresharedKey)
+			if err != nil {
+				log.Error("Cannot verify wireguard preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard preshared key"})
+			}
 		}
-
-		client.PresharedKey = presharedKey.String()
 		client.CreatedAt = time.Now().UTC()
 		client.UpdatedAt = client.CreatedAt
 
