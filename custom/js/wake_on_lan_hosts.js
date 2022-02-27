@@ -26,7 +26,7 @@ const wake_on_lan_new_template = '<div class="col-sm-4" id="{{ .Id }}">\n' +
 jQuery(function ($) {
    $.validator.addMethod('mac', function (value, element) {
        return this.optional(element) || /^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$/.test(value);
-   }, 'Please enter a valid MAC Address. ex: 00:00:00:00:00:00');
+   }, 'Please enter a valid MAC Address.(uppercase letters and numbers, : only) ex: 00:AB:12:EF:DD:AA');
 });
 
 jQuery.each(["put", "delete"], function (i, method) {
