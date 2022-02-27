@@ -38,6 +38,7 @@ func New(dbPath string) (*JsonDB, error) {
 func (o *JsonDB) Init() error {
 	var clientPath string = path.Join(o.dbPath, "clients")
 	var serverPath string = path.Join(o.dbPath, "server")
+	var wakeOnLanHostsPath string = path.Join(o.dbPath, "wake_on_lan_hosts")
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
@@ -48,6 +49,9 @@ func (o *JsonDB) Init() error {
 	}
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		os.MkdirAll(serverPath, os.ModePerm)
+	}
+	if _, err := os.Stat(wakeOnLanHostsPath); os.IsNotExist(err) {
+		os.MkdirAll(wakeOnLanHostsPath, os.ModePerm)
 	}
 
 	// server's interface
