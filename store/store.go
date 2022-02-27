@@ -20,4 +20,5 @@ type IStore interface {
 	GetWakeOnLanHost(macAddress string) (*model.WakeOnLanHost, error)
 	DeleteWakeOnHostLanHost(macAddress string) error
 	SaveWakeOnLanHost(host model.WakeOnLanHost) error
+	DeleteWakeOnHost(host model.WakeOnLanHost) error
 }
