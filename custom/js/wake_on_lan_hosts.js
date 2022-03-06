@@ -54,7 +54,10 @@ jQuery(function ($) {
 
 jQuery(function ($) {
     $('.btn-outline-success').click(function () {
-        $.put('/wake_on_lan_host/' + $(this).data('mac-address'));
+        const $this = $(this);
+        $.put('/wake_on_lan_host/' + $this.data('mac-address'), function (result) {
+            $this.parents('.info-box').find('.latest-used').text(prettyDateTime(result));
+        });
     });
 });
 
@@ -78,6 +81,13 @@ jQuery(function ($) {
 
         $modal_remove_wake_on_lan_host.modal('hide');
     });
+});
+
+jQuery(function ($) {
+   $('.latest-used').each(function () {
+       const $this = $(this);
+       $this.text(prettyDateTime($this.text().trim()));
+   });
 });
 
 jQuery(function ($) {

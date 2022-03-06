@@ -124,7 +124,7 @@ func WakeOnHost(db store.IStore) echo.HandlerFunc {
 		macAddress := c.Param("mac_address")
 		host, err := db.GetWakeOnLanHost(macAddress)
 
-		now := time.Now()
+		now := time.Now().UTC()
 		host.LatestUsed = &now
 		err = db.SaveWakeOnLanHost(*host)
 		if err != nil {
@@ -166,6 +166,6 @@ func WakeOnHost(db store.IStore) echo.HandlerFunc {
 			return createError(c, err, fmt.Sprintf("Network Send Error: %s", macAddress))
 		}
 
-		return c.JSON(http.StatusOK, nil)
+		return c.JSON(http.StatusOK, host.LatestUsed)
 	}
 }
