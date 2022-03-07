@@ -16,6 +16,12 @@ var (
 	EmailSubject   string
 	EmailContent   string
 	SessionSecret  []byte
+	DBType         string
+	DBHost         string
+	DBPort         int
+	DBDatabase     string
+	DBUsername     string
+	DBPassword     string
 )
 
 const (

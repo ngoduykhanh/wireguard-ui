@@ -35,6 +35,12 @@ var (
 	flagEmailFrom      string
 	flagEmailFromName  string = "WireGuard UI"
 	flagSessionSecret  string
+	flagDBType         string = "jsondb"
+	flagDBHost         string = "localhost"
+	flagDBPort         int    = 3306
+	flagDBDatabase     string = "wireguard-ui"
+	flagDBUsername     string
+	flagDBPassword     string
 )
 
 const (
@@ -61,6 +67,12 @@ func init() {
 	flag.StringVar(&flagEmailFrom, "email-from", util.LookupEnvOrString("EMAIL_FROM_ADDRESS", flagEmailFrom), "'From' email address.")
 	flag.StringVar(&flagEmailFromName, "email-from-name", util.LookupEnvOrString("EMAIL_FROM_NAME", flagEmailFromName), "'From' email name.")
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
+	flag.StringVar(&flagDBType, "db-type", util.LookupEnvOrString("DB_TYPE", flagDBType), "Type of database to use. One of: `jsondb`|`mysql`.")
+	flag.StringVar(&flagDBHost, "db-host", util.LookupEnvOrString("DB_HOST", flagDBHost), "Database host")
+	flag.IntVar(&flagDBPort, "db-port", util.LookupEnvOrInt("DB_PORT", flagDBPort), "Database port")
+	flag.StringVar(&flagDBDatabase, "db-database", util.LookupEnvOrString("DB_DATABASE", flagDBDatabase), "Database name")
+	flag.StringVar(&flagDBUsername, "db-username", util.LookupEnvOrString("DB_USERNAME", flagDBUsername), "Database username")
+	flag.StringVar(&flagDBPassword, "db-password", util.LookupEnvOrString("DB_PASSWORD", flagDBPassword), "Database password")
 	flag.Parse()
 
 	// update runtime config
@@ -76,6 +88,12 @@ func init() {
 	util.EmailFrom = flagEmailFrom
 	util.EmailFromName = flagEmailFromName
 	util.SessionSecret = []byte(flagSessionSecret)
+	util.DBType = flagDBType
+	util.DBHost = flagDBHost
+	util.DBPort = flagDBPort
+	util.DBDatabase = flagDBDatabase
+	util.DBUsername = flagDBUsername
+	util.DBPassword = flagDBPassword
 
 	// print app information
 	fmt.Println("Wireguard UI")
