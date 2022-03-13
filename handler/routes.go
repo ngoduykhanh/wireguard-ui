@@ -171,23 +171,51 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 		client.ID = guid.String()
 
 		// gen Wireguard key pair
-		key, err := wgtypes.GeneratePrivateKey()
-		if err != nil {
-			log.Error("Cannot generate wireguard key pair: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+		if client.PublicKey == "" {
+			key, err := wgtypes.GeneratePrivateKey()
+			if err != nil {
+				log.Error("Cannot generate wireguard key pair: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			}
+			client.PrivateKey = key.String()
+			client.PublicKey = key.PublicKey().String()
+		} else {
+			_, err := wgtypes.ParseKey(client.PublicKey)
+			if err != nil {
+				log.Error("Cannot verify wireguard public key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard public key"})
+			}
+			// check for duplicates
+			clients, err := db.GetClients(false)
+			if err != nil {
+				log.Error("Cannot get clients for duplicate check")
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get clients for duplicate check"})
+			}
+			for _, other := range clients {
+				if other.Client.PublicKey == client.PublicKey {
+					log.Error("Duplicate Public Key")
+					return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Duplicate Public Key"})
+				}
+			}
+
 		}
 
-		presharedKey, err := wgtypes.GenerateKey()
-		if err != nil {
-			log.Error("Cannot generated preshared key: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
-				false, "Cannot generate Wireguard preshared key",
-			})
+		if client.PresharedKey == "" {
+			presharedKey, err := wgtypes.GenerateKey()
+			if err != nil {
+				log.Error("Cannot generated preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+					false, "Cannot generate Wireguard preshared key",
+				})
+			}
+			client.PresharedKey = presharedKey.String()
+		} else {
+			_, err := wgtypes.ParseKey(client.PresharedKey)
+			if err != nil {
+				log.Error("Cannot verify wireguard preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard preshared key"})
+			}
 		}
-
-		client.PrivateKey = key.String()
-		client.PublicKey = key.PublicKey().String()
-		client.PresharedKey = presharedKey.String()
 		client.CreatedAt = time.Now().UTC()
 		client.UpdatedAt = client.CreatedAt
 
@@ -227,18 +255,25 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
 		cfg_att := emailer.Attachment{"wg0.conf", []byte(config)}
-		qrdata, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(clientData.QRCode, "data:image/png;base64,"))
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "decoding: " + err.Error()})
+		var attachments []emailer.Attachment
+		if clientData.Client.PrivateKey != "" {
+			qrdata, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(clientData.QRCode, "data:image/png;base64,"))
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "decoding: " + err.Error()})
+			}
+			qr_att := emailer.Attachment{"wg.png", qrdata}
+			attachments = []emailer.Attachment{cfg_att, qr_att}
+		} else {
+			attachments = []emailer.Attachment{cfg_att}
 		}
-		qr_att := emailer.Attachment{"wg.png", qrdata}
 		err = mailer.Send(
 			clientData.Client.Name,
 			payload.Email,
 			emailSubject,
 			emailContent,
-			[]emailer.Attachment{cfg_att, qr_att},
+			attachments,
 		)
+
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
 		}
