@@ -255,18 +255,25 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
 		cfg_att := emailer.Attachment{"wg0.conf", []byte(config)}
-		qrdata, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(clientData.QRCode, "data:image/png;base64,"))
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "decoding: " + err.Error()})
+		var attachments []emailer.Attachment
+		if clientData.Client.PrivateKey != "" {
+			qrdata, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(clientData.QRCode, "data:image/png;base64,"))
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "decoding: " + err.Error()})
+			}
+			qr_att := emailer.Attachment{"wg.png", qrdata}
+			attachments = []emailer.Attachment{cfg_att, qr_att}
+		} else {
+			attachments = []emailer.Attachment{cfg_att}
 		}
-		qr_att := emailer.Attachment{"wg.png", qrdata}
 		err = mailer.Send(
 			clientData.Client.Name,
 			payload.Email,
 			emailSubject,
 			emailContent,
-			[]emailer.Attachment{cfg_att, qr_att},
+			attachments,
 		)
+
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
 		}
