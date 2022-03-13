@@ -148,7 +148,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 		}
 
 		// validate the input Allocation IPs
-		allocatedIPs, err := util.GetAllocatedIPs("")
+		allocatedIPs, err := util.GetAllocatedIPs(db, "")
 		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
@@ -268,7 +268,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		}
 		client := *clientData.Client
 		// validate the input Allocation IPs
-		allocatedIPs, err := util.GetAllocatedIPs(client.ID)
+		allocatedIPs, err := util.GetAllocatedIPs(db, client.ID)
 		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, _client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
@@ -624,7 +624,7 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 		// we take the first available ip address from
 		// each server's network addresses.
 		suggestedIPs := make([]string, 0)
-		allocatedIPs, err := util.GetAllocatedIPs("")
+		allocatedIPs, err := util.GetAllocatedIPs(db, "")
 		if err != nil {
 			log.Error("Cannot suggest ip allocation. Failed to get list of allocated ip addresses: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{

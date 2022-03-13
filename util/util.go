@@ -1,7 +1,6 @@
 package util
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -15,7 +14,7 @@ import (
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
-	"github.com/sdomino/scribble"
+	"github.com/ngoduykhanh/wireguard-ui/store"
 )
 
 // BuildClientConfig to create wireguard client config string
@@ -214,20 +213,15 @@ func GetIPFromCIDR(cidr string) (string, error) {
 }
 
 // GetAllocatedIPs to get all ip addresses allocated to clients and server
-func GetAllocatedIPs(ignoreClientID string) ([]string, error) {
+func GetAllocatedIPs(db store.IStore, ignoreClientID string) ([]string, error) {
 	allocatedIPs := make([]string, 0)
-
-	// initialize database directory
-	dir := "./db"
-	db, err := scribble.New(dir, nil)
-	if err != nil {
-		return nil, err
-	}
-
+	
 	// read server information
 	serverInterface := model.ServerInterface{}
-	if err := db.Read("server", "interfaces", &serverInterface); err != nil {
+	if server, err := db.GetServer(); err != nil {
 		return nil, err
+	} else{
+		serverInterface = *server.Interface
 	}
 
 	// append server's addresses to the result
@@ -240,7 +234,7 @@ func GetAllocatedIPs(ignoreClientID string) ([]string, error) {
 	}
 
 	// read client information
-	records, err := db.ReadAll("clients")
+	records, err := db.GetClients(false)
 	if err != nil {
 		return nil, err
 	}
@@ -248,9 +242,7 @@ func GetAllocatedIPs(ignoreClientID string) ([]string, error) {
 	// append client's addresses to the result
 	for _, f := range records {
 		client := model.Client{}
-		if err := json.Unmarshal([]byte(f), &client); err != nil {
-			return nil, err
-		}
+		client = *f.Client
 
 		if client.ID != ignoreClientID {
 			for _, cidr := range client.AllocatedIPs {
