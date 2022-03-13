@@ -177,14 +177,27 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 				log.Error("Cannot generate wireguard key pair: ", err)
 				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
 			}
-		    client.PrivateKey = key.String()
-		    client.PublicKey = key.PublicKey().String()
+			client.PrivateKey = key.String()
+			client.PublicKey = key.PublicKey().String()
 		} else {
 			_, err := wgtypes.ParseKey(client.PublicKey)
 			if err != nil {
 				log.Error("Cannot verify wireguard public key: ", err)
 				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard public key"})
 			}
+			// check for duplicates
+			clients, err := db.GetClients(false)
+			if err != nil {
+				log.Error("Cannot get clients for duplicate check")
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get clients for duplicate check"})
+			}
+			for _, other := range clients {
+				if other.Client.PublicKey == client.PublicKey {
+					log.Error("Duplicate Public Key")
+					return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Duplicate Public Key"})
+				}
+			}
+
 		}
 
 		if client.PresharedKey == "" {
