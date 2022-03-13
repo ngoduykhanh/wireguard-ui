@@ -20,8 +20,8 @@ CREATE TABLE `clients` (
   `name` varchar(255) NOT NULL,
   `use_server_dns` tinyint(1) NOT NULL,
   `enabled` tinyint(1) NOT NULL,
-  `created_at` varchar(255) NOT NULL,
-  `updated_at` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
   `email` varchar(255)
 );
 
@@ -43,15 +43,15 @@ CREATE TABLE `global_settings` (
   `mtu` varchar(255) NOT NULL,
   `persistent_keepalive` varchar(255) NOT NULL,
   `config_file_path` varchar(255) NOT NULL,
-  `updated_at` varchar(255) NOT NULL
+  `updated_at` datetime NOT NULL
 );
 
 CREATE TABLE `interfaces` (
   `id` int(11) NOT NULL,
   `listen_port` varchar(5) NOT NULL,
-  `updated_at` varchar(255) NOT NULL,
-  `post_up` varchar(255) NOT NULL,
-  `post_down` varchar(255) NOT NULL
+  `updated_at` datetime NOT NULL,
+  `post_up` varchar(255) DEFAULT "",
+  `post_down` varchar(255) DEFAULT ""
 );
 
 CREATE TABLE `interface_addresses` (
@@ -64,12 +64,12 @@ CREATE TABLE `keypair` (
   `id` int(11) NOT NULL,
   `private_key` varchar(255) NOT NULL,
   `public_key` varchar(255) NOT NULL,
-  `updated_at` varchar(255) NOT NULL
+  `updated_at` datetime NOT NULL
 );
 
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
+  `username` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL
 );
 
