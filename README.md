@@ -33,7 +33,7 @@ wireguard interface stats. See the `cap_add` and `network_mode` options on the d
 
 Set the `SESSION_SECRET` environment variable to a random value.
 
-In order to sent the wireguard configuration to clients via email, set the following environment variables:
+In order to send the wireguard configuration to clients via email, set the following environment variables:
 
 - using SendGrid API
 
@@ -55,6 +55,22 @@ EMAIL_FROM_ADDRESS: the sender's email address
 EMAIL_FROM_NAME: the sender's name
 ```
 
+In order to connect to a database, set the following environment
+variables:
+
+```
+DB_TYPE
+DB_HOST
+DB_PORT
+DB_DATABASE
+DB_USERNAME
+DB_PASSWORD
+DB_TLS: the TLS option
+```
+
+For details on the values that these variables should be set to, see the
+section for your desired database.
+
 ### Using binary file
 
 Download the binary file from the release and run it with command:
@@ -63,6 +79,61 @@ Download the binary file from the release and run it with command:
 ./wireguard-ui
 ```
 
+## Databases
+
+By default, all the data for the application is stored in JSON files in
+the `./db` directory. By using the `--db-type` command line option or by
+setting the `DB_TYPE` environment variable, you can choose to use a
+different backend. Note: for some backends, other options may need to be
+set.
+
+Backend options:
+
+| Value | Database | Other options |
+| ----- | -------- | ------------- |
+| jsondb | JSON files in `./db` | None |
+| mysql | MySQL or MariaDB server | `DB_HOST` `DB_PORT` `DB_DATABASE` `DB_USERNAME` `DB_PASSWORD` `DB_TLS` |
+
+### JSONDB
+
+When using the JSONDB database, all of the data is stored in separate
+JSON files in the `./db` directory. This is the default database and no
+special configuration is required. 
+
+### MySQL
+
+In order to use a MySQL or MariaDB server, you will first have to set
+the `DB_TYPE` environment variable to `mysql`. You should then specify
+the hostname or IP address of the database server using `DB_HOST` as
+well as the port on which the database server is listening, if it is
+different from the default of `3306`. `DB_DATABASE` is the name of the
+database that WireGuard-UI is to use. Please ensure that the database is
+empty before you start WireGuard-UI for the first time otherwise the
+tables will not be initialized properly. `DB_USERNAME` and `DB_PASSWORD`
+should contain the login details for a user with the following
+permissions for the database:
+
+* SELECT
+* INSERT
+* UPDATE
+* DELETE
+* CREATE
+* ALTER
+
+`DB_TLS` sets the TLS configuration for the database connection. It
+defaults to `false` and can be one of the following values:
+
+| Option | Description |
+| ------ | ----------- |
+| false | Never use TLS (default) |
+| true | Enable TLS / SSL encrypted connection to the server |
+| prefered | Use TLS when advertised by the server |
+| skip-verify | Use TLS, but don't check against a CA |
+
+After you have set these options, you should be able to start the
+WireGuard-UI server. The server will then initialize the database and
+insert the default configuration. If this process is interrupted, you
+will have to empty the database and restart the initialization.
 ## Auto restart WireGuard daemon
 WireGuard-UI only takes care of configuration generation. You can use systemd to watch for the changes and restart the service. Following is an example:
 
