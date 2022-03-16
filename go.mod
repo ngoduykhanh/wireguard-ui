@@ -6,6 +6,7 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/glendc/go-external-ip v0.0.0-20170425150139-139229dcdddd
 	github.com/go-playground/universal-translator v0.17.0 // indirect
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/sessions v1.2.0
 	github.com/jcelliott/lumber v0.0.0-20160324203708-dd349441af25 // indirect
 	github.com/labstack/echo-contrib v0.9.0

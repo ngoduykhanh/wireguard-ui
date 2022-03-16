@@ -12,7 +12,9 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
+	"github.com/ngoduykhanh/wireguard-ui/store"
 	"github.com/ngoduykhanh/wireguard-ui/store/jsondb"
+	"github.com/ngoduykhanh/wireguard-ui/store/mysqldb"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
@@ -41,6 +43,7 @@ var (
 	flagDBDatabase     string = "wireguard-ui"
 	flagDBUsername     string
 	flagDBPassword     string
+	flagDBTLS		   string = "false"
 )
 
 const (
@@ -67,12 +70,13 @@ func init() {
 	flag.StringVar(&flagEmailFrom, "email-from", util.LookupEnvOrString("EMAIL_FROM_ADDRESS", flagEmailFrom), "'From' email address.")
 	flag.StringVar(&flagEmailFromName, "email-from-name", util.LookupEnvOrString("EMAIL_FROM_NAME", flagEmailFromName), "'From' email name.")
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
-	flag.StringVar(&flagDBType, "db-type", util.LookupEnvOrString("DB_TYPE", flagDBType), "Type of database to use. One of: `jsondb`|`mysql`.")
+	flag.StringVar(&flagDBType, "db-type", util.LookupEnvOrString("DB_TYPE", flagDBType), "Type of database to use. [jsondb, mysql]")
 	flag.StringVar(&flagDBHost, "db-host", util.LookupEnvOrString("DB_HOST", flagDBHost), "Database host")
 	flag.IntVar(&flagDBPort, "db-port", util.LookupEnvOrInt("DB_PORT", flagDBPort), "Database port")
 	flag.StringVar(&flagDBDatabase, "db-database", util.LookupEnvOrString("DB_DATABASE", flagDBDatabase), "Database name")
 	flag.StringVar(&flagDBUsername, "db-username", util.LookupEnvOrString("DB_USERNAME", flagDBUsername), "Database username")
 	flag.StringVar(&flagDBPassword, "db-password", util.LookupEnvOrString("DB_PASSWORD", flagDBPassword), "Database password")
+	flag.StringVar(&flagDBTLS, "db-tls", util.LookupEnvOrString("DB_TLS", flagDBTLS), "TLS mode. [true, false, skip-verify, preferred]")
 	flag.Parse()
 
 	// update runtime config
@@ -94,6 +98,7 @@ func init() {
 	util.DBDatabase = flagDBDatabase
 	util.DBUsername = flagDBUsername
 	util.DBPassword = flagDBPassword
+	util.DBTLS = flagDBTLS
 
 	// print app information
 	fmt.Println("Wireguard UI")
@@ -107,18 +112,12 @@ func init() {
 	//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
 	fmt.Println("Email from\t:", util.EmailFrom)
 	fmt.Println("Email from name\t:", util.EmailFromName)
+	fmt.Println("Datastore\t:", util.DBType)
 	//fmt.Println("Session secret\t:", util.SessionSecret)
 
 }
 
 func main() {
-	db, err := jsondb.New("./db")
-	if err != nil {
-		panic(err)
-	}
-	if err := db.Init(); err != nil {
-		panic(err)
-	}
 	// set app extra data
 	extraData := make(map[string]string)
 	extraData["appVersion"] = appVersion
@@ -128,6 +127,23 @@ func main() {
 
 	// rice file server for assets. "assets" is the folder where the files come from.
 	assetHandler := http.FileServer(rice.MustFindBox("assets").HTTPBox())
+
+	// Configure database
+	var db store.IStore
+	var err error
+	switch util.DBType {
+	case "jsondb":
+		db, err = jsondb.New("./db")
+	case "mysql":
+		db, err = mysqldb.New(util.DBUsername, util.DBPassword, util.DBHost, util.DBPort, util.DBDatabase, util.DBTLS, tmplBox)
+	}
+
+	if err != nil {
+		panic(err)
+	}
+	if err := db.Init(); err != nil {
+		panic(err)
+	}
 
 	// register routes
 	app := router.New(tmplBox, extraData, util.SessionSecret)

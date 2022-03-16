@@ -22,6 +22,7 @@ var (
 	DBDatabase     string
 	DBUsername     string
 	DBPassword     string
+	DBTLS		   string
 )
 
 const (
