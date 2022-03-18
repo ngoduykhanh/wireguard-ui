@@ -31,7 +31,7 @@ function renderClientList(data) {
                                 <div class="btn-group">      
                                     <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal"
                                         data-target="#modal_qr_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Scan</button>
+                                        data-clientname="${obj.Client.name}" ${obj.QRCode != "" ? '' : ' disabled'}>Scan</button>
                                 </div>
                                 <div class="btn-group">      
                                     <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal"

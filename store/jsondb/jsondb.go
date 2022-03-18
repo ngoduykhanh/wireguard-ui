@@ -159,7 +159,7 @@ func (o *JsonDB) GetClients(hasQRCode bool) ([]model.ClientData, error) {
 		}
 
 		// generate client qrcode image in base64
-		if hasQRCode {
+		if hasQRCode && client.PrivateKey != "" {
 			server, _ := o.GetServer()
 			globalSettings, _ := o.GetGlobalSettings()
 
@@ -189,7 +189,7 @@ func (o *JsonDB) GetClientByID(clientID string, hasQRCode bool) (model.ClientDat
 	}
 
 	// generate client qrcode image in base64
-	if hasQRCode {
+	if hasQRCode && client.PrivateKey != "" {
 		server, _ := o.GetServer()
 		globalSettings, _ := o.GetGlobalSettings()
 
