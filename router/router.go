@@ -79,6 +79,11 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 		log.Fatal(err)
 	}
 
+	tmplWakeOnLanHostsString, err := tmplBox.String("wake_on_lan_hosts.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// create template list
 	templates := make(map[string]*template.Template)
 	templates["login.html"] = template.Must(template.New("login").Parse(tmplLoginString))
@@ -86,6 +91,7 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 	templates["server.html"] = template.Must(template.New("server").Parse(tmplBaseString + tmplServerString))
 	templates["global_settings.html"] = template.Must(template.New("global_settings").Parse(tmplBaseString + tmplGlobalSettingsString))
 	templates["status.html"] = template.Must(template.New("status").Parse(tmplBaseString + tmplStatusString))
+	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Parse(tmplBaseString + tmplWakeOnLanHostsString))
 
 	e.Logger.SetLevel(log.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())

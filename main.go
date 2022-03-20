@@ -3,12 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/labstack/echo/v4"
-
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
 	"github.com/ngoduykhanh/wireguard-ui/router"
@@ -147,6 +146,10 @@ func main() {
 	app.GET("/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)
 	app.GET("/api/suggest-client-ips", handler.SuggestIPAllocation(db), handler.ValidSession)
 	app.GET("/api/apply-wg-config", handler.ApplyServerConfig(db, tmplBox), handler.ValidSession)
+	app.GET("/wake_on_lan_hosts", handler.GetWakeOnLanHosts(db), handler.ValidSession)
+	app.POST("/wake_on_lan_host", handler.SaveWakeOnLanHost(db), handler.ValidSession)
+	app.DELETE("/wake_on_lan_host/:mac_address", handler.DeleteWakeOnHost(db), handler.ValidSession)
+	app.PUT("/wake_on_lan_host/:mac_address", handler.WakeOnHost(db), handler.ValidSession)
 
 	// servers other static files
 	app.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
