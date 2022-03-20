@@ -43,7 +43,7 @@ Wireguard Clients
                 <div class="modal-body">
                     <input type="hidden" id="e_client_id" name="e_client_id">
                     <div class="form-group">
-                        <label for="e_client_email" class="control-label">Email</label>
+                        <label for="e_client_email" class="control-label">Email address</label>
                         <input type="text" class="form-control" id="e_client_email" name="e_client_email">
                     </div>
                 </div>
@@ -471,7 +471,7 @@ Wireguard Clients
                 success: function (resp) {
                     const client = resp.Client;
 
-                    modal.find(".modal-title").text("Email Client " + client.name);
+                    modal.find(".modal-title").text("Send config to client " + client.name);
                     modal.find("#e_client_id").val(client.id);
                     modal.find("#e_client_email").val(client.email);
                 },
@@ -497,7 +497,7 @@ Wireguard Clients
                 success: function (resp) {
                     const client = resp.Client;
 
-                    modal.find(".modal-title").text("QR Code for " + client.name);
+                    modal.find(".modal-title").text("Scan QR Code for " + client.name + " profile");
                     QRCodeImg.attr('src', resp.QRCode).show();
                 },
                 error: function (jqXHR, exception) {
