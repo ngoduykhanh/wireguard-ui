@@ -26,6 +26,7 @@ const (
 	DefaultDNS                 = "1.1.1.1"
 	DefaultMTU                 = 1450
 	DefaultPersistentKeepalive = 15
+	DefaultForwardMark         = "0xca6c"
 	DefaultConfigFilePath      = "/etc/wireguard/wg0.conf"
 	UsernameEnvVar             = "WGUI_USERNAME"
 	PasswordEnvVar             = "WGUI_PASSWORD"

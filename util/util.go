@@ -55,11 +55,17 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		peerPersistentKeepalive = fmt.Sprintf("PersistentKeepalive = %d\n", setting.PersistentKeepalive)
 	}
 
+	forwardMark := ""
+	if setting.ForwardMark != DefaultForwardMark {
+		forwardMark = fmt.Sprintf("FwMark = %s\n", setting.ForwardMark)
+	}
+
 	// build the config as string
 	strConfig := "[Interface]\n" +
 		clientAddress +
 		clientPrivateKey +
 		clientDNS +
+		forwardMark +
 		"\n[Peer]\n" +
 		peerPublicKey +
 		peerPresharedKey +

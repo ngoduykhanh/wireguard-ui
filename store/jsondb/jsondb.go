@@ -90,6 +90,7 @@ func (o *JsonDB) Init() error {
 		globalSetting.DNSServers = []string{util.DefaultDNS}
 		globalSetting.MTU = util.DefaultMTU
 		globalSetting.PersistentKeepalive = util.DefaultPersistentKeepalive
+		globalSetting.ForwardMark = util.DefaultForwardMark
 		globalSetting.ConfigFilePath = util.DefaultConfigFilePath
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
