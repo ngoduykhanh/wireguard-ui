@@ -275,6 +275,12 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		)
 
 		if err != nil {
+			_, isMailError := err.(emailer.SmtpMailError)
+			if isMailError {
+				fmt.Println("SmtpMailError", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "An error occurred while sending mail. Contact your administrator."})
+			}
+
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
 		}
 

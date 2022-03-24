@@ -8,6 +8,26 @@ import (
 	mail "github.com/xhit/go-simple-mail/v2"
 )
 
+type SmtpMailErrorCode int
+
+const (
+	EmptyEmailFrom SmtpMailErrorCode = 1 + iota
+)
+
+type SmtpMailError struct {
+	Msg  string
+	Code SmtpMailErrorCode
+}
+
+func (err SmtpMailError) Error() string {
+	switch err.Code {
+	case EmptyEmailFrom:
+		return "-email-from is not specified or is empty.\nCheck the usage with --help."
+	default:
+		panic("Not Implemented")
+	}
+}
+
 type SmtpMail struct {
 	hostname   string
 	port       int
@@ -63,6 +83,10 @@ func (o *SmtpMail) Send(toName string, to string, subject string, content string
 
 	if err != nil {
 		return err
+	}
+
+	if o.from == "" {
+		return SmtpMailError{Msg: "", Code: EmptyEmailFrom}
 	}
 
 	email := mail.NewMSG()
