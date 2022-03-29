@@ -33,6 +33,8 @@ wireguard interface stats. See the `cap_add` and `network_mode` options on the d
 
 Set the `SESSION_SECRET` environment variable to a random value.
 
+To use custom `wg.conf` template set the `WG_CONF_TEMPLATE` environment variable to a path to such file. Make sure `wireguard-ui` will be able to work with it - use [default template](templates/wg.conf) for reference.
+
 In order to sent the wireguard configuration to clients via email, set the following environment variables:
 
 - using SendGrid API

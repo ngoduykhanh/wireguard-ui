@@ -15,6 +15,7 @@ services:
       - SESSION_SECRET
       - WGUI_USERNAME=alpha
       - WGUI_PASSWORD=this-unusual-password
+      - WG_CONF_TEMPLATE
     logging:
       driver: json-file
       options:
