@@ -98,7 +98,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c)},
+			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c), AllowedIPs: util.AllowedIPs},
 			"clientDataList": clientDataList,
 		})
 	}

@@ -17,6 +17,7 @@ var (
 	EmailContent   string
 	SessionSecret  []byte
 	ClientMTU      int
+	AllowedIPs     string
 )
 
 const (
