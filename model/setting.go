@@ -11,5 +11,7 @@ type GlobalSetting struct {
 	MTU                 int       `json:"mtu,string"`
 	PersistentKeepalive int       `json:"persistent_keepalive,string"`
 	ConfigFilePath      string    `json:"config_file_path"`
+	EmailSubject        string    `json:"email_subject"`
+	EmailContent        string    `json:"email_content"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }

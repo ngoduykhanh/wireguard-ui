@@ -254,6 +254,13 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		globalSettings, _ := db.GetGlobalSettings()
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
+		if globalSettings.EmailContent != "" {
+			emailContent = globalSettings.EmailContent
+		}
+		if globalSettings.EmailSubject != "" {
+			emailSubject = globalSettings.EmailSubject
+		}
+
 		cfg_att := emailer.Attachment{"wg0.conf", []byte(config)}
 		var attachments []emailer.Attachment
 		if clientData.Client.PrivateKey != "" {
@@ -609,6 +616,7 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 		}
 
 		globalSettings.UpdatedAt = time.Now().UTC()
+		globalSettings.EmailContent = base64.StdEncoding.EncodeToString([]byte(globalSettings.EmailContent))
 
 		// write config to the database
 		if err := db.SaveGlobalSettings(globalSettings); err != nil {
