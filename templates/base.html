@@ -175,7 +175,7 @@
                                     </i>
                                 </label>
                                 <input type="text" data-role="tagsinput" class="form-control" id="client_allowed_ips"
-                                    value="0.0.0.0/0">
+                                    value="{{if .baseData.AllowedIPs}} {{.baseData.AllowedIPs}} {{else}} 0.0.0.0/0 {{end}}">
                             </div>
                             <div class="form-group">
                                 <label for="client_extra_allowed_ips" class="control-label">Extra Allowed IPs

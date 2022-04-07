@@ -115,7 +115,18 @@ func (o *JsonDB) GetUser() (model.User, error) {
 // GetGlobalSettings func to query global settings from the database
 func (o *JsonDB) GetGlobalSettings() (model.GlobalSetting, error) {
 	settings := model.GlobalSetting{}
-	return settings, o.conn.Read("server", "global_settings", &settings)
+	err := o.conn.Read("server", "global_settings", &settings)
+	if err != nil {
+		return settings, err
+	}
+	if settings.EmailContent != "" {
+		str, err := base64.StdEncoding.DecodeString(settings.EmailContent)
+		if err != nil {
+			return settings, err
+		}
+		settings.EmailContent = string(str)
+	}
+	return settings, err
 }
 
 // GetServer func to query Server setting from the database

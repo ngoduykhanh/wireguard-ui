@@ -98,7 +98,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c)},
+			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c), AllowedIPs: util.AllowedIPs},
 			"clientDataList": clientDataList,
 		})
 	}
@@ -253,6 +253,13 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		server, _ := db.GetServer()
 		globalSettings, _ := db.GetGlobalSettings()
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
+
+		if globalSettings.EmailContent != "" {
+			emailContent = globalSettings.EmailContent
+		}
+		if globalSettings.EmailSubject != "" {
+			emailSubject = globalSettings.EmailSubject
+		}
 
 		cfg_att := emailer.Attachment{"wg0.conf", []byte(config)}
 		var attachments []emailer.Attachment
@@ -609,6 +616,7 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 		}
 
 		globalSettings.UpdatedAt = time.Now().UTC()
+		globalSettings.EmailContent = base64.StdEncoding.EncodeToString([]byte(globalSettings.EmailContent))
 
 		// write config to the database
 		if err := db.SaveGlobalSettings(globalSettings); err != nil {

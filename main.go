@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"
+
+	"github.com/labstack/echo/v4"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
@@ -34,6 +35,8 @@ var (
 	flagEmailFrom      string
 	flagEmailFromName  string = "WireGuard UI"
 	flagSessionSecret  string
+	flagClientMTU      int
+	flagAllowedIPs     string
 )
 
 const (
@@ -60,6 +63,8 @@ func init() {
 	flag.StringVar(&flagEmailFrom, "email-from", util.LookupEnvOrString("EMAIL_FROM_ADDRESS", flagEmailFrom), "'From' email address.")
 	flag.StringVar(&flagEmailFromName, "email-from-name", util.LookupEnvOrString("EMAIL_FROM_NAME", flagEmailFromName), "'From' email name.")
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
+	flag.IntVar(&flagClientMTU, "client-mtu", util.LookupEnvOrInt("CLIENT_MTU", flagClientMTU), "Client default MTU")
+	flag.StringVar(&flagAllowedIPs, "allowed-ips", util.LookupEnvOrString("ALLOWED_IPS", flagAllowedIPs), "List of default allowed IPs for the client")
 	flag.Parse()
 
 	// update runtime config
@@ -75,6 +80,8 @@ func init() {
 	util.EmailFrom = flagEmailFrom
 	util.EmailFromName = flagEmailFromName
 	util.SessionSecret = []byte(flagSessionSecret)
+	util.ClientMTU = flagClientMTU
+	util.AllowedIPs = flagAllowedIPs
 
 	// print app information
 	fmt.Println("Wireguard UI")
