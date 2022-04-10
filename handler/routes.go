@@ -53,7 +53,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 			// TODO: refresh the token
 			sess, _ := session.Get("session", c)
 			sess.Options = &sessions.Options{
-				Path:     "/",
+				Path:     util.BasePath,
 				MaxAge:   86400,
 				HttpOnly: true,
 			}
@@ -82,7 +82,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 func Logout() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clearSession(c)
-		return c.Redirect(http.StatusTemporaryRedirect, "/login")
+		return c.Redirect(http.StatusTemporaryRedirect, util.BasePath + "/login")
 	}
 }
 

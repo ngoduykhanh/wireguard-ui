@@ -35,6 +35,8 @@ Set the `SESSION_SECRET` environment variable to a random value.
 
 To use custom `wg.conf` template set the `WG_CONF_TEMPLATE` environment variable to a path to such file. Make sure `wireguard-ui` will be able to work with it - use [default template](templates/wg.conf) for reference.
 
+Set the `BASE_PATH` environment variable if you run wireguard-ui under a subpath of your reverse proxy virtual host (e.g. /wireguard).
+
 In order to sent the wireguard configuration to clients via email, set the following environment variables:
 
 - using SendGrid API

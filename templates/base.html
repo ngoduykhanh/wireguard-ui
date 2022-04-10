@@ -10,19 +10,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="static/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/plugins/fontawesome-free/css/all.min.css">
     <!-- iCheck for checkboxes and radio inputs -->
-    <link rel="stylesheet" href="static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
     <!-- Select2 -->
-    <link rel="stylesheet" href="static/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/plugins/select2/css/select2.min.css">
     <!-- Toastr -->
-    <link rel="stylesheet" href="static/plugins/toastr/toastr.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/plugins/toastr/toastr.min.css">
     <!-- Jquery Tags Input -->
-    <link rel="stylesheet" href="static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.css">
     <!-- Ionicons -->
     <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
     <!-- overlayScrollbars -->
-    <link rel="stylesheet" href="static/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="{{.basePath}}/static/dist/css/adminlte.min.css">
     <!-- Google Font: Source Sans Pro -->
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
 
@@ -65,7 +65,7 @@
                     data-target="#modal_apply_config"><i class="nav-icon fas fa-check"></i> Apply
                     Config</button>
                 {{if .baseData.CurrentUser}}
-                <button onclick="location.href='/logout';" style="margin-left: 0.5em;" type="button"
+                <button onclick="location.href='{{.basePath}}/logout';" style="margin-left: 0.5em;" type="button"
                     class="btn btn-outline-danger btn-sm"><i class="nav-icon fas fa-sign-out-alt"></i> Logout</button>
                 {{end}}
             </div>
@@ -75,7 +75,7 @@
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="/" class="brand-link">
+            <a href="{{.basePath}}" class="brand-link">
                 <span class="brand-text">&nbsp; WIREGUARD UI</span>
             </a>
 
@@ -96,7 +96,7 @@
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                         <li class="nav-header">MAIN</li>
                         <li class="nav-item">
-                            <a href="/" class="nav-link {{if eq .baseData.Active ""}}active{{end}}">
+                            <a href="{{.basePath}}" class="nav-link {{if eq .baseData.Active ""}}active{{end}}">
                                 <i class="nav-icon fas fa-user-secret"></i>
                                 <p>
                                     Wireguard Clients
@@ -104,7 +104,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/wg-server" class="nav-link {{if eq .baseData.Active "wg-server" }}active{{end}}">
+                            <a href="{{.basePath}}/wg-server" class="nav-link {{if eq .baseData.Active "wg-server" }}active{{end}}">
                                 <i class="nav-icon fas fa-server"></i>
                                 <p>
                                     Wireguard Server
@@ -113,7 +113,7 @@
                         </li>
                         <li class="nav-header">SETTINGS</li>
                         <li class="nav-item">
-                            <a href="/global-settings" class="nav-link {{if eq .baseData.Active "global-settings" }}active{{end}}">
+                            <a href="{{.basePath}}/global-settings" class="nav-link {{if eq .baseData.Active "global-settings" }}active{{end}}">
                                 <i class="nav-icon fas fa-cog"></i>
                                 <p>
                                     Global Settings
@@ -122,7 +122,7 @@
                         </li>
                         <li class="nav-header">UTILITIES</li>
                         <li class="nav-item">
-                            <a href="/status" class="nav-link {{if eq .baseData.Active "status" }}active{{end}}">
+                            <a href="{{.basePath}}/status" class="nav-link {{if eq .baseData.Active "status" }}active{{end}}">
                                 <i class="nav-icon fas fa-signal"></i>
                                 <p>
                                     Status
@@ -130,7 +130,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="/wake_on_lan_hosts" class="nav-link {{if eq .baseData.Active "wake_on_lan_hosts" }}active{{end}}">
+                            <a href="{{.basePath}}/wake_on_lan_hosts" class="nav-link {{if eq .baseData.Active "wake_on_lan_hosts" }}active{{end}}">
                                 <i class="nav-icon fas  fa-solid fa-power-off"></i>
                                 <p>
                                     WoL Hosts
@@ -295,21 +295,21 @@
     <!-- ./wrapper -->
 
     <!-- jQuery -->
-    <script src="static/plugins/jquery/jquery.min.js"></script>
+    <script src="{{.basePath}}/static/plugins/jquery/jquery.min.js"></script>
     <!-- Bootstrap 4 -->
-    <script src="static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="{{.basePath}}/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <!-- Select2 -->
-    <script src="static/plugins/select2/js/select2.full.min.js"></script>
+    <script src="{{.basePath}}/static/plugins/select2/js/select2.full.min.js"></script>
     <!-- jquery-validation -->
-    <script src="static/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="{{.basePath}}/static/plugins/jquery-validation/jquery.validate.min.js"></script>
     <!-- Toastr -->
-    <script src="static/plugins/toastr/toastr.min.js"></script>
+    <script src="{{.basePath}}/static/plugins/toastr/toastr.min.js"></script>
     <!-- Jquery Tags Input -->
-    <script src="static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.js"></script>
+    <script src="{{.basePath}}/static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.js"></script>
     <!-- AdminLTE App -->
-    <script src="static/dist/js/adminlte.min.js"></script>
+    <script src="{{.basePath}}/static/dist/js/adminlte.min.js"></script>
     <!-- Custom js -->
-    <script src="static/custom/js/helper.js"></script>
+    <script src="{{.basePath}}/static/custom/js/helper.js"></script>
     <script>
         // initialize all tooltips
         $(function () {
@@ -322,7 +322,7 @@
             $.ajax({
                 cache: false,
                 method: 'GET',
-                url: '/api/client/' + client_id,
+                url: '{{.basePath}}/api/client/' + client_id,
                 dataType: 'json',
                 contentType: "application/json",
                 success: function (resp) {
@@ -368,7 +368,7 @@
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '/new-client',
+                url: '{{.basePath}}/new-client',
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
@@ -393,7 +393,7 @@
             $.ajax({
                 cache: false,
                 method: 'GET',
-                url: '/api/suggest-client-ips',
+                url: '{{.basePath}}/api/suggest-client-ips',
                 dataType: 'json',
                 contentType: "application/json",
                 success: function(data) {
@@ -495,7 +495,7 @@
                 $.ajax({
                     cache: false,
                     method: 'GET',
-                    url: '/api/apply-wg-config',
+                    url: '{{.basePath}}/api/apply-wg-config',
                     dataType: 'json',
                     contentType: "application/json",
                     success: function(data) {

@@ -14,9 +14,9 @@ func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if !isValidSession(c) {
 			nextURL := c.Request().URL
 			if nextURL != nil && c.Request().Method == http.MethodGet {
-				return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("/login?next=%s", c.Request().URL))
+				return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf(util.BasePath + "/login?next=%s", c.Request().URL))
 			} else {
-				return c.Redirect(http.StatusTemporaryRedirect, "/login")
+				return c.Redirect(http.StatusTemporaryRedirect, util.BasePath + "/login")
 			}
 		}
 		return next(c)
