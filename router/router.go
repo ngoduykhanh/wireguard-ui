@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"reflect"
+	"strings"
 	"text/template"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -12,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
 // TemplateRegistry is a custom html/template renderer for Echo framework
@@ -33,6 +35,8 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 		for k, v := range t.extraData {
 			data.(map[string]interface{})[k] = v
 		}
+
+		data.(map[string]interface{})["client_defaults"] = util.ClientDefaultsFromEnv()
 	}
 
 	// login page does not need the base layout
@@ -85,13 +89,16 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 	}
 
 	// create template list
+	funcs := template.FuncMap{
+		"StringsJoin": strings.Join,
+	}
 	templates := make(map[string]*template.Template)
-	templates["login.html"] = template.Must(template.New("login").Parse(tmplLoginString))
-	templates["clients.html"] = template.Must(template.New("clients").Parse(tmplBaseString + tmplClientsString))
-	templates["server.html"] = template.Must(template.New("server").Parse(tmplBaseString + tmplServerString))
-	templates["global_settings.html"] = template.Must(template.New("global_settings").Parse(tmplBaseString + tmplGlobalSettingsString))
-	templates["status.html"] = template.Must(template.New("status").Parse(tmplBaseString + tmplStatusString))
-	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Parse(tmplBaseString + tmplWakeOnLanHostsString))
+	templates["login.html"] = template.Must(template.New("login").Funcs(funcs).Parse(tmplLoginString))
+	templates["clients.html"] = template.Must(template.New("clients").Funcs(funcs).Parse(tmplBaseString + tmplClientsString))
+	templates["server.html"] = template.Must(template.New("server").Funcs(funcs).Parse(tmplBaseString + tmplServerString))
+	templates["global_settings.html"] = template.Must(template.New("global_settings").Funcs(funcs).Parse(tmplBaseString + tmplGlobalSettingsString))
+	templates["status.html"] = template.Must(template.New("status").Funcs(funcs).Parse(tmplBaseString + tmplStatusString))
+	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Funcs(funcs).Parse(tmplBaseString + tmplWakeOnLanHostsString))
 
 	e.Logger.SetLevel(log.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())

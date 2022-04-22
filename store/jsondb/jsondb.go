@@ -57,8 +57,10 @@ func (o *JsonDB) Init() error {
 	// server's interface
 	if _, err := os.Stat(serverInterfacePath); os.IsNotExist(err) {
 		serverInterface := new(model.ServerInterface)
-		serverInterface.Addresses = []string{util.DefaultServerAddress}
-		serverInterface.ListenPort = util.DefaultServerPort
+		serverInterface.Addresses = util.LookupEnvOrStrings(util.ServerAddressesEnvVar, []string{util.DefaultServerAddress})
+		serverInterface.ListenPort = util.LookupEnvOrInt(util.ServerListenPortEnvVar, util.DefaultServerPort)
+		serverInterface.PostUp = util.LookupEnvOrString(util.ServerPostUpScriptEnvVar, "")
+		serverInterface.PostDown = util.LookupEnvOrString(util.ServerPostDownScriptEnvVar, "")
 		serverInterface.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "interfaces", serverInterface)
 	}
@@ -87,11 +89,11 @@ func (o *JsonDB) Init() error {
 
 		globalSetting := new(model.GlobalSetting)
 		globalSetting.EndpointAddress = publicInterface.IPAddress
-		globalSetting.DNSServers = []string{util.DefaultDNS}
-		globalSetting.MTU = util.DefaultMTU
-		globalSetting.PersistentKeepalive = util.DefaultPersistentKeepalive
-		globalSetting.ForwardMark = util.DefaultForwardMark
-		globalSetting.ConfigFilePath = util.DefaultConfigFilePath
+		globalSetting.DNSServers = util.LookupEnvOrStrings(util.DNSEnvVar, []string{util.DefaultDNS})
+		globalSetting.MTU = util.LookupEnvOrInt(util.MTUEnvVar, util.DefaultMTU)
+		globalSetting.PersistentKeepalive = util.LookupEnvOrInt(util.PersistentKeepaliveEnvVar, util.DefaultPersistentKeepalive)
+		globalSetting.ForwardMark = util.LookupEnvOrString(util.ForwardMarkEnvVar, util.DefaultForwardMark)
+		globalSetting.ConfigFilePath = util.LookupEnvOrString(util.ConfigFilePathEnvVar, util.DefaultConfigFilePath)
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
 	}
@@ -99,8 +101,8 @@ func (o *JsonDB) Init() error {
 	// user info
 	if _, err := os.Stat(userPath); os.IsNotExist(err) {
 		user := new(model.User)
-		user.Username = util.GetCredVar(util.UsernameEnvVar, util.DefaultUsername)
-		user.Password = util.GetCredVar(util.PasswordEnvVar, util.DefaultPassword)
+		user.Username = util.LookupEnvOrString(util.UsernameEnvVar, util.DefaultUsername)
+		user.Password = util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
 		o.conn.Write("server", "users", user)
 	}
 

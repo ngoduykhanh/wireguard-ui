@@ -175,7 +175,7 @@
                                     </i>
                                 </label>
                                 <input type="text" data-role="tagsinput" class="form-control" id="client_allowed_ips"
-                                    value="0.0.0.0/0">
+                                    value="{{ StringsJoin .client_defaults.AllowedIps "," }}">
                             </div>
                             <div class="form-group">
                                 <label for="client_extra_allowed_ips" class="control-label">Extra Allowed IPs
@@ -184,11 +184,11 @@
                                        client. These addresses will be included in 'AllowedIPs' of WG server config">
                                     </i>
                                 </label>
-                                <input type="text" data-role="tagsinput" class="form-control" id="client_extra_allowed_ips">
+                                <input type="text" data-role="tagsinput" class="form-control" id="client_extra_allowed_ips" value="{{ StringsJoin .client_defaults.ExtraAllowedIps "," }}">
                             </div>
                             <div class="form-group">
                                 <div class="icheck-primary d-inline">
-                                    <input type="checkbox" id="use_server_dns" checked>
+                                    <input type="checkbox" id="use_server_dns" {{ if .client_defaults.UseServerDNS }}checked{{ end }}>
                                     <label for="use_server_dns">
                                         Use server DNS
                                     </label>
@@ -196,7 +196,7 @@
                             </div>
                             <div class="form-group">
                                 <div class="icheck-primary d-inline">
-                                    <input type="checkbox" id="enabled" checked>
+                                    <input type="checkbox" id="enabled" {{ if .client_defaults.EnableAfterCreation }}checked{{ end }}>
                                     <label for="enabled">
                                         Enable after creation
                                     </label>
