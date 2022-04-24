@@ -56,6 +56,12 @@ Global Settings
                                     value="{{if .globalSettings.PersistentKeepalive }}{{ .globalSettings.PersistentKeepalive }}{{end}}">
                             </div>
                             <div class="form-group">
+                                <label for="forward_mark">Forward Mark</label>
+                                <input type="text" class="form-control" id="forward_mark"
+                                    name="forward_mark" placeholder="Forward Mark"
+                                    value="{{ .globalSettings.ForwardMark }}">
+                            </div>
+                            <div class="form-group">
                                 <label for="config_file_path">Wireguard Config File Path</label>
                                 <input type="text" class="form-control" id="config_file_path"
                                     name="config_file_path" placeholder="E.g. /etc/wireguard/wg0.conf"
@@ -141,8 +147,9 @@ Global Settings
             const dns_servers = $("#dns_servers").val().split(",");
             const mtu = $("#mtu").val();
             const persistent_keepalive = $("#persistent_keepalive").val();
+            const forward_mark = $("#forward_mark").val();
             const config_file_path = $("#config_file_path").val();
-            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "config_file_path": config_file_path};
+            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "forward_mark": forward_mark, "config_file_path": config_file_path};
 
             $.ajax({
                 cache: false,
@@ -211,6 +218,9 @@ Global Settings
                     },
                     config_file_path: {
                         required: true
+                    },
+                    forward_mark: {
+                        required: false
                     }
                 },
                 messages: {
