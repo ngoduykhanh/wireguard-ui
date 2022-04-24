@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"strconv"
@@ -359,10 +360,22 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
 func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, globalSettings model.GlobalSetting) error {
-	// read wg.conf template file to string
-	tmplWireguardConf, err := tmplBox.String("wg.conf")
-	if err != nil {
-		return err
+	var tmplWireguardConf string
+
+	// if set, read wg.conf template from WgConfTemplate
+	if len(WgConfTemplate) > 0 {
+		fileContentBytes, err := ioutil.ReadFile(WgConfTemplate)
+		if err != nil {
+			return err
+		}
+		tmplWireguardConf = string(fileContentBytes)
+	} else {
+		// read default wg.conf template file to string
+		fileContent, err := tmplBox.String("wg.conf")
+		if err != nil {
+			return err
+		}
+		tmplWireguardConf = fileContent
 	}
 
 	// parse the template

@@ -16,6 +16,7 @@ var (
 	EmailSubject   string
 	EmailContent   string
 	SessionSecret  []byte
+	WgConfTemplate string
 )
 
 const (
