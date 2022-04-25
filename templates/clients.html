@@ -189,7 +189,7 @@ Wireguard Clients
             $.ajax({
                 cache: false,
                 method: 'GET',
-                url: '/api/clients',
+                url: '{{.basePath}}/api/clients',
                 dataType: 'json',
                 contentType: "application/json",
                 success: function (data) {
@@ -207,7 +207,7 @@ Wireguard Clients
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '/client/set-status',
+                url: '{{.basePath}}/client/set-status',
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
@@ -276,7 +276,7 @@ Wireguard Clients
                 $.ajax({
                     cache: false,
                     method: 'POST',
-                    url: '/remove-client',
+                    url: '{{.basePath}}/remove-client',
                     dataType: 'json',
                     contentType: "application/json",
                     data: JSON.stringify(data),
@@ -339,7 +339,7 @@ Wireguard Clients
                 $.ajax({
                     cache: false,
                     method: 'GET',
-                    url: '/api/client/' + client_id,
+                    url: '{{.basePath}}/api/client/' + client_id,
                     dataType: 'json',
                     contentType: "application/json",
                     success: function (resp) {
@@ -384,7 +384,7 @@ Wireguard Clients
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '/email-client',
+                url: '{{.basePath}}/email-client',
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
@@ -431,7 +431,7 @@ Wireguard Clients
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '/update-client',
+                url: '{{.basePath}}/update-client',
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
@@ -465,7 +465,7 @@ Wireguard Clients
             $.ajax({
                 cache: false,
                 method: 'GET',
-                url: '/api/client/' + client_id,
+                url: '{{.basePath}}/api/client/' + client_id,
                 dataType: 'json',
                 contentType: "application/json",
                 success: function (resp) {
@@ -491,7 +491,7 @@ Wireguard Clients
             $.ajax({
                 cache: false,
                 method: 'GET',
-                url: '/api/client/' + client_id,
+                url: '{{.basePath}}/api/client/' + client_id,
                 dataType: 'json',
                 contentType: "application/json",
                 success: function (resp) {

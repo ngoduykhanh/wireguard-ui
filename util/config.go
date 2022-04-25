@@ -1,5 +1,7 @@
 package util
 
+import "strings"
+
 // Runtime config
 var (
 	DisableLogin   bool
@@ -17,6 +19,7 @@ var (
 	EmailContent   string
 	SessionSecret  []byte
 	WgConfTemplate string
+	BasePath       string
 )
 
 const (
@@ -32,3 +35,13 @@ const (
 	UsernameEnvVar             = "WGUI_USERNAME"
 	PasswordEnvVar             = "WGUI_PASSWORD"
 )
+
+func ParseBasePath(basePath string) string {
+	if !strings.HasPrefix(basePath, "/") {
+		basePath = "/" + basePath
+	}
+	if strings.HasSuffix(basePath, "/") {
+		basePath = strings.TrimSuffix(basePath, "/")
+	}
+	return basePath
+}

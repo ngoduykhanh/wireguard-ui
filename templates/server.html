@@ -136,7 +136,7 @@ Wireguard Server Settings
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '/wg-server/interfaces',
+                url: '{{.basePath}}/wg-server/interfaces',
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
@@ -210,7 +210,7 @@ Wireguard Server Settings
                 $.ajax({
                     cache: false,
                     method: 'POST',
-                    url: '/wg-server/keypair',
+                    url: '{{.basePath}}/wg-server/keypair',
                     dataType: 'json',
                     contentType: "application/json",
                     success: function(data) {

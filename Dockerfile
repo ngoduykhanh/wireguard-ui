@@ -13,8 +13,11 @@ RUN apk add --update --no-cache ${BUILD_DEPENDENCIES}
 
 WORKDIR /build
 
-# Add sources
-COPY . /build
+# Add dependencies
+COPY go.mod /build
+COPY go.sum /build
+COPY package.json /build
+COPY yarn.lock /build
 
 # Prepare assets
 RUN yarn install --pure-lockfile --production && \
@@ -39,12 +42,15 @@ RUN mkdir -p assets/plugins && \
     /build/node_modules/jquery-tags-input/ \
     assets/plugins/
 
-# Move custom assets
-RUN cp -r /build/custom/ assets/
-
 # Get go modules and build tool
 RUN go mod download && \
     go get github.com/GeertJohan/go.rice/rice
+
+# Add sources
+COPY . /build
+
+# Move custom assets
+RUN cp -r /build/custom/ assets/
 
 # Build
 RUN rice embed-go && \
