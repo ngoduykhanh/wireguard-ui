@@ -30,8 +30,41 @@ wireguard interface stats. See the `cap_add` and `network_mode` options on the d
 
 ### Environment Variables
 
+| Variable                    | Description                                                                                         |
+|-----------------------------|-----------------------------------------------------------------------------------------------------|
+| `SESSION_SECRET`            | Used to encrypt the session cookies. Set this to a random value.                                    |
+| `WGUI_USERNAME`             | The username for the login page. (default `admin`)                                                  |
+| `WGUI_PASSWORD`             | The password for the user on the login page. (default `admin`)                                      |
+| `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings. (default is your public IP address)           |
+| `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings. (default `1.1.1.1`)     |
+| `WGUI_MTU`                  | The default MTU used in global settings. (default `1450`)                                           |
+| `WGUI_PERSISTENT_KEEPALIVE` | The default persistent keepalive for WireGuard in global settings. (default `15`)                   |
+| `WGUI_FORWARD_MARK`         | The default WireGuard forward mark. (default `0xca6c`)                                              |
+| `WGUI_CONFIG_FILE_PATH`     | The default WireGuard config file path used in global settings. (default `/etc/wireguard/wg0.conf`) |
 
-Set the `SESSION_SECRET` environment variable to a random value.
+#### Defaults for server configuration
+
+These environment variables are used to control the default server settings used when initializing the database.
+
+| Variable                          | Description                                                                                                              |
+|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `WGUI_SERVER_INTERFACE_ADDRESSES` | The default interface addresses (comma-separated-list) for the WireGuard server configuration. (default `10.252.1.0/24`) |
+| `WGUI_SERVER_LISTEN_PORT`         | The default server listen port. (default `51820`)                                                                        |
+| `WGUI_SERVER_POST_UP_SCRIPT`      | The default server post-up script.                                                                                       |
+| `WGUI_SERVER_POST_DOWN_SCRIPT`    | The default server post-down script.                                                                                     |
+
+#### Defaults for new clients
+
+These environment variables are used to set the defaults used in `New Client` dialog.
+
+| Variable                                    | Description                                                                                                      |
+|---------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| `WGUI_DEFAULT_CLIENT_ALLOWED_IPS`           | Comma-separated-list of CIDRs for the `Allowed IPs` field. (default `0.0.0.0/0`)                                 |
+| `WGUI_DEFAULT_CLIENT_EXTRA_ALLOWED_IPS`     | Comma-separated-list of CIDRs for the `Extra Allowed IPs` field. (default empty)                                 |
+| `WGUI_DEFAULT_CLIENT_USE_SERVER_DNS`        | Boolean value [`0`, `f`, `F`, `false`, `False`, `FALSE`, `1`, `t`, `T`, `true`, `True`, `TRUE`] (default `true`) |
+| `WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION` | Boolean value [`0`, `f`, `F`, `false`, `False`, `FALSE`, `1`, `t`, `T`, `true`, `True`, `TRUE`] (default `true`) |
+
+#### Email configuration
 
 To use custom `wg.conf` template set the `WG_CONF_TEMPLATE` environment variable to a path to such file. Make sure `wireguard-ui` will be able to work with it - use [default template](templates/wg.conf) for reference.
 

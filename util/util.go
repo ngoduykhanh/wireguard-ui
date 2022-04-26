@@ -77,6 +77,17 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	return strConfig
 }
 
+// Read the default values for creating a new client from the environment or use sane defaults
+func ClientDefaultsFromEnv() model.ClientDefaults {
+	client_defaults := model.ClientDefaults{}
+	client_defaults.AllowedIps = LookupEnvOrStrings(DefaultClientAllowedIpsEnvVar, []string{"0.0.0.0/0"})
+	client_defaults.ExtraAllowedIps = LookupEnvOrStrings(DefaultClientExtraAllowedIpsEnvVar, []string{})
+	client_defaults.UseServerDNS = LookupEnvOrBool(DefaultClientUseServerDNSEnvVar, true)
+	client_defaults.EnableAfterCreation = LookupEnvOrBool(DefaultClientEnableAfterCreationEnvVar, true)
+
+	return client_defaults
+}
+
 // ValidateCIDR to validate a network CIDR
 func ValidateCIDR(cidr string) bool {
 	_, _, err := net.ParseCIDR(cidr)
@@ -440,10 +451,9 @@ func LookupEnvOrInt(key string, defaultVal int) int {
 	return defaultVal
 }
 
-// GetCredVar reads value from environment variable or returns fallback
-func GetCredVar(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
+func LookupEnvOrStrings(key string, defaultVal []string) []string {
+	if val, ok := os.LookupEnv(key); ok {
+		return strings.Split(val, ",")
 	}
-	return fallback
+	return defaultVal
 }
