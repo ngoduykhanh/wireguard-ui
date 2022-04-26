@@ -14,6 +14,14 @@ A web user interface to manage your WireGuard setup.
 
 Default username and password are `admin`.
 
+### Using binary file
+
+Download the binary file from the release and run it with command:
+
+```
+./wireguard-ui
+```
+
 ### Using docker compose
 
 You can take a look at this example of [docker-compose.yml](https://github.com/ngoduykhanh/wireguard-ui/blob/master/docker-compose.yaml). Please adjust volume mount points to work with your setup. Then run it like below:
@@ -24,25 +32,27 @@ docker-compose up
 
 Note:
 
-There is a Status option that needs docker to be able to access the network of the host in order to read the 
+- There is a Status option that needs docker to be able to access the network of the host in order to read the 
 wireguard interface stats. See the `cap_add` and `network_mode` options on the docker-compose.yaml
+- Because the `network_mode` is set to `host`, we don't need to specify the exposed ports. The app will listen on port `5000` by default.
 
 
-### Environment Variables
+## Environment Variables
 
-| Variable                    | Description                                                                                         |
-|-----------------------------|-----------------------------------------------------------------------------------------------------|
-| `SESSION_SECRET`            | Used to encrypt the session cookies. Set this to a random value.                                    |
-| `WGUI_USERNAME`             | The username for the login page. (default `admin`)                                                  |
-| `WGUI_PASSWORD`             | The password for the user on the login page. (default `admin`)                                      |
-| `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings. (default is your public IP address)           |
-| `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings. (default `1.1.1.1`)     |
-| `WGUI_MTU`                  | The default MTU used in global settings. (default `1450`)                                           |
-| `WGUI_PERSISTENT_KEEPALIVE` | The default persistent keepalive for WireGuard in global settings. (default `15`)                   |
-| `WGUI_FORWARD_MARK`         | The default WireGuard forward mark. (default `0xca6c`)                                              |
-| `WGUI_CONFIG_FILE_PATH`     | The default WireGuard config file path used in global settings. (default `/etc/wireguard/wg0.conf`) |
+| Variable                    | Description                                                                                                     |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------|
+| `SESSION_SECRET`            | Used to encrypt the session cookies. Set this to a random value.                                                |
+| `WGUI_USERNAME`             | The username for the login page. (default `admin`)                                                              |
+| `WGUI_PASSWORD`             | The password for the user on the login page. (default `admin`)                                                  |
+| `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings. (default is your public IP address)                       |
+| `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings. (default `1.1.1.1`)                 |
+| `WGUI_MTU`                  | The default MTU used in global settings. (default `1450`)                                                       |
+| `WGUI_PERSISTENT_KEEPALIVE` | The default persistent keepalive for WireGuard in global settings. (default `15`)                               |
+| `WGUI_FORWARD_MARK`         | The default WireGuard forward mark. (default `0xca6c`)                                                          |
+| `WGUI_CONFIG_FILE_PATH`     | The default WireGuard config file path used in global settings. (default `/etc/wireguard/wg0.conf`)             |
+| `BASE_PATH`                 | Set this variable if you run wireguard-ui under a subpath of your reverse proxy virtual host (e.g. /wireguard)) |
 
-#### Defaults for server configuration
+### Defaults for server configuration
 
 These environment variables are used to control the default server settings used when initializing the database.
 
@@ -53,7 +63,7 @@ These environment variables are used to control the default server settings used
 | `WGUI_SERVER_POST_UP_SCRIPT`      | The default server post-up script.                                                                                       |
 | `WGUI_SERVER_POST_DOWN_SCRIPT`    | The default server post-down script.                                                                                     |
 
-#### Defaults for new clients
+### Defaults for new clients
 
 These environment variables are used to set the defaults used in `New Client` dialog.
 
@@ -64,11 +74,9 @@ These environment variables are used to set the defaults used in `New Client` di
 | `WGUI_DEFAULT_CLIENT_USE_SERVER_DNS`        | Boolean value [`0`, `f`, `F`, `false`, `False`, `FALSE`, `1`, `t`, `T`, `true`, `True`, `TRUE`] (default `true`) |
 | `WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION` | Boolean value [`0`, `f`, `F`, `false`, `False`, `FALSE`, `1`, `t`, `T`, `true`, `True`, `TRUE`] (default `true`) |
 
-#### Email configuration
+### Email configuration
 
 To use custom `wg.conf` template set the `WG_CONF_TEMPLATE` environment variable to a path to such file. Make sure `wireguard-ui` will be able to work with it - use [default template](templates/wg.conf) for reference.
-
-Set the `BASE_PATH` environment variable if you run wireguard-ui under a subpath of your reverse proxy virtual host (e.g. /wireguard).
 
 In order to sent the wireguard configuration to clients via email, set the following environment variables:
 
@@ -90,14 +98,6 @@ SMTP_PASSWORD
 SMTP_AUTH_TYPE
 EMAIL_FROM_ADDRESS: the sender's email address
 EMAIL_FROM_NAME: the sender's name
-```
-
-### Using binary file
-
-Download the binary file from the release and run it with command:
-
-```
-./wireguard-ui
 ```
 
 ## Auto restart WireGuard daemon
