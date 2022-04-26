@@ -91,11 +91,11 @@ EMAIL_FROM_NAME: the sender's email address
 - using SMTP
 
 ```
-SMTP_HOSTNAME
-SMTP_PORT
-SMTP_USERNAME
-SMTP_PASSWORD
-SMTP_AUTH_TYPE
+SMTP_HOSTNAME: The SMTP ip address or hostname
+SMTP_PORT: the SMTP port
+SMTP_USERNAME: the SMTP username to authenticate
+SMTP_PASSWORD: the SMTP user password
+SMTP_AUTH_TYPE: the authentication type. Possible values: PLAIN, LOGIN, NONE
 EMAIL_FROM_ADDRESS: the sender's email address
 EMAIL_FROM_NAME: the sender's name
 ```
