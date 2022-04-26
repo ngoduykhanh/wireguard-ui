@@ -88,7 +88,7 @@ func (o *JsonDB) Init() error {
 		}
 
 		globalSetting := new(model.GlobalSetting)
-		globalSetting.EndpointAddress = publicInterface.IPAddress
+		globalSetting.EndpointAddress = util.LookupEnvOrString(util.EndpointAddressEnvVar, publicInterface.IPAddress)
 		globalSetting.DNSServers = util.LookupEnvOrStrings(util.DNSEnvVar, []string{util.DefaultDNS})
 		globalSetting.MTU = util.LookupEnvOrInt(util.MTUEnvVar, util.DefaultMTU)
 		globalSetting.PersistentKeepalive = util.LookupEnvOrInt(util.PersistentKeepaliveEnvVar, util.DefaultPersistentKeepalive)
