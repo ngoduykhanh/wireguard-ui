@@ -58,7 +58,7 @@ Connected Peers
                 <td title="{{ $peer.ReceivedBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.ReceivedBytes }}))</script></td>
                 <td title="{{ $peer.TransmitBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.TransmitBytes }}))</script></td>
                 <td>{{ if $peer.Connected }}✓{{end}}</td>
-                <td>{{ $peer.LastHandshakeTime.Format "2006-01-02 15:04:05 UTC" }}</td>
+                <td>{{ $peer.LastHandshakeTime.Format "2006-01-02 15:04:05 MST" }}</td>
                </tr>
               {{ end }}
               </tbody>
