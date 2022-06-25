@@ -9,6 +9,9 @@ A web user interface to manage your WireGuard setup.
 - Authentication
 - Manage extra client's information (name, email, etc)
 - Retrieve configs using QR code / file
+- start wireguard interface / rules
+- stop wireguard interface / rules
+- restart wireguard interface / rules
 
 ## Run WireGuard-UI
 
@@ -32,8 +35,8 @@ docker-compose up
 
 Note:
 
-- There is a Status option that needs docker to be able to access the network of the host in order to read the 
-wireguard interface stats. See the `cap_add` and `network_mode` options on the docker-compose.yaml
+- There is a Status option that needs docker to be able to access the network of the host in order to read the
+  wireguard interface stats. See the `cap_add` and `network_mode` options on the docker-compose.yaml
 - Because the `network_mode` is set to `host`, we don't need to specify the exposed ports. The app will listen on port `5000` by default.
 
 
@@ -98,72 +101,6 @@ SMTP_PASSWORD: the SMTP user password
 SMTP_AUTH_TYPE: the authentication type. Possible values: PLAIN, LOGIN, NONE
 EMAIL_FROM_ADDRESS: the sender's email address
 EMAIL_FROM_NAME: the sender's name
-```
-
-## Auto restart WireGuard daemon
-WireGuard-UI only takes care of configuration generation. You can use systemd to watch for the changes and restart the service. Following is an example:
-
-### systemd
-
-Create /etc/systemd/system/wgui.service
-
-```
-[Unit]
-Description=Restart WireGuard
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/systemctl restart wg-quick@wg0.service
-
-[Install]
-RequiredBy=wgui.path
-```
-
-Create /etc/systemd/system/wgui.path
-
-```
-[Unit]
-Description=Watch /etc/wireguard/wg0.conf for changes
-
-[Path]
-PathModified=/etc/wireguard/wg0.conf
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Apply it
-
-```
-systemctl enable wgui.{path,service}
-systemctl start wgui.{path,service}
-```
-
-### openrc
-
-Create and `chmod +x` /usr/local/bin/wgui
-```
-#!/bin/sh
-wg-quick down wg0
-wg-quick up wg0
-```
-
-Create and `chmod +x` /etc/init.d/wgui
-```
-#!/sbin/openrc-run
-
-command=/sbin/inotifyd
-command_args="/usr/local/bin/wgui /etc/wireguard/wg0.conf:w"
-pidfile=/run/${RC_SVCNAME}.pid
-command_background=yes
-```
-
-Apply it
-
-```
-rc-service wgui start
-rc-update add wgui default
 ```
 
 ## Build

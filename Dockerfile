@@ -13,11 +13,8 @@ RUN apk add --update --no-cache ${BUILD_DEPENDENCIES}
 
 WORKDIR /build
 
-# Add dependencies
-COPY go.mod /build
-COPY go.sum /build
-COPY package.json /build
-COPY yarn.lock /build
+# Add sources
+COPY . /build
 
 # Prepare assets
 RUN yarn install --pure-lockfile --production && \
@@ -42,34 +39,30 @@ RUN mkdir -p assets/plugins && \
     /build/node_modules/jquery-tags-input/ \
     assets/plugins/
 
+# Move custom assets
+RUN cp -r /build/custom/ assets/
+
 # Get go modules and build tool
 RUN go mod download && \
     go get github.com/GeertJohan/go.rice/rice
-
-# Add sources
-COPY . /build
-
-# Move custom assets
-RUN cp -r /build/custom/ assets/
 
 # Build
 RUN rice embed-go && \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o wg-ui .
 
 # Release stage
-FROM alpine:3.11
+FROM ubuntu:22.04
+ENV TZ=Europe/Minsk
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN addgroup -S wgui && \
-    adduser -S -D -G wgui wgui
-
-RUN apk --no-cache add ca-certificates
+RUN apt-get update && apt upgrade -y && apt-get install -y wireguard wireguard-tools iptables iproute2
 
 WORKDIR /app
 
 RUN mkdir -p db
 
 # Copy binary files
-COPY --from=builder --chown=wgui:wgui /build/wg-ui /app
+COPY --from=builder /build/wg-ui /app
 
 RUN chmod +x wg-ui
 

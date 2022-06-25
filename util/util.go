@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"text/template"
@@ -373,6 +374,52 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 	}
 
 	return true, nil
+}
+
+// StopWireguard Server to stop Wireguard server with config. e.g. wg0.conf
+func StopWireGuardServer(globalSettings model.GlobalSetting) error {
+
+    app := "wg-quick"
+
+    arg0 := "down"
+    arg1 := globalSettings.ConfigFilePath
+
+
+    cmd := exec.Command(app, arg0, arg1)
+    stdout, err := cmd.Output()
+
+    if err != nil {
+        fmt.Println(err.Error())
+        return err
+    }
+
+    // Print the output
+    fmt.Println(string(stdout))
+
+	return nil
+}
+
+// StartWireguard Server to start Wireguard server with config. e.g. wg0.conf
+func StartWireGuardServer(globalSettings model.GlobalSetting) error {
+
+    app := "wg-quick"
+
+    arg0 := "up"
+    arg1 := globalSettings.ConfigFilePath
+
+
+    cmd := exec.Command(app, arg0, arg1)
+    stdout, err := cmd.Output()
+
+    if err != nil {
+        fmt.Println(err.Error())
+        return err
+    }
+
+    // Print the output
+    fmt.Println(string(stdout))
+
+	return nil
 }
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf

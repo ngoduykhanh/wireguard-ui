@@ -686,6 +686,82 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 	}
 }
 
+// Restart Wireguard Server handler to stop Wireguard server
+func RestartServer(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		settings, err := db.GetGlobalSettings()
+		if err != nil {
+			log.Error("Cannot get global settings: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
+		}
+
+		// Stop Server
+		err = util.StopWireGuardServer(settings)
+		if err != nil {
+			log.Error("Cannot stop server: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot stop server: %v", err),
+			})
+		}
+
+		// Start Server
+		err = util.StartWireGuardServer(settings)
+		if err != nil {
+			log.Error("Cannot start server: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot start server: %v", err),
+			})
+		}
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Restarted Wireguard Server successfully"})
+	}
+}
+
+// Stop Wireguard Server handler to stop Wireguard server
+func StopServer(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		settings, err := db.GetGlobalSettings()
+		if err != nil {
+			log.Error("Cannot get global settings: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
+		}
+
+		// Stop Server
+		err = util.StopWireGuardServer(settings)
+		if err != nil {
+			log.Error("Cannot stop server: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot stop server: %v", err),
+			})
+		}
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Stopped Wireguard Server successfully"})
+	}
+}
+
+// Start Wireguard Server handler to start Wireguard server
+func StartServer(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		settings, err := db.GetGlobalSettings()
+		if err != nil {
+			log.Error("Cannot get global settings: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
+		}
+
+		// Start Server
+		err = util.StartWireGuardServer(settings)
+		if err != nil {
+			log.Error("Cannot start server: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot start server: %v", err),
+			})
+		}
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Started Wireguard Server successfully"})
+	}
+}
+
 // ApplyServerConfig handler to write config file and restart Wireguard server
 func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 	return func(c echo.Context) error {

@@ -17,7 +17,7 @@ import (
 
 var (
 	// command-line banner information
-	appVersion = "development"
+	appVersion = "development-2"
 	gitCommit  = "N/A"
 	gitRef     = "N/A"
 	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
@@ -97,6 +97,7 @@ func init() {
 	//fmt.Println("Session secret\t:", util.SessionSecret)
 	fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
 	fmt.Println("Base path\t:", util.BasePath + "/")
+
 }
 
 func main() {
@@ -154,6 +155,9 @@ func main() {
 	app.GET(util.BasePath + "/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)
 	app.GET(util.BasePath + "/api/suggest-client-ips", handler.SuggestIPAllocation(db), handler.ValidSession)
 	app.GET(util.BasePath + "/api/apply-wg-config", handler.ApplyServerConfig(db, tmplBox), handler.ValidSession)
+	app.GET(util.BasePath + "/api/start-wg", handler.StartServer(db, tmplBox), handler.ValidSession)
+	app.GET(util.BasePath + "/api/stop-wg", handler.StopServer(db, tmplBox), handler.ValidSession)
+	app.GET(util.BasePath + "/api/restart-wg", handler.RestartServer(db, tmplBox), handler.ValidSession)
 	app.GET(util.BasePath + "/wake_on_lan_hosts", handler.GetWakeOnLanHosts(db), handler.ValidSession)
 	app.POST(util.BasePath + "/wake_on_lan_host", handler.SaveWakeOnLanHost(db), handler.ValidSession)
 	app.DELETE(util.BasePath + "/wake_on_lan_host/:mac_address", handler.DeleteWakeOnHost(db), handler.ValidSession)

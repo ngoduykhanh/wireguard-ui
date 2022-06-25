@@ -64,6 +64,12 @@
                 <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
                     data-target="#modal_apply_config"><i class="nav-icon fas fa-check"></i> Apply
                     Config</button>
+                <button id="start-wg" style="margin-left: 0.5em;" type="button"
+                        class="btn btn-outline-success btn-sm"><i class="nav-icon fa fa-play"></i> Start</button>
+                <button id="stop-wg" style="margin-left: 0.5em;" type="button"
+                        class="btn btn-outline-danger btn-sm"><i class="nav-icon fa fa-stop"></i> Stop</button>
+                <button id="restart-wg" style="margin-left: 0.5em;" type="button"
+                        class="btn btn-outline-success btn-sm"><i class="nav-icon fa fa-retweet"></i> Restart</button>
                 {{if .baseData.CurrentUser}}
                 <button onclick="location.href='{{.basePath}}/logout';" style="margin-left: 0.5em;" type="button"
                     class="btn btn-outline-danger btn-sm"><i class="nav-icon fas fa-sign-out-alt"></i> Logout</button>
@@ -246,7 +252,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Do you want to write config file and restart WireGuard server?</p>
+                        <p>Do you want to write config file?</p>
                     </div>
                     <div class="modal-footer justify-content-between">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -486,6 +492,66 @@
                 $("#client_allocated_ips").importTags('');
                 $("#client_extra_allowed_ips").importTags('');
                 updateIPAllocationSuggestion();
+            });
+        });
+
+        // restart wireguard button event
+        $(document).ready(function () {
+            $("#restart-wg").click(function () {
+                $.ajax({
+                    cache: false,
+                    method: 'GET',
+                    url: '{{.basePath}}/api/restart-wg',
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function(data) {
+                        toastr.success('Wireguard restart successfully');
+                    },
+                    error: function(jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
+            });
+        });
+
+        // stop wireguard button event
+        $(document).ready(function () {
+            $("#stop-wg").click(function () {
+                $.ajax({
+                    cache: false,
+                    method: 'GET',
+                    url: '{{.basePath}}/api/stop-wg',
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function(data) {
+                        toastr.success('Wireguard stopped successfully');
+                    },
+                    error: function(jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
+            });
+        });
+
+        // start wireguard button event
+        $(document).ready(function () {
+            $("#start-wg").click(function () {
+                $.ajax({
+                    cache: false,
+                    method: 'GET',
+                    url: '{{.basePath}}/api/start-wg',
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function(data) {
+                        toastr.success('Wireguard started successfully');
+                    },
+                    error: function(jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
             });
         });
 
