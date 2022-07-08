@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -49,7 +50,9 @@ func Login(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot query user from DB"})
 		}
 
-		if user.Username == dbuser.Username && user.Password == dbuser.Password {
+		userCorrect := subtle.ConstantTimeCompare([]byte(user.Username), []byte(dbuser.Username)) == 1
+		passwordCorrect := subtle.ConstantTimeCompare([]byte(user.Password), []byte(dbuser.Password)) == 1
+		if userCorrect && passwordCorrect {
 			// TODO: refresh the token
 			sess, _ := session.Get("session", c)
 			sess.Options = &sessions.Options{
@@ -82,7 +85,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 func Logout() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clearSession(c)
-		return c.Redirect(http.StatusTemporaryRedirect, util.BasePath + "/login")
+		return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/login")
 	}
 }
 
