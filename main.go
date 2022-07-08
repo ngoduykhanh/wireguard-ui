@@ -96,7 +96,7 @@ func init() {
 	fmt.Println("Email from name\t:", util.EmailFromName)
 	//fmt.Println("Session secret\t:", util.SessionSecret)
 	fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
-	fmt.Println("Base path\t:", util.BasePath + "/")
+	fmt.Println("Base path\t:", util.BasePath+"/")
 }
 
 func main() {
@@ -124,8 +124,8 @@ func main() {
 	app.GET(util.BasePath, handler.WireGuardClients(db), handler.ValidSession)
 
 	if !util.DisableLogin {
-		app.GET(util.BasePath + "/login", handler.LoginPage())
-		app.POST(util.BasePath + "/login", handler.Login(db))
+		app.GET(util.BasePath+"/login", handler.LoginPage())
+		app.POST(util.BasePath+"/login", handler.Login(db))
 	}
 
 	var sendmail emailer.Emailer
@@ -135,32 +135,32 @@ func main() {
 		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom)
 	}
 
-	app.GET(util.BasePath + "/_health", handler.Health())
-	app.GET(util.BasePath + "/logout", handler.Logout(), handler.ValidSession)
-	app.POST(util.BasePath + "/new-client", handler.NewClient(db), handler.ValidSession)
-	app.POST(util.BasePath + "/update-client", handler.UpdateClient(db), handler.ValidSession)
-	app.POST(util.BasePath + "/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession)
-	app.POST(util.BasePath + "/client/set-status", handler.SetClientStatus(db), handler.ValidSession)
-	app.POST(util.BasePath + "/remove-client", handler.RemoveClient(db), handler.ValidSession)
-	app.GET(util.BasePath + "/download", handler.DownloadClient(db), handler.ValidSession)
-	app.GET(util.BasePath + "/wg-server", handler.WireGuardServer(db), handler.ValidSession)
-	app.POST(util.BasePath + "/wg-server/interfaces", handler.WireGuardServerInterfaces(db), handler.ValidSession)
-	app.POST(util.BasePath + "/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession)
-	app.GET(util.BasePath + "/global-settings", handler.GlobalSettings(db), handler.ValidSession)
-	app.POST(util.BasePath + "/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession)
-	app.GET(util.BasePath + "/status", handler.Status(db), handler.ValidSession)
-	app.GET(util.BasePath + "/api/clients", handler.GetClients(db), handler.ValidSession)
-	app.GET(util.BasePath + "/api/client/:id", handler.GetClient(db), handler.ValidSession)
-	app.GET(util.BasePath + "/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)
-	app.GET(util.BasePath + "/api/suggest-client-ips", handler.SuggestIPAllocation(db), handler.ValidSession)
-	app.GET(util.BasePath + "/api/apply-wg-config", handler.ApplyServerConfig(db, tmplBox), handler.ValidSession)
-	app.GET(util.BasePath + "/wake_on_lan_hosts", handler.GetWakeOnLanHosts(db), handler.ValidSession)
-	app.POST(util.BasePath + "/wake_on_lan_host", handler.SaveWakeOnLanHost(db), handler.ValidSession)
-	app.DELETE(util.BasePath + "/wake_on_lan_host/:mac_address", handler.DeleteWakeOnHost(db), handler.ValidSession)
-	app.PUT(util.BasePath + "/wake_on_lan_host/:mac_address", handler.WakeOnHost(db), handler.ValidSession)
+	app.GET(util.BasePath+"/_health", handler.Health())
+	app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
+	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/update-client", handler.UpdateClient(db), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/client/set-status", handler.SetClientStatus(db), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/remove-client", handler.RemoveClient(db), handler.ValidSession, handler.ContentTypeJson)
+	app.GET(util.BasePath+"/download", handler.DownloadClient(db), handler.ValidSession)
+	app.GET(util.BasePath+"/wg-server", handler.WireGuardServer(db), handler.ValidSession)
+	app.POST(util.BasePath+"/wg-server/interfaces", handler.WireGuardServerInterfaces(db), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession, handler.ContentTypeJson)
+	app.GET(util.BasePath+"/global-settings", handler.GlobalSettings(db), handler.ValidSession)
+	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession, handler.ContentTypeJson)
+	app.GET(util.BasePath+"/status", handler.Status(db), handler.ValidSession)
+	app.GET(util.BasePath+"/api/clients", handler.GetClients(db), handler.ValidSession)
+	app.GET(util.BasePath+"/api/client/:id", handler.GetClient(db), handler.ValidSession)
+	app.GET(util.BasePath+"/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)
+	app.GET(util.BasePath+"/api/suggest-client-ips", handler.SuggestIPAllocation(db), handler.ValidSession)
+	app.POST(util.BasePath+"/api/apply-wg-config", handler.ApplyServerConfig(db, tmplBox), handler.ValidSession, handler.ContentTypeJson)
+	app.GET(util.BasePath+"/wake_on_lan_hosts", handler.GetWakeOnLanHosts(db), handler.ValidSession)
+	app.POST(util.BasePath+"/wake_on_lan_host", handler.SaveWakeOnLanHost(db), handler.ValidSession, handler.ContentTypeJson)
+	app.DELETE(util.BasePath+"/wake_on_lan_host/:mac_address", handler.DeleteWakeOnHost(db), handler.ValidSession, handler.ContentTypeJson)
+	app.PUT(util.BasePath+"/wake_on_lan_host/:mac_address", handler.WakeOnHost(db), handler.ValidSession, handler.ContentTypeJson)
 
 	// servers other static files
-	app.GET(util.BasePath + "/static/*", echo.WrapHandler(http.StripPrefix(util.BasePath + "/static/", assetHandler)))
+	app.GET(util.BasePath+"/static/*", echo.WrapHandler(http.StripPrefix(util.BasePath+"/static/", assetHandler)))
 
 	app.Logger.Fatal(app.Start(util.BindAddress))
 }
