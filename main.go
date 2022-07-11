@@ -4,7 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/store"
 	"net/http"
+	"os"
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
@@ -118,6 +121,9 @@ func main() {
 	// rice file server for assets. "assets" is the folder where the files come from.
 	assetHandler := http.FileServer(rice.MustFindBox("assets").HTTPBox())
 
+	// create the wireguard config on start, if it doesn't exist
+	initServerConfig(db, tmplBox)
+
 	// register routes
 	app := router.New(tmplBox, extraData, util.SessionSecret)
 
@@ -163,4 +169,32 @@ func main() {
 	app.GET(util.BasePath + "/static/*", echo.WrapHandler(http.StripPrefix(util.BasePath + "/static/", assetHandler)))
 
 	app.Logger.Fatal(app.Start(util.BindAddress))
+}
+
+func initServerConfig(db store.IStore, tmplBox *rice.Box) {
+	settings, err := db.GetGlobalSettings()
+	if err != nil {
+		log.Fatalf("Cannot get global settings: ", err)
+	}
+
+	if _, err := os.Stat(settings.ConfigFilePath); err == nil {
+		// file exists, don't overwrite it implicitly
+		return
+	}
+
+	server, err := db.GetServer()
+	if err != nil {
+		log.Fatalf("Cannot get server config: ", err)
+	}
+
+	clients, err := db.GetClients(false)
+	if err != nil {
+		log.Fatalf("Cannot get client config: ", err)
+	}
+
+	// write config file
+	err = util.WriteWireGuardServerConfig(tmplBox, server, clients, settings)
+	if err != nil {
+		log.Fatalf("Cannot create server config: ", err)
+	}
 }
