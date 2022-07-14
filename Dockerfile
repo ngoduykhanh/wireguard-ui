@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.16.7-alpine3.14 as builder
+FROM golang:1.17-alpine3.16 as builder
 LABEL maintainer="Khanh Ngo <k@ndk.name"
 
 ARG TARGETOS=linux
@@ -57,7 +57,7 @@ RUN rice embed-go && \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o wg-ui .
 
 # Release stage
-FROM alpine:3.11
+FROM alpine:3.16
 
 RUN addgroup -S wgui && \
     adduser -S -D -G wgui wgui
