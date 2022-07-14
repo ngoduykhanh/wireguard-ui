@@ -25,7 +25,7 @@ Connected Peers
       if (pow == units.length-1) break
     }
 
-    return parseFloat(temporal.toFixed(3)) + units[pow]+"Bytes"
+    return parseFloat(temporal.toFixed(2)) + units[pow]+"B"
   }
 </script>
 <section class="content">
@@ -42,10 +42,10 @@ Connected Peers
                   <th scope="col">Name</th>
                   <th scope="col">Email</th>
                   <th scope="col">Public Key</th>
-                  <th scope="col">ReceiveBytes</th>
-                  <th scope="col">TransmitBytes</th>
+                  <th scope="col">Received</th>
+                  <th scope="col">Transmitted</th>
                   <th scope="col">Connected (Approximation)</th>
-                  <th scope="col">LastHandshakeTime</th>
+                  <th scope="col">Last Handshake</th>
                 </tr>
               </thead>
               <tbody>
@@ -57,8 +57,8 @@ Connected Peers
                 <td>{{ $peer.PublicKey }}</td>
                 <td title="{{ $peer.ReceivedBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.ReceivedBytes }}))</script></td>
                 <td title="{{ $peer.TransmitBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.TransmitBytes }}))</script></td>
-                <td>{{ $peer.Connected }}</td>
-                <td>{{ $peer.LastHandshakeTime }}</td>
+                <td>{{ if $peer.Connected }}✓{{end}}</td>
+                <td>{{ $peer.LastHandshakeTime.Format "2006-01-02 15:04:05 MST" }}</td>
                </tr>
               {{ end }}
               </tbody>
