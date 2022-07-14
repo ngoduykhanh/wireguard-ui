@@ -494,7 +494,7 @@
             $("#apply_config_confirm").click(function () {
                 $.ajax({
                     cache: false,
-                    method: 'GET',
+                    method: 'POST',
                     url: '{{.basePath}}/api/apply-wg-config',
                     dataType: 'json',
                     contentType: "application/json",
