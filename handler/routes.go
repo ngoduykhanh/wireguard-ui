@@ -51,7 +51,18 @@ func Login(db store.IStore) echo.HandlerFunc {
 		}
 
 		userCorrect := subtle.ConstantTimeCompare([]byte(user.Username), []byte(dbuser.Username)) == 1
-		passwordCorrect := subtle.ConstantTimeCompare([]byte(user.Password), []byte(dbuser.Password)) == 1
+
+		var passwordCorrect bool
+		if dbuser.PasswordHash != "" {
+			match, err := util.VerifyHash(dbuser.PasswordHash, user.Password)
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify password"})
+			}
+			passwordCorrect = match
+		} else {
+			passwordCorrect = subtle.ConstantTimeCompare([]byte(user.Password), []byte(dbuser.Password)) == 1
+		}
+
 		if userCorrect && passwordCorrect {
 			// TODO: refresh the token
 			sess, _ := session.Get("session", c)

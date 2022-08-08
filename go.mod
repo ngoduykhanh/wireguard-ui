@@ -19,6 +19,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.10.0+incompatible
 	github.com/skip2/go-qrcode v0.0.0-20191027152451-9434209cb086
 	github.com/xhit/go-simple-mail/v2 v2.10.0
+	golang.org/x/crypto v0.0.0-20210503195802-e9a32991a82e
 	//golang.zx2c4.com/wireguard v0.0.20200121 // indirect
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20210803171230-4253848d036c
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
