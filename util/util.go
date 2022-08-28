@@ -28,6 +28,14 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	if client.UseServerDNS {
 		clientDNS = fmt.Sprintf("DNS = %s\n", strings.Join(setting.DNSServers, ","))
 	}
+	clientPostUp := ""
+	if strings.TrimSpace(client.PostUp) != "" {
+		clientPostUp = fmt.Sprintf("PostUp = %s\n", client.PostUp)
+	}
+	clientPostDown := ""
+	if strings.TrimSpace(client.PostDown) != "" {
+		clientPostDown = fmt.Sprintf("PostDown = %s\n", client.PostDown)
+	}
 
 	// Peer section
 	peerPublicKey := fmt.Sprintf("PublicKey = %s\n", server.KeyPair.PublicKey)
@@ -67,6 +75,8 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		clientPrivateKey +
 		clientDNS +
 		forwardMark +
+		clientPostUp +
+		clientPostDown +
 		"\n[Peer]\n" +
 		peerPublicKey +
 		peerPresharedKey +

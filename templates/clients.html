@@ -110,6 +110,14 @@ Wireguard Clients
                                id="_client_extra_allowed_ips">
                     </div>
                     <div class="form-group">
+                        <label for="_client_post_up">Post Up Script</label>
+                        <input type="text" class="form-control" id="_client_post_up"placeholder="Post Up Script">
+                    </div>
+                    <div class="form-group">
+                        <label for="_client_post_down">Post Down Script</label>
+                        <input type="text" class="form-control" id="_client_post_down" placeholder="Post Down Script">
+                    </div>
+                    <div class="form-group">
                         <div class="icheck-primary d-inline">
                             <input type="checkbox" id="_use_server_dns">
                             <label for="_use_server_dns">
@@ -365,6 +373,9 @@ Wireguard Clients
                             modal.find("#_client_extra_allowed_ips").addTag(obj);
                         });
 
+                        modal.find("#_client_post_up").val(client.post_up);
+                        modal.find("#_client_post_down").val(client.post_down);
+
                         modal.find("#_use_server_dns").prop("checked", client.use_server_dns);
                         modal.find("#_enabled").prop("checked", client.enabled);
                     },
@@ -408,6 +419,8 @@ Wireguard Clients
             const email = $("#_client_email").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
             const allowed_ips = $("#_client_allowed_ips").val().split(",");
+            const post_up = $("#_client_post_up").val();
+            const post_down = $("#_client_post_down").val();
             let use_server_dns = false;
             let extra_allowed_ips = [];
 
@@ -426,7 +439,8 @@ Wireguard Clients
             }
 
             const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
-                "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled};
+                "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "post_up": post_up, "post_down": post_down,
+                "use_server_dns": use_server_dns, "enabled": enabled};
 
             $.ajax({
                 cache: false,

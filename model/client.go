@@ -17,6 +17,8 @@ type Client struct {
 	ExtraAllowedIPs []string  `json:"extra_allowed_ips"`
 	UseServerDNS    bool      `json:"use_server_dns"`
 	Enabled         bool      `json:"enabled"`
+	PostUp          string    `json:"post_up"`
+	PostDown        string    `json:"post_down"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

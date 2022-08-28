@@ -331,6 +331,8 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
 		client.ExtraAllowedIPs = _client.ExtraAllowedIPs
+		client.PostUp = _client.PostUp
+		client.PostDown = _client.PostDown
 		client.UpdatedAt = time.Now().UTC()
 
 		// write to the database
