@@ -33,6 +33,7 @@ var (
 	flagSmtpPassword   string
 	flagSmtpAuthType   string = "None"
 	flagSmtpNoTLSCheck bool   = false
+	flagSmtpEncryption string = "STARTTLS"
 	flagSendgridApiKey string
 	flagEmailFrom      string
 	flagEmailFromName  string = "WireGuard UI"
@@ -60,7 +61,8 @@ func init() {
 	flag.StringVar(&flagSmtpUsername, "smtp-username", util.LookupEnvOrString("SMTP_USERNAME", flagSmtpUsername), "SMTP Password")
 	flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword), "SMTP Password")
 	flag.BoolVar(&flagSmtpNoTLSCheck, "smtp-no-tls-check", util.LookupEnvOrBool("SMTP_NO_TLS_CHECK", flagSmtpNoTLSCheck), "Disable TLS verification for SMTP. This is potentially dangerous.")
-	flag.StringVar(&flagSmtpAuthType, "smtp-auth-type", util.LookupEnvOrString("SMTP_AUTH_TYPE", flagSmtpAuthType), "SMTP Auth Type : Plain or None.")
+	flag.StringVar(&flagSmtpEncryption, "smtp-use-ssl", util.LookupEnvOrString("SMTP_USE_SSL", flagSmtpEncryption), "SMTP Encryption : SSL, SSLTLS or STARTTLS (by default)")
+	flag.StringVar(&flagSmtpAuthType, "smtp-auth-type", util.LookupEnvOrString("SMTP_AUTH_TYPE", flagSmtpAuthType), "SMTP Auth Type : Plain, Login or None.")
 	flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey), "Your sendgrid api key.")
 	flag.StringVar(&flagEmailFrom, "email-from", util.LookupEnvOrString("EMAIL_FROM_ADDRESS", flagEmailFrom), "'From' email address.")
 	flag.StringVar(&flagEmailFromName, "email-from-name", util.LookupEnvOrString("EMAIL_FROM_NAME", flagEmailFromName), "'From' email name.")
@@ -78,6 +80,7 @@ func init() {
 	util.SmtpPassword = flagSmtpPassword
 	util.SmtpAuthType = flagSmtpAuthType
 	util.SmtpNoTLSCheck = flagSmtpNoTLSCheck
+	util.SmtpEncryption = flagSmtpEncryption
 	util.SendgridApiKey = flagSendgridApiKey
 	util.EmailFrom = flagEmailFrom
 	util.EmailFromName = flagEmailFromName
@@ -138,7 +141,7 @@ func main() {
 	if util.SendgridApiKey != "" {
 		sendmail = emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
 	} else {
-		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom)
+		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
 	}
 
 	app.GET(util.BasePath+"/_health", handler.Health())

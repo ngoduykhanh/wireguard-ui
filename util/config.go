@@ -11,6 +11,7 @@ var (
 	SmtpUsername   string
 	SmtpPassword   string
 	SmtpNoTLSCheck bool
+	SmtpEncryption string
 	SmtpAuthType   string
 	SendgridApiKey string
 	EmailFrom      string
