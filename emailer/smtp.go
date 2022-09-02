@@ -37,6 +37,8 @@ func encryptionType(encryptionType string) mail.Encryption {
 		return mail.EncryptionSSL
 	case "SSLTLS":
 		return mail.EncryptionSSLTLS
+	case "TLS":
+		return mail.EncryptionTLS
 	default:
 		return mail.EncryptionSTARTTLS
 	}
