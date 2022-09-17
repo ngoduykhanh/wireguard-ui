@@ -7,12 +7,14 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	rice "github.com/GeertJohan/go.rice"
+	"github.com/asaskevich/govalidator"
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
@@ -38,16 +40,10 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 
 	peerAllowedIPs := fmt.Sprintf("AllowedIPs = %s\n", strings.Join(client.AllowedIPs, ","))
 
-	desiredHost := setting.EndpointAddress
-	desiredPort := server.Interface.ListenPort
-	if strings.Contains(desiredHost, ":") {
-		split := strings.Split(desiredHost, ":")
-		desiredHost = split[0]
-		if n, err := strconv.Atoi(split[1]); err == nil {
-			desiredPort = n
-		} else {
-			log.Error("Endpoint appears to be incorrectly formatted: ", err)
-		}
+	desiredHost, desiredPort, err := ParseEndpoint(setting.EndpointAddress, server.Interface.ListenPort)
+
+	if err != nil {
+		log.Error("Endpoint appears to be incorrectly formatted: ", err)
 	}
 	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d\n", desiredHost, desiredPort)
 
@@ -456,4 +452,53 @@ func LookupEnvOrStrings(key string, defaultVal []string) []string {
 		return strings.Split(val, ",")
 	}
 	return defaultVal
+}
+
+func RemoveIPv6Brackets(host string) string {
+	ipv6 := host
+	if matchBrackets, _ := regexp.MatchString(`^\[.*\]$`, ipv6); matchBrackets == true {
+		ipv6 = strings.Replace(ipv6, "[", "", -1)
+		ipv6 = strings.Replace(ipv6, "]", "", -1)
+
+		//only remove brackets if valid ipv6 address
+		if govalidator.IsIPv6(ipv6) {
+			return ipv6
+		}
+	}
+	return host
+}
+
+func AddIPv6Brackets(host string) string {
+	ipv6 := host
+
+	//only add brackets if valid ipv6 address
+	if govalidator.IsIPv6(ipv6) {
+		ipv6 = "[" + ipv6 + "]"
+		return ipv6
+	}
+	return host
+}
+
+func ParseEndpoint(host string, defaultPort int) (string, int, error) {
+	port := defaultPort
+
+	//remove brackets from standalone IPv6 address
+	host = RemoveIPv6Brackets(host)
+
+	if govalidator.IsIPv4(host) || govalidator.IsIPv6(host) || govalidator.IsDNSName(host) {
+		return AddIPv6Brackets(host), port, nil
+	}
+
+	//check if specific port contained
+	host, strPort, err := net.SplitHostPort(host)
+	if err != nil {
+		return "", -1, errors.New("invalid Host")
+	}
+
+	port, err = strconv.Atoi(strPort)
+	if err != nil || port > 65535 || port < 0 {
+		return "", -1, errors.New("invalid Port")
+	}
+
+	return AddIPv6Brackets(host), port, nil
 }
