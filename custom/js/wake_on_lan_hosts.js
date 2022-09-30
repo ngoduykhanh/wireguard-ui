@@ -1,3 +1,8 @@
+var base_url = jQuery(".brand-link").attr('href');
+if (base_url.substring(base_url.length - 1, base_url.length) != "/")
+    base_url = base_url + "/";
+
+
 const wake_on_lan_new_template = '<div class="col-sm-4" id="{{ .Id }}">\n' +
     '\t<div class="info-box">\n' +
     '\t\t<div class="info-box-content">\n' +
@@ -24,9 +29,9 @@ const wake_on_lan_new_template = '<div class="col-sm-4" id="{{ .Id }}">\n' +
     '</div>';
 
 jQuery(function ($) {
-   $.validator.addMethod('mac', function (value, element) {
-       return this.optional(element) || /^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$/.test(value);
-   }, 'Please enter a valid MAC Address.(uppercase letters and numbers, : only) ex: 00:AB:12:EF:DD:AA');
+    $.validator.addMethod('mac', function (value, element) {
+        return this.optional(element) || /^([0-9A-F]{2}[:]){5}([0-9A-F]{2})$/.test(value);
+    }, 'Please enter a valid MAC Address.(uppercase letters and numbers, : only) ex: 00:AB:12:EF:DD:AA');
 });
 
 jQuery.each(["put", "delete"], function (i, method) {
@@ -42,7 +47,8 @@ jQuery.each(["put", "delete"], function (i, method) {
             type: method,
             dataType: type,
             data: data,
-            success: callback
+            success: callback,
+            contentType: 'application/json'
         });
     };
 });
@@ -55,7 +61,7 @@ jQuery(function ($) {
 jQuery(function ($) {
     $('.btn-outline-success').click(function () {
         const $this = $(this);
-        $.put('/wake_on_lan_host/' + $this.data('mac-address'), function (result) {
+        $.put(base_url + 'wake_on_lan_host/' + $this.data('mac-address'), function (result) {
             $this.parents('.info-box').find('.latest-used').text(prettyDateTime(result));
         });
     });
@@ -76,7 +82,7 @@ jQuery(function ($) {
 
     $remove_client_confirm.click(function () {
         const macAddress = $remove_client_confirm.val().replaceAll(":", "-");
-        $.delete('/wake_on_lan_host/' + macAddress);
+        $.delete(base_url + 'wake_on_lan_host/' + macAddress);
         $('#' + macAddress).remove();
 
         $modal_remove_wake_on_lan_host.modal('hide');
@@ -84,10 +90,18 @@ jQuery(function ($) {
 });
 
 jQuery(function ($) {
-   $('.latest-used').each(function () {
-       const $this = $(this);
-       $this.text(prettyDateTime($this.text().trim()));
-   });
+    $('.latest-used').each(function () {
+        const $this = $(this);
+        const timeText = $this.text().trim();
+        try {
+            if (timeText != "Unused") {
+                $this.text(prettyDateTime(timeText));
+            }
+        } catch (ex) {
+            console.log(timeText);
+            throw ex;
+        }
+    });
 });
 
 jQuery(function ($) {
@@ -109,7 +123,7 @@ jQuery(function ($) {
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '/wake_on_lan_host',
+                url: base_url + 'wake_on_lan_host',
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
