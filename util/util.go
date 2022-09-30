@@ -28,6 +28,10 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	if client.UseServerDNS {
 		clientDNS = fmt.Sprintf("DNS = %s\n", strings.Join(setting.DNSServers, ","))
 	}
+	clientMTU := ""
+	if setting.MTU > 0 {
+		clientMTU = fmt.Sprintf("MTU = %d\n", setting.MTU)
+	}
 
 	// Peer section
 	peerPublicKey := fmt.Sprintf("PublicKey = %s\n", server.KeyPair.PublicKey)
@@ -66,6 +70,7 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		clientAddress +
 		clientPrivateKey +
 		clientDNS +
+		clientMTU +
 		forwardMark +
 		"\n[Peer]\n" +
 		peerPublicKey +
