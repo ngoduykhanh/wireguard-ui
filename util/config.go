@@ -34,6 +34,7 @@ const (
 	DefaultConfigFilePath                  = "/etc/wireguard/wg0.conf"
 	UsernameEnvVar                         = "WGUI_USERNAME"
 	PasswordEnvVar                         = "WGUI_PASSWORD"
+	PasswordHashEnvVar                     = "WGUI_PASSWORD_HASH"
 	EndpointAddressEnvVar                  = "WGUI_ENDPOINT_ADDRESS"
 	DNSEnvVar                              = "WGUI_DNS"
 	MTUEnvVar                              = "WGUI_MTU"

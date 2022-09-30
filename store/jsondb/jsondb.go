@@ -102,7 +102,15 @@ func (o *JsonDB) Init() error {
 	if _, err := os.Stat(userPath); os.IsNotExist(err) {
 		user := new(model.User)
 		user.Username = util.LookupEnvOrString(util.UsernameEnvVar, util.DefaultUsername)
-		user.Password = util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
+		user.PasswordHash = util.LookupEnvOrString(util.PasswordHashEnvVar, "")
+		if user.PasswordHash == "" {
+			plaintext := util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
+			hash, err := util.HashPassword(plaintext)
+			if err != nil {
+				return err
+			}
+			user.PasswordHash = hash
+		}
 		o.conn.Write("server", "users", user)
 	}
 
