@@ -20,7 +20,7 @@ type SmtpMail struct {
 }
 
 func authType(authType string) mail.AuthType {
-	switch authType {
+	switch strings.ToUpper(authType) {
 	case "PLAIN":
 		return mail.AuthPlain
 	case "LOGIN":
