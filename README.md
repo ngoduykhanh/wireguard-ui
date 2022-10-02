@@ -43,7 +43,8 @@ wireguard interface stats. See the `cap_add` and `network_mode` options on the d
 |-----------------------------|-----------------------------------------------------------------------------------------------------------------|
 | `SESSION_SECRET`            | Used to encrypt the session cookies. Set this to a random value.                                                |
 | `WGUI_USERNAME`             | The username for the login page. (default `admin`)                                                              |
-| `WGUI_PASSWORD`             | The password for the user on the login page. (default `admin`)                                                  |
+| `WGUI_PASSWORD`             | The password for the user on the login page. Will be hashed automatically. (default `admin`)                    |
+| `WGUI_PASSWORD_HASH`        | The password hash for the user on the login page. (alternative to `WGUI_PASSWORD`)                              |
 | `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings. (default is your public IP address)                       |
 | `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings. (default `1.1.1.1`)                 |
 | `WGUI_MTU`                  | The default MTU used in global settings. (default `1450`)                                                       |

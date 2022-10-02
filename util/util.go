@@ -28,6 +28,11 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	if client.UseServerDNS {
 		clientDNS = fmt.Sprintf("DNS = %s\n", strings.Join(setting.DNSServers, ","))
 	}
+	clientMTU := ""
+	if setting.MTU > 0 {
+		clientMTU = fmt.Sprintf("MTU = %d\n", setting.MTU)
+	}
+
 	clientPostUp := ""
 	if strings.TrimSpace(client.PostUp) != "" {
 		clientPostUp = fmt.Sprintf("PostUp = %s\n", client.PostUp)
@@ -74,6 +79,7 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		clientAddress +
 		clientPrivateKey +
 		clientDNS +
+		clientMTU +
 		forwardMark +
 		clientPostUp +
 		clientPostDown +
