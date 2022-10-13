@@ -376,7 +376,7 @@
                     $("#modal_new_client").modal('hide');
                     toastr.success('Created new client successfully');
                     // Update the home page (clients page) after adding successfully
-                    if (window.location.pathname === "/") {
+                    if (window.location.pathname === "{{.basePath}}/") {
                         populateClient(resp.id);
                     }
                 },
