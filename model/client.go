@@ -26,3 +26,10 @@ type ClientData struct {
 	Client *Client
 	QRCode string
 }
+
+type QRCodeSettings struct {
+	Enabled       bool
+	IncludeDNS    bool
+	IncludeFwMark bool
+	IncludeMTU    bool
+}
