@@ -68,7 +68,18 @@ Wireguard Clients
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
+            <div class="modal-body">
+                <input type="hidden" id="qr_client_id" name="qr_client_id">
+                <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
+                <div class="form-group">
+                    <div class="icheck-primary d-inline">
+                        <input type="checkbox" id="qr_include_fwmark" onchange="regenerateQRCode()">
+                        <label for="qr_include_fwmark">
+                            Include FwMark
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
         <!-- /.modal-content -->
     </div>
@@ -376,6 +387,37 @@ Wireguard Clients
             });
         });
 
+        // regenerateQRCode function for regenerating QR Code adding/removing some parts of configuration because of compatibility issues with some clients
+        function regenerateQRCode() {
+            const client_id = $("#qr_client_id").val();
+            const QRCodeImg = $("#qr_code");
+            let include_fwmark = false;
+            if ($("#qr_include_fwmark").is(':checked')){
+                include_fwmark = true;
+            }
+            QRCodeImg.hide();
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '{{.basePath}}/api/client/' + client_id,
+                data: { 
+                    qrCodeIncludeFwMark: include_fwmark
+                },
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (resp) {
+                    const client = resp.Client;
+
+                    $(".modal-title").text("Scan QR Code for " + client.name + " profile");
+                    QRCodeImg.attr('src', resp.QRCode).show();
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
         // submitEmailClient function for sending an email to the client with the configuration
         function submitEmailClient() {
             const client_id = $("#e_client_id").val();
@@ -453,7 +495,7 @@ Wireguard Clients
             const formId = $(form).attr('id');
             if (formId === "frm_edit_client") {
                 submitEditClient();
-            }else if (formId === "frm_email_client") {
+            } else if (formId === "frm_email_client") {
                 submitEmailClient();
             }
         }
@@ -486,31 +528,14 @@ Wireguard Clients
             let modal = $(this);
             const button = $(event.relatedTarget);
             const client_id = button.data('clientid');
-            const QRCodeImg = modal.find("#qr_code");
-            QRCodeImg.hide();
-            $.ajax({
-                cache: false,
-                method: 'GET',
-                url: '{{.basePath}}/api/client/' + client_id,
-                dataType: 'json',
-                contentType: "application/json",
-                success: function (resp) {
-                    const client = resp.Client;
 
-                    modal.find(".modal-title").text("Scan QR Code for " + client.name + " profile");
-                    QRCodeImg.attr('src', resp.QRCode).show();
-                },
-                error: function (jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
-                }
-            });
+            modal.find("#qr_client_id").val(client_id);
+            regenerateQRCode();
         });
 
         $(document).ready(function () {
             $.validator.setDefaults({
                 submitHandler: function (form) {
-                    //submitEditClient();
                     submitHandler(form);
                 }
             });
@@ -563,6 +588,7 @@ Wireguard Clients
                     $(element).removeClass('is-invalid');
                 }
             });
+            // 
         });
     </script>
 {{end}}
