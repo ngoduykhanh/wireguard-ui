@@ -81,14 +81,18 @@ func (o *JsonDB) Init() error {
 
 	// global settings
 	if _, err := os.Stat(globalSettingPath); os.IsNotExist(err) {
-
-		publicInterface, err := util.GetPublicIP()
-		if err != nil {
-			return err
+		endpointAddress := util.LookupEnvOrString(util.EndpointAddressEnvVar, "")
+		if endpointAddress == "" {
+			// automatically find an external IP address
+			publicInterface, err := util.GetPublicIP()
+			if err != nil {
+				return err
+			}
+			endpointAddress = publicInterface.IPAddress
 		}
 
 		globalSetting := new(model.GlobalSetting)
-		globalSetting.EndpointAddress = util.LookupEnvOrString(util.EndpointAddressEnvVar, publicInterface.IPAddress)
+		globalSetting.EndpointAddress = endpointAddress
 		globalSetting.DNSServers = util.LookupEnvOrStrings(util.DNSEnvVar, []string{util.DefaultDNS})
 		globalSetting.MTU = util.LookupEnvOrInt(util.MTUEnvVar, util.DefaultMTU)
 		globalSetting.PersistentKeepalive = util.LookupEnvOrInt(util.PersistentKeepaliveEnvVar, util.DefaultPersistentKeepalive)
