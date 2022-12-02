@@ -172,7 +172,7 @@ Global Settings
         }
 
         function updateEndpointSuggestionIP() {
-            $.getJSON("/api/machine-ips", null, function(data) {
+            $.getJSON("{{.basePath}}/api/machine-ips", null, function(data) {
                 $("#ip_suggestion option").remove();
                 $.each(data, function(index, item) {
                     $("#ip_suggestion").append(
