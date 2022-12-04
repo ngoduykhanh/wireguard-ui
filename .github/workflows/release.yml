@@ -7,7 +7,7 @@ on:
 jobs:
   releases-matrix:
     name: Release Go Binary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         # build and publish in parallel: linux/386, linux/amd64, darwin/386, darwin/amd64

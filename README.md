@@ -97,6 +97,7 @@ SMTP_PORT: the SMTP port
 SMTP_USERNAME: the SMTP username to authenticate
 SMTP_PASSWORD: the SMTP user password
 SMTP_AUTH_TYPE: the authentication type. Possible values: PLAIN, LOGIN, NONE
+SMTP_ENCRYPTION: the encryption method. Possible values: SSL, SSLTLS, TLS or STARTTLS (default)
 EMAIL_FROM_ADDRESS: the sender's email address
 EMAIL_FROM_NAME: the sender's name
 ```

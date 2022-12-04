@@ -138,7 +138,15 @@ func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		clientID := c.Param("id")
-		clientData, err := db.GetClientByID(clientID, true)
+		qrCodeIncludeFwMark := c.QueryParam("qrCodeIncludeFwMark")
+		qrCodeSettings := model.QRCodeSettings{
+			Enabled:       true,
+			IncludeDNS:    true,
+			IncludeFwMark: qrCodeIncludeFwMark == "true",
+			IncludeMTU:    true,
+		}
+
+		clientData, err := db.GetClientByID(clientID, qrCodeSettings)
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
@@ -257,7 +265,13 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		c.Bind(&payload)
 		// TODO validate email
 
-		clientData, err := db.GetClientByID(payload.ID, true)
+		qrCodeSettings := model.QRCodeSettings{
+			Enabled:       true,
+			IncludeDNS:    true,
+			IncludeFwMark: true,
+			IncludeMTU:    true,
+		}
+		clientData, err := db.GetClientByID(payload.ID, qrCodeSettings)
 		if err != nil {
 			log.Errorf("Cannot generate client id %s config file for downloading: %v", payload.ID, err)
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
@@ -304,7 +318,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		c.Bind(&_client)
 
 		// validate client existence
-		clientData, err := db.GetClientByID(_client.ID, false)
+		clientData, err := db.GetClientByID(_client.ID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
@@ -370,7 +384,7 @@ func SetClientStatus(db store.IStore) echo.HandlerFunc {
 		clientID := data["id"].(string)
 		status := data["status"].(bool)
 
-		clientdata, err := db.GetClientByID(clientID, false)
+		clientdata, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
 		}
@@ -395,7 +409,7 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Missing clientid parameter"})
 		}
 
-		clientData, err := db.GetClientByID(clientID, false)
+		clientData, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			log.Errorf("Cannot generate client id %s config file for downloading: %v", clientID, err)
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})

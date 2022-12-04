@@ -70,7 +70,7 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	}
 
 	forwardMark := ""
-	if setting.ForwardMark != "" && setting.ForwardMark != DefaultForwardMark {
+	if setting.ForwardMark != "" {
 		forwardMark = fmt.Sprintf("FwMark = %s\n", setting.ForwardMark)
 	}
 
