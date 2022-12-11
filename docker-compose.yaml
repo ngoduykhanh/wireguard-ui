@@ -16,6 +16,8 @@ services:
       - WGUI_USERNAME=alpha
       - WGUI_PASSWORD=this-unusual-password
       - WG_CONF_TEMPLATE
+      - WGUI_MANAGE_START=false
+      - WGUI_MANAGE_RESTART=false
     logging:
       driver: json-file
       options:
