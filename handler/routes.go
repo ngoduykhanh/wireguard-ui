@@ -256,7 +256,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// EmailClient handler to sent the configuration via email
+// EmailClient handler to send the configuration via email
 func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailContent string) echo.HandlerFunc {
 	type clientIdEmailPayload struct {
 		ID    string `json:"id"`
@@ -285,17 +285,17 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		globalSettings, _ := db.GetGlobalSettings()
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
-		cfg_att := emailer.Attachment{"wg0.conf", []byte(config)}
+		cfgAtt := emailer.Attachment{"wg0.conf", []byte(config)}
 		var attachments []emailer.Attachment
 		if clientData.Client.PrivateKey != "" {
 			qrdata, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(clientData.QRCode, "data:image/png;base64,"))
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "decoding: " + err.Error()})
 			}
-			qr_att := emailer.Attachment{"wg.png", qrdata}
-			attachments = []emailer.Attachment{cfg_att, qr_att}
+			qrAtt := emailer.Attachment{"wg.png", qrdata}
+			attachments = []emailer.Attachment{cfgAtt, qrAtt}
 		} else {
-			attachments = []emailer.Attachment{cfg_att}
+			attachments = []emailer.Attachment{cfgAtt}
 		}
 		err = mailer.Send(
 			clientData.Client.Name,
@@ -385,12 +385,12 @@ func SetClientStatus(db store.IStore) echo.HandlerFunc {
 		clientID := data["id"].(string)
 		status := data["status"].(bool)
 
-		clientdata, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
+		clientData, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
 		}
 
-		client := *clientdata.Client
+		client := *clientData.Client
 
 		client.Enabled = status
 		if err := db.SaveClient(client); err != nil {
@@ -558,7 +558,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 	}
 	return func(c echo.Context) error {
 
-		wgclient, err := wgctrl.New()
+		wgClient, err := wgctrl.New()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
 				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
@@ -567,7 +567,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 			})
 		}
 
-		devices, err := wgclient.Devices()
+		devices, err := wgClient.Devices()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
 				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
