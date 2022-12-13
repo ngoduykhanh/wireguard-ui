@@ -231,6 +231,9 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 				})
 			}
 			client.PresharedKey = presharedKey.String()
+		} else if client.PresharedKey == "-" {
+			client.PresharedKey = ""
+			log.Infof("skipped PresharedKey generation for user: %v", client.Name)
 		} else {
 			_, err := wgtypes.ParseKey(client.PresharedKey)
 			if err != nil {
