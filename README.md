@@ -34,6 +34,7 @@ Note:
 
 - There is a Status option that needs docker to be able to access the network of the host in order to read the 
 wireguard interface stats. See the `cap_add` and `network_mode` options on the docker-compose.yaml
+- Similarly the `WGUI_MANAGE_START` and `WGUI_MANAGE_RESTART` settings need the same access, in order to restart the wireguard interface.
 - Because the `network_mode` is set to `host`, we don't need to specify the exposed ports. The app will listen on port `5000` by default.
 
 
@@ -74,6 +75,15 @@ These environment variables are used to set the defaults used in `New Client` di
 | `WGUI_DEFAULT_CLIENT_EXTRA_ALLOWED_IPS`     | Comma-separated-list of CIDRs for the `Extra Allowed IPs` field. (default empty)                                 |
 | `WGUI_DEFAULT_CLIENT_USE_SERVER_DNS`        | Boolean value [`0`, `f`, `F`, `false`, `False`, `FALSE`, `1`, `t`, `T`, `true`, `True`, `TRUE`] (default `true`) |
 | `WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION` | Boolean value [`0`, `f`, `F`, `false`, `False`, `FALSE`, `1`, `t`, `T`, `true`, `True`, `TRUE`] (default `true`) |
+
+### Docker only
+
+These environment variables only apply to the docker container.
+
+| Variable              | Description                                                                      |
+|-----------------------|----------------------------------------------------------------------------------|
+| `WGUI_MANAGE_START`   | Start/stop WireGaurd when the container is started/stopped. (default `false`)    |
+| `WGUI_MANAGE_RESTART` | Auto restart WireGuard when we Apply Config changes in the UI. (default `false`) |
 
 ### Email configuration
 
@@ -167,6 +177,12 @@ Apply it
 rc-service wgui start
 rc-update add wgui default
 ```
+
+### docker
+
+Set `WGUI_MANAGE_RESTART=true` to manage Wireguard interface restarts.
+Using `WGUI_MANAGE_START=true` can also replace the function of `wg-quick@wg0` service, to start Wireguard at boot, by running the container with `restart: unless-stopped`.
+These settings can also pick up changes to Wireguard Config File Path, after restarting the container.
 
 ## Build
 
