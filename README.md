@@ -7,7 +7,7 @@ A web user interface to manage your WireGuard setup.
 ## Features
 - Friendly UI
 - Authentication
-- Manage extra client's information (name, email, etc)
+- Manage extra client information (name, email, etc)
 - Retrieve configs using QR code / file
 
 ## Run WireGuard-UI
@@ -77,9 +77,9 @@ These environment variables are used to set the defaults used in `New Client` di
 
 ### Email configuration
 
-To use custom `wg.conf` template set the `WG_CONF_TEMPLATE` environment variable to a path to such file. Make sure `wireguard-ui` will be able to work with it - use [default template](templates/wg.conf) for reference.
+To use a custom `wg.conf` template, set the `WG_CONF_TEMPLATE` environment variable to a path to such file. To make sure `wireguard-ui` will be able to work with it - refer to the [default template](templates/wg.conf).
 
-In order to sent the wireguard configuration to clients via email, set the following environment variables:
+In order to send the wireguard configuration to clients via email, set the following environment variables:
 
 - using SendGrid API
 
@@ -107,9 +107,11 @@ WireGuard-UI only takes care of configuration generation. You can use systemd to
 
 ### systemd
 
-Create /etc/systemd/system/wgui.service
+Create `/etc/systemd/system/wgui.service`
 
-```
+```bash
+cd /etc/systemd/system/
+cat << EOF > wgui.service
 [Unit]
 Description=Restart WireGuard
 After=network.target
@@ -120,11 +122,14 @@ ExecStart=/usr/bin/systemctl restart wg-quick@wg0.service
 
 [Install]
 RequiredBy=wgui.path
+EOF
 ```
 
-Create /etc/systemd/system/wgui.path
+Create `/etc/systemd/system/wgui.path`
 
-```
+```bash
+cd /etc/systemd/system/
+cat << EOF > wgui.path
 [Unit]
 Description=Watch /etc/wireguard/wg0.conf for changes
 
@@ -133,39 +138,52 @@ PathModified=/etc/wireguard/wg0.conf
 
 [Install]
 WantedBy=multi-user.target
+EOF
 ```
 
 Apply it
 
-```
+```sh
 systemctl enable wgui.{path,service}
 systemctl start wgui.{path,service}
+
 ```
 
 ### openrc
 
 Create and `chmod +x` /usr/local/bin/wgui
-```
+```sh
+cd /usr/local/bin/
+cat << EOF > wgui
 #!/bin/sh
 wg-quick down wg0
 wg-quick up wg0
+EOF
+chmod +x wgui
+
 ```
 
 Create and `chmod +x` /etc/init.d/wgui
-```
+```sh
+cd /etc/init.d/
+cat << EOF > wgui
 #!/sbin/openrc-run
 
 command=/sbin/inotifyd
 command_args="/usr/local/bin/wgui /etc/wireguard/wg0.conf:w"
 pidfile=/run/${RC_SVCNAME}.pid
 command_background=yes
+EOF
+chmod +x wgui
+
 ```
 
 Apply it
 
-```
+```sh
 rc-service wgui start
 rc-update add wgui default
+
 ```
 
 ## Build
@@ -174,30 +192,34 @@ rc-update add wgui default
 
 Go to the project root directory and run the following command:
 
-```
+```sh
 docker build -t wireguard-ui .
+
 ```
 
 ### Build binary file
 
 Prepare the assets directory
 
-```
+```sh
 ./prepare_assets.sh
+
 ```
 
 Then you can embed resources by generating Go source code
 
-```
+```sh
 rice embed-go
 go build -o wireguard-ui
+
 ```
 
 Or, append resources to executable as zip file
 
-```
+```sh
 go build -o wireguard-ui
 rice append --exec wireguard-ui
+
 ```
 
 ## Screenshot
