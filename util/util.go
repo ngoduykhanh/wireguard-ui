@@ -82,15 +82,15 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	return strConfig
 }
 
-// Read the default values for creating a new client from the environment or use sane defaults
+// ClientDefaultsFromEnv to read the default values for creating a new client from the environment or use sane defaults
 func ClientDefaultsFromEnv() model.ClientDefaults {
-	client_defaults := model.ClientDefaults{}
-	client_defaults.AllowedIps = LookupEnvOrStrings(DefaultClientAllowedIpsEnvVar, []string{"0.0.0.0/0"})
-	client_defaults.ExtraAllowedIps = LookupEnvOrStrings(DefaultClientExtraAllowedIpsEnvVar, []string{})
-	client_defaults.UseServerDNS = LookupEnvOrBool(DefaultClientUseServerDNSEnvVar, true)
-	client_defaults.EnableAfterCreation = LookupEnvOrBool(DefaultClientEnableAfterCreationEnvVar, true)
+	clientDefaults := model.ClientDefaults{}
+	clientDefaults.AllowedIps = LookupEnvOrStrings(DefaultClientAllowedIpsEnvVar, []string{"0.0.0.0/0"})
+	clientDefaults.ExtraAllowedIps = LookupEnvOrStrings(DefaultClientExtraAllowedIpsEnvVar, []string{})
+	clientDefaults.UseServerDNS = LookupEnvOrBool(DefaultClientUseServerDNSEnvVar, true)
+	clientDefaults.EnableAfterCreation = LookupEnvOrBool(DefaultClientEnableAfterCreationEnvVar, true)
 
-	return client_defaults
+	return clientDefaults
 }
 
 // ValidateCIDR to validate a network CIDR
