@@ -208,7 +208,9 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 		server, _ := o.GetServer()
 		globalSettings, _ := o.GetGlobalSettings()
 		client := client
-		client.UseServerDNS = qrCodeSettings.IncludeDNS
+		if !qrCodeSettings.IncludeDNS{
+			globalSettings.DNSServers = []string{}
+		}
 		if !qrCodeSettings.IncludeMTU {
 			globalSettings.MTU = 0
 		}
