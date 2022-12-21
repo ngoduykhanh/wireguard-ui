@@ -127,6 +127,11 @@ func (o *JsonDB) GetUser() (model.User, error) {
 	return user, o.conn.Read("server", "users", &user)
 }
 
+// SaveUser func to user info to the database
+func (o *JsonDB) SaveUser(user model.User) error {
+	return o.conn.Write("server", "users", user)
+}
+
 // GetGlobalSettings func to query global settings from the database
 func (o *JsonDB) GetGlobalSettings() (model.GlobalSetting, error) {
 	settings := model.GlobalSetting{}

@@ -135,6 +135,9 @@ func main() {
 	if !util.DisableLogin {
 		app.GET(util.BasePath+"/login", handler.LoginPage())
 		app.POST(util.BasePath+"/login", handler.Login(db))
+		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
+		app.GET(util.BasePath+"/profile", handler.LoadProfile(db), handler.ValidSession)
+		app.POST(util.BasePath+"/profile", handler.UpdateProfile(db), handler.ValidSession)
 	}
 
 	var sendmail emailer.Emailer
@@ -145,7 +148,6 @@ func main() {
 	}
 
 	app.GET(util.BasePath+"/_health", handler.Health())
-	app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
 	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/update-client", handler.UpdateClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession, handler.ContentTypeJson)

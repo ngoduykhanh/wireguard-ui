@@ -63,6 +63,11 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 		log.Fatal(err)
 	}
 
+	tmplProfileString, err := tmplBox.String("profile.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	tmplClientsString, err := tmplBox.String("clients.html")
 	if err != nil {
 		log.Fatal(err)
@@ -94,6 +99,7 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 	}
 	templates := make(map[string]*template.Template)
 	templates["login.html"] = template.Must(template.New("login").Funcs(funcs).Parse(tmplLoginString))
+	templates["profile.html"] = template.Must(template.New("profile").Funcs(funcs).Parse(tmplBaseString + tmplProfileString))
 	templates["clients.html"] = template.Must(template.New("clients").Funcs(funcs).Parse(tmplBaseString + tmplClientsString))
 	templates["server.html"] = template.Must(template.New("server").Funcs(funcs).Parse(tmplBaseString + tmplServerString))
 	templates["global_settings.html"] = template.Must(template.New("global_settings").Funcs(funcs).Parse(tmplBaseString + tmplGlobalSettingsString))
