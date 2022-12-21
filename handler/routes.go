@@ -118,7 +118,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClients handler return a list of Wireguard client data
+// GetClients handler return a JSON list of Wireguard client data
 func GetClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
@@ -133,7 +133,7 @@ func GetClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClient handler return a of Wireguard client data
+// GetClient handler returns a JSON object of Wireguard client data
 func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
