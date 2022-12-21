@@ -165,6 +165,7 @@ Wireguard Server Settings
 
         // Load server addresses to the form
         {{range .serverInterface.Addresses}}
+        $("#addresses").removeTag('{{.}}');
         $("#addresses").addTag('{{.}}');
         {{end}}
 
