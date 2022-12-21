@@ -62,17 +62,17 @@ FROM alpine:3.16
 RUN addgroup -S wgui && \
     adduser -S -D -G wgui wgui
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates wireguard-tools jq
 
 WORKDIR /app
 
 RUN mkdir -p db
 
 # Copy binary files
-COPY --from=builder --chown=wgui:wgui /build/wg-ui /app
-
+COPY --from=builder --chown=wgui:wgui /build/wg-ui .
 RUN chmod +x wg-ui
+COPY init.sh .
 
 EXPOSE 5000/tcp
 HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1:5000/_health"]
-ENTRYPOINT ["./wg-ui"]
+ENTRYPOINT ["./init.sh"]
