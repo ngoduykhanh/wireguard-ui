@@ -98,7 +98,7 @@ These environment variables only apply to the docker container.
 
 | Variable              | Description                                                   | Default |
 |-----------------------|---------------------------------------------------------------|---------|
-| `WGUI_MANAGE_START`   | Start/stop WireGaurd when the container is started/stopped    | `false` |
+| `WGUI_MANAGE_START`   | Start/stop WireGuard when the container is started/stopped    | `false` |
 | `WGUI_MANAGE_RESTART` | Auto restart WireGuard when we Apply Config changes in the UI | `false` |
 
 ## Auto restart WireGuard daemon
