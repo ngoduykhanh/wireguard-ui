@@ -100,6 +100,63 @@ func Logout() echo.HandlerFunc {
 	}
 }
 
+// LoadProfile to load user information
+func LoadProfile(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		userInfo, err := db.GetUser()
+		if err != nil {
+			log.Error("Cannot get user information: ", err)
+		}
+
+		return c.Render(http.StatusOK, "profile.html", map[string]interface{}{
+			"baseData": model.BaseData{Active: "profile", CurrentUser: currentUser(c)},
+			"userInfo": userInfo,
+		})
+	}
+}
+
+// UpdateProfile to update user information
+func UpdateProfile(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		data := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&data)
+
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+
+		username := data["username"].(string)
+		password := data["password"].(string)
+
+		user, err := db.GetUser()
+		if err != nil {
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
+		}
+
+		if username == "" {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		} else {
+			user.Username = username
+		}
+
+		if password != "" {
+			hash, err := util.HashPassword(password)
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+			}
+			user.PasswordHash = hash
+		}
+
+		if err := db.SaveUser(user); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+		log.Infof("Updated admin user information successfully")
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated admin user information successfully"})
+	}
+}
+
 // WireGuardClients handler
 func WireGuardClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -118,7 +175,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClients handler return a list of Wireguard client data
+// GetClients handler return a JSON list of Wireguard client data
 func GetClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
@@ -133,7 +190,7 @@ func GetClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClient handler return a of Wireguard client data
+// GetClient handler returns a JSON object of Wireguard client data
 func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 

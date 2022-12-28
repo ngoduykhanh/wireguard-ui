@@ -49,10 +49,10 @@ Note:
 | Variable                    | Description                                                                                                                                                  | Default                            |
 |-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
 | `BASE_PATH`                 | Set this variable if you run wireguard-ui under a subpath of your reverse proxy virtual host (e.g. /wireguard))                                              | N/A                                |
-| `SESSION_SECRET`            | The secret key used to encrypt the session cookies. Set this to a random value.                                                                              | N/A                                |
-| `WGUI_USERNAME`             | The username for the login page                                                                                                                              | `admin`                            |
-| `WGUI_PASSWORD`             | The password for the user on the login page. Will be hashed automatically                                                                                    | `admin`                            |
-| `WGUI_PASSWORD_HASH`        | The password hash for the user on the login page. (alternative to `WGUI_PASSWORD`)                                                                           | N/A                                |
+| `SESSION_SECRET`            | The secret key used to encrypt the session cookies. Set this to a random value                                                                               | N/A                                |
+| `WGUI_USERNAME`             | The username for the login page. Used for db initialization only                                                                                             | `admin`                            |
+| `WGUI_PASSWORD`             | The password for the user on the login page. Will be hashed automatically. Used for db initialization only                                                   | `admin`                            |
+| `WGUI_PASSWORD_HASH`        | The password hash for the user on the login page. (alternative to `WGUI_PASSWORD`). Used for db initialization only                                          | N/A                                |
 | `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings                                                                                                         | Resolved to your public ip address |
 | `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings                                                                                   | `1.1.1.1`                          |
 | `WGUI_MTU`                  | The default MTU used in global settings                                                                                                                      | `1450`                             |
@@ -98,7 +98,7 @@ These environment variables only apply to the docker container.
 
 | Variable              | Description                                                   | Default |
 |-----------------------|---------------------------------------------------------------|---------|
-| `WGUI_MANAGE_START`   | Start/stop WireGaurd when the container is started/stopped    | `false` |
+| `WGUI_MANAGE_START`   | Start/stop WireGuard when the container is started/stopped    | `false` |
 | `WGUI_MANAGE_RESTART` | Auto restart WireGuard when we Apply Config changes in the UI | `false` |
 
 ## Auto restart WireGuard daemon

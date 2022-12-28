@@ -199,6 +199,7 @@ Global Settings
 
         // Load DNS server to the form
         {{range .globalSettings.DNSServers}}
+        $("#dns_servers").removeTag('{{.}}');
         $("#dns_servers").addTag('{{.}}');
         {{end}}
 

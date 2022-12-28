@@ -1,0 +1,110 @@
+{{ define "title"}}
+Profile
+{{ end }}
+
+{{ define "top_css"}}
+{{ end }}
+
+{{ define "username"}}
+{{ .username }}
+{{ end }}
+
+{{ define "page_title"}}
+Profile
+{{ end }}
+
+{{ define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        <!-- <h5 class="mt-4 mb-2">Global Settings</h5> -->
+        <div class="row">
+            <!-- left column -->
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Update user information</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form role="form" id="frm_profile" name="frm_profile">
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="username" class="control-label">Username</label>
+                                <input type="text" class="form-control" name="username" id="username"
+                                       value="{{ .userInfo.Username }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="password" class="control-label">Password</label>
+                                <input type="password" class="form-control" name="password" id="password"
+                                       value="" placeholder="Leave empty to keep the password unchanged">
+                            </div>
+                            <!-- /.card-body -->
+                            <div class="card-footer">
+                                <button type="submit" class="btn btn-success" id="update">Update</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <!-- /.card -->
+            </div>
+        </div>
+        <!-- /.row -->
+    </div>
+</section>
+{{ end }}
+
+{{ define "bottom_js"}}
+<script>
+  function updateUserInfo() {
+    const username = $("#username").val();
+    const password = $("#password").val();
+    const data = {"username": username, "password": password};
+    $.ajax({
+      cache: false,
+      method: 'POST',
+      url: '{{.basePath}}/profile',
+      dataType: 'json',
+      contentType: "application/json",
+      data: JSON.stringify(data),
+      success: function (data) {
+        toastr.success("Updated admin user information successfully");
+      },
+      error: function (jqXHR, exception) {
+        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+        toastr.error(responseJson['message']);
+      }
+    });
+  }
+
+  $(document).ready(function () {
+    $.validator.setDefaults({
+      submitHandler: function () {
+        updateUserInfo();
+      }
+    });
+    $("#frm_profile").validate({
+      rules: {
+        username: {
+          required: true
+        }
+      },
+      messages: {
+        username: {
+          required: "Please enter a username",
+        }
+      },
+      errorElement: 'span',
+      errorPlacement: function (error, element) {
+        error.addClass('invalid-feedback');
+        element.closest('.form-group').append(error);
+      },
+      highlight: function (element, errorClass, validClass) {
+        $(element).addClass('is-invalid');
+      },
+      unhighlight: function (element, errorClass, validClass) {
+        $(element).removeClass('is-invalid');
+      }
+    });
+  });
+</script>
+{{ end }}

@@ -127,13 +127,18 @@ func (o *JsonDB) GetUser() (model.User, error) {
 	return user, o.conn.Read("server", "users", &user)
 }
 
+// SaveUser func to user info to the database
+func (o *JsonDB) SaveUser(user model.User) error {
+	return o.conn.Write("server", "users", user)
+}
+
 // GetGlobalSettings func to query global settings from the database
 func (o *JsonDB) GetGlobalSettings() (model.GlobalSetting, error) {
 	settings := model.GlobalSetting{}
 	return settings, o.conn.Read("server", "global_settings", &settings)
 }
 
-// GetServer func to query Server setting from the database
+// GetServer func to query Server settings from the database
 func (o *JsonDB) GetServer() (model.Server, error) {
 	server := model.Server{}
 	// read server interface information
@@ -157,7 +162,7 @@ func (o *JsonDB) GetServer() (model.Server, error) {
 func (o *JsonDB) GetClients(hasQRCode bool) ([]model.ClientData, error) {
 	var clients []model.ClientData
 
-	// read all client json file in "clients" directory
+	// read all client json files in "clients" directory
 	records, err := o.conn.ReadAll("clients")
 	if err != nil {
 		return clients, err
@@ -208,7 +213,9 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 		server, _ := o.GetServer()
 		globalSettings, _ := o.GetGlobalSettings()
 		client := client
-		client.UseServerDNS = qrCodeSettings.IncludeDNS
+		if !qrCodeSettings.IncludeDNS{
+			globalSettings.DNSServers = []string{}
+		}
 		if !qrCodeSettings.IncludeMTU {
 			globalSettings.MTU = 0
 		}

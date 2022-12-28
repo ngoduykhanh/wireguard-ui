@@ -87,7 +87,11 @@
                         <i class="nav-icon fas fa-2x fa-user"></i>
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block">{{if .baseData.CurrentUser}} {{.baseData.CurrentUser}} {{else}} Administrator {{end}}</a>
+                        {{if .baseData.CurrentUser}}
+                        <a href="{{.basePath}}/profile" class="d-block">{{.baseData.CurrentUser}}</a>
+                        {{else}}
+                        <a href="#" class="d-block">Administrator</a>
+                        {{end}}
                     </div>
                 </div>
 

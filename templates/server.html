@@ -110,7 +110,7 @@ Wireguard Server Settings
             </div>
             <div class="modal-body">
                 <p>Are you sure to generate a new key pair for the Wireguard server?<br/>
-                The existing Clients's peer public key need to be updated to keep the connection working.</p>
+                The existing Client's peer public key need to be updated to keep the connection working.</p>
             </div>
             <div class="modal-footer justify-content-between">
                 <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
@@ -165,6 +165,7 @@ Wireguard Server Settings
 
         // Load server addresses to the form
         {{range .serverInterface.Addresses}}
+        $("#addresses").removeTag('{{.}}');
         $("#addresses").addTag('{{.}}');
         {{end}}
 
