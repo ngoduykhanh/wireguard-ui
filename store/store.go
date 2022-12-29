@@ -6,8 +6,10 @@ import (
 
 type IStore interface {
 	Init() error
-	GetUser() (model.User, error)
+	GetUsers() ([]model.User, error)
+	GetUserByName(username string) (model.User, error)
 	SaveUser(user model.User) error
+	DeleteUser(username string) error
 	GetGlobalSettings() (model.GlobalSetting, error)
 	GetServer() (model.Server, error)
 	GetClients(hasQRCode bool) ([]model.ClientData, error)
