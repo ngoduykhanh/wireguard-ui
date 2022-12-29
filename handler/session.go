@@ -55,7 +55,7 @@ func currentUser(c echo.Context) string {
 	return username
 }
 
-// currentUser to get username of logged in user
+// isAdmin to get user type: admin or manager
 func isAdmin(c echo.Context) bool {
 	if util.DisableLogin {
 		return true

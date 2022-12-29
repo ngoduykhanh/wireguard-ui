@@ -132,7 +132,7 @@ func (o *JsonDB) GetUser() (model.User, error) {
 	return user, o.conn.Read("server", "users", &user)
 }
 
-// GetUsers func to query user info from the database
+// GetUsers func to get all users from the database
 func (o *JsonDB) GetUsers() ([]model.User, error) {
 	var users []model.User
 	results, err := o.conn.ReadAll("users")
@@ -151,6 +151,7 @@ func (o *JsonDB) GetUsers() ([]model.User, error) {
 	return users, err
 }
 
+// GetUserByName func to get single user from the database
 func (o *JsonDB) GetUserByName(username string) (model.User, error) {
 	user := model.User{}
 
@@ -161,18 +162,15 @@ func (o *JsonDB) GetUserByName(username string) (model.User, error) {
 	return user, nil
 }
 
+// SaveUser func to save user in the database
 func (o *JsonDB) SaveUser(user model.User) error {
 	return o.conn.Write("users", user.Username, user)
 }
 
+// DeleteUser func to remove user from the database
 func (o *JsonDB) DeleteUser(username string) error {
 	return o.conn.Delete("users", username)
 }
-
-//// SaveUser func to user info to the database
-//func (o *JsonDB) SaveUser(user model.User) error {
-//	return o.conn.Write("server", "users", user)
-//}
 
 // GetGlobalSettings func to query global settings from the database
 func (o *JsonDB) GetGlobalSettings() (model.GlobalSetting, error) {

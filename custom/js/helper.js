@@ -80,10 +80,9 @@ function renderClientList(data) {
 
 function renderUserList(data) {
     $.each(data, function(index, obj) {
-        // render client status css tag style
         let clientStatusHtml = '>'
 
-        // render client html content
+        // render user html content
         let html = `<div class="col-sm-6 col-md-6 col-lg-4" id="user_${obj.username}">
                         <div class="info-box">
                             <div class="info-box-content">
@@ -101,7 +100,7 @@ function renderUserList(data) {
                         </div>
                     </div>`
 
-        // add the client html elements to the list
+        // add the user html elements to the list
         $('#users-list').append(html);
     });
 }

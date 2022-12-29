@@ -10,7 +10,6 @@ ARG BUILD_DEPENDENCIES="npm \
 
 # Get dependencies
 RUN apk add --update --no-cache ${BUILD_DEPENDENCIES}
-#RUN apt install ${BUILD_DEPENDENCIES}
 
 WORKDIR /build
 
@@ -21,7 +20,8 @@ COPY package.json /build
 COPY yarn.lock /build
 
 # Prepare assets
-RUN yarn install --pure-lockfile --production && yarn cache clean
+RUN yarn install --pure-lockfile --production && \
+    yarn cache clean
 
 # Move admin-lte dist
 RUN mkdir -p assets/dist/js assets/dist/css && \

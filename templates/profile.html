@@ -83,7 +83,6 @@ Profile
     function updateUserInfo() {
         const username = $("#username").val();
         const password = $("#password").val();
-//        const previous_username = $("#previous_username").val();
         const data = {"username": username, "password": password, "previous_username": previous_username, "admin":admin};
         $.ajax({
             cache: false,

@@ -107,26 +107,30 @@ func Login(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClients handler return a JSON list of Wireguard client data
+// GetUsers handler return a JSON list of all users
 func GetUsers(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		clientDataList, err := db.GetUsers()
+		usersList, err := db.GetUsers()
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
 				false, fmt.Sprintf("Cannot get user list: %v", err),
 			})
 		}
 
-		return c.JSON(http.StatusOK, clientDataList)
+		return c.JSON(http.StatusOK, usersList)
 	}
 }
 
-// GetClient handler returns a JSON object of Wireguard client data
+// GetUser handler returns a JSON object of single user
 func GetUser(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		username := c.Param("username")
+
+		if !isAdmin(c) && (username != currentUser(c)) {
+			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
+		}
 
 		userData, err := db.GetUserByName(username)
 		if err != nil {
@@ -154,7 +158,7 @@ func LoadProfile(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// WireGuardClients handler
+// UsersSettings handler
 func UsersSettings(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return c.Render(http.StatusOK, "users_settings.html", map[string]interface{}{
@@ -163,7 +167,7 @@ func UsersSettings(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// UpdateProfile to update user information
+// UpdateUser to update user information
 func UpdateUser(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data := make(map[string]interface{})
@@ -177,6 +181,14 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 		password := data["password"].(string)
 		previousUsername := data["previous_username"].(string)
 		admin := data["admin"].(bool)
+
+		if !isAdmin(c) && (previousUsername != currentUser(c)) {
+			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
+		}
+
+		if !isAdmin(c) {
+			admin = false
+		}
 
 		user, err := db.GetUserByName(previousUsername)
 		if err != nil {
@@ -221,7 +233,7 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// UpdateProfile to update user information
+// CreateUser to create new user
 func CreateUser(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data := make(map[string]interface{})
@@ -266,7 +278,7 @@ func CreateUser(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// RemoveClient handler
+// RemoveUser handler
 func RemoveUser(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data := make(map[string]interface{})
@@ -277,7 +289,7 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 		}
 
 		username := data["username"].(string)
-		// delete client from database
+		// delete user from database
 
 		if err := db.DeleteUser(username); err != nil {
 			log.Error("Cannot delete user: ", err)

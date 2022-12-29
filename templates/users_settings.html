@@ -14,7 +14,6 @@ Users Settings
 {{end}}
 
 {{define "page_content"}}
-<h1>HUBBA BUBBA BABA YAGA</h1>
 <section class="content">
     <div class="container-fluid">
         <div class="row" id="users-list">
@@ -111,7 +110,7 @@ Users Settings
     }
 </script>
 <script>
-    // load client list
+    // load user list
     $(document).ready(function () {
         populateUsersList();
         let newUserHtml = '<div class="col-sm-2 offset-md-4" style=" text-align: right;">' +
@@ -203,10 +202,15 @@ Users Settings
         const previous_username = $("#_previous_user_name").val();
         const password = $("#_user_password").val();
         let admin = false;
-        if ($("#_admin").is(':checked')){
+        if ($("#_admin").is(':checked')) {
             admin = true;
         }
-        const data = {"username": username, "password": password, "previous_username": previous_username, "admin": admin};
+        const data = {
+            "username": username,
+            "password": password,
+            "previous_username": previous_username,
+            "admin": admin
+        };
 
         if (previous_username !== "") {
             $.ajax({
@@ -252,7 +256,7 @@ Users Settings
                 updateUserInfo();
             }
         });
-        // Edit client form validation
+        // Edit user form validation
         $("#frm_edit_user").validate({
             rules: {
                 _user_name: {
@@ -260,7 +264,7 @@ Users Settings
                 },
                 _user_password: {
                     required: function () {
-                        return $("#_previous_user_name").val()==="";
+                        return $("#_previous_user_name").val() === "";
                     }
                 },
             },
