@@ -215,7 +215,10 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 			}
 			user.PasswordHash = hash
 		}
-		user.Admin = admin
+
+		if previousUsername != currentUser(c) {
+			user.Admin = admin
+		}
 
 		if err := db.DeleteUser(previousUsername); err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
@@ -289,6 +292,10 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 		}
 
 		username := data["username"].(string)
+
+		if username == currentUser(c) {
+			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "User cannot delete itself"})
+		}
 		// delete user from database
 
 		if err := db.DeleteUser(username); err != nil {
@@ -297,10 +304,7 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 		}
 
 		log.Infof("Removed user: %s", username)
-		if username == currentUser(c) {
-			log.Infof("You removed yourself, killing session")
-			clearSession(c)
-		}
+
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "User removed"})
 	}
 }
