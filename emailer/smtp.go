@@ -20,7 +20,7 @@ type SmtpMail struct {
 	from       string
 }
 
-func AuthType(authType string) mail.AuthType {
+func authType(authType string) mail.AuthType {
 	switch strings.ToUpper(authType) {
 	case "PLAIN":
 		return mail.AuthPlain
@@ -31,7 +31,7 @@ func AuthType(authType string) mail.AuthType {
 	}
 }
 
-func EncryptionType(encryptionType string) mail.Encryption {
+func encryptionType(encryptionType string) mail.Encryption {
 	switch strings.ToUpper(encryptionType) {
 	case "SSL":
 		return mail.EncryptionSSL
@@ -45,7 +45,7 @@ func EncryptionType(encryptionType string) mail.Encryption {
 }
 
 func NewSmtpMail(hostname string, port int, username string, password string, noTLSCheck bool, auth string, fromName, from string, encryption string) *SmtpMail {
-	ans := SmtpMail{hostname: hostname, port: port, username: username, password: password, noTLSCheck: noTLSCheck, fromName: fromName, from: from, authType: AuthType(auth), encryption: EncryptionType(encryption)}
+	ans := SmtpMail{hostname: hostname, port: port, username: username, password: password, noTLSCheck: noTLSCheck, fromName: fromName, from: from, authType: authType(auth), encryption: encryptionType(encryption)}
 	return &ans
 }
 

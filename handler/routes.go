@@ -522,7 +522,6 @@ func EmailClient(db store.IStore) echo.HandlerFunc {
 			emailSetting.DefaultEmailContent,
 			attachments,
 		)
-		fmt.Println("\n\n\n %s \n\n\n", err)
 
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
