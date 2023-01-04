@@ -42,7 +42,9 @@ func (o *JsonDB) Init() error {
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
+	var emailSettingPath string = path.Join(serverPath, "email_settings.json")
 	var userPath string = path.Join(serverPath, "users.json")
+
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
 		os.MkdirAll(clientPath, os.ModePerm)
@@ -100,6 +102,27 @@ func (o *JsonDB) Init() error {
 		globalSetting.ConfigFilePath = util.LookupEnvOrString(util.ConfigFilePathEnvVar, util.DefaultConfigFilePath)
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
+	}
+
+	// email settings
+	// TODO move ENV_VAR variables and default values to config.go
+	if _, err := os.Stat(emailSettingPath); os.IsNotExist(err) {
+		emailSetting := new(model.EmailSetting)
+		emailSetting.SendgridApiKey = util.LookupEnvOrString("SENDGRID_API_KEY", "")
+		emailSetting.EmailFromName = util.LookupEnvOrString("EMAIL_FROM_NAME", "WireGuard UI")
+		emailSetting.EmailFrom = util.LookupEnvOrString("EMAIL_FROM_ADDRESS", "")
+		emailSetting.SmtpHostname = util.LookupEnvOrString("SMTP_HOSTNAME", "127.0.0.1")
+		emailSetting.SmtpPort = util.LookupEnvOrInt("SMTP_PORT", 25)
+		emailSetting.SmtpUsername = util.LookupEnvOrString("SMTP_USERNAME", "")
+		emailSetting.SmtpPassword = util.LookupEnvOrString("SMTP_PASSWORD", "")
+		emailSetting.SmtpNoTLSCheck = util.LookupEnvOrBool("SMTP_NO_TLS_CHECK", false)
+		emailSetting.SmtpAuthType = util.LookupEnvOrString("SMTP_AUTH_TYPE", "NONE")
+		emailSetting.SmtpEncryption = util.LookupEnvOrString("SMTP_ENCRYPTION", "STARTTLS")
+		emailSetting.DefaultEmailSubject = "Your wireguard configuration"
+		emailSetting.DefaultEmailContent = `Hi,</br>
+<p>In this email you can find your personal configuration for our wireguard server.</p>
+<p>Best</p>`
+		o.conn.Write("server", "email_settings", emailSetting)
 	}
 
 	// user info
@@ -254,4 +277,14 @@ func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
 
 func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	return o.conn.Write("server", "global_settings", globalSettings)
+}
+
+// GetEmailSettings func to query email settings from the database
+func (o *JsonDB) GetEmailSettings() (model.EmailSetting, error) {
+	settings := model.EmailSetting{}
+	return settings, o.conn.Read("server", "email_settings", &settings)
+}
+
+func (o *JsonDB) SaveEmailSettings(emailSettings model.EmailSetting) error {
+	return o.conn.Write("server", "email_settings", emailSettings)
 }

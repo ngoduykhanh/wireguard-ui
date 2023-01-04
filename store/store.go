@@ -9,6 +9,7 @@ type IStore interface {
 	GetUser() (model.User, error)
 	SaveUser(user model.User) error
 	GetGlobalSettings() (model.GlobalSetting, error)
+	GetEmailSettings() (model.EmailSetting, error)
 	GetServer() (model.Server, error)
 	GetClients(hasQRCode bool) ([]model.ClientData, error)
 	GetClientByID(clientID string, qrCode model.QRCodeSettings) (model.ClientData, error)
@@ -17,6 +18,7 @@ type IStore interface {
 	SaveServerInterface(serverInterface model.ServerInterface) error
 	SaveServerKeyPair(serverKeyPair model.ServerKeypair) error
 	SaveGlobalSettings(globalSettings model.GlobalSetting) error
+	SaveEmailSettings(emailSettings model.EmailSetting) error
 	GetWakeOnLanHosts() ([]model.WakeOnLanHost, error)
 	GetWakeOnLanHost(macAddress string) (*model.WakeOnLanHost, error)
 	DeleteWakeOnHostLanHost(macAddress string) error

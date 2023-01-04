@@ -314,7 +314,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 }
 
 // EmailClient handler to send the configuration via email
-func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailContent string) echo.HandlerFunc {
+func EmailClient(db store.IStore) echo.HandlerFunc {
 	type clientIdEmailPayload struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
@@ -337,6 +337,15 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
 		}
 
+		// init mailer
+		var mailer emailer.Emailer
+		emailSetting, _ := db.GetEmailSettings()
+		if emailSetting.SendgridApiKey != "" {
+			mailer = emailer.NewSendgridApiMail(emailSetting.SendgridApiKey, emailSetting.EmailFromName, emailSetting.EmailFrom)
+		} else {
+			mailer = emailer.NewSmtpMail(emailSetting.SmtpHostname, emailSetting.SmtpPort, emailSetting.SmtpUsername, emailSetting.SmtpPassword, emailSetting.SmtpNoTLSCheck, emailSetting.SmtpAuthType, emailSetting.EmailFromName, emailSetting.EmailFrom, emailSetting.SmtpEncryption)
+		}
+
 		// build config
 		server, _ := db.GetServer()
 		globalSettings, _ := db.GetGlobalSettings()
@@ -357,8 +366,8 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		err = mailer.Send(
 			clientData.Client.Name,
 			payload.Email,
-			emailSubject,
-			emailContent,
+			emailSetting.DefaultEmailSubject,
+			emailSetting.DefaultEmailContent,
 			attachments,
 		)
 
@@ -593,6 +602,64 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c)},
 			"globalSettings": globalSettings,
 		})
+	}
+}
+
+// EmailSettings handler
+func EmailSettings(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		emailSettings, err := db.GetEmailSettings()
+		if err != nil {
+			log.Error("Cannot get email settings: ", err)
+		}
+
+		return c.Render(http.StatusOK, "email_settings.html", map[string]interface{}{
+			"baseData":      model.BaseData{Active: "email-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
+			"emailSettings": emailSettings,
+		})
+	}
+}
+
+// EmailSettingsSubmit handler to update the email settings
+func EmailSettingsSubmit(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		data := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&data)
+
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+
+		emailSetting, err := db.GetEmailSettings()
+		if err != nil {
+			log.Error("Cannot get email settings: ", err)
+		}
+
+		if len(data) == 2 {
+			emailSetting.DefaultEmailSubject = data["default_email_subject"].(string)
+			emailSetting.DefaultEmailContent = data["default_email_content"].(string)
+		} else {
+			emailSetting.SendgridApiKey = data["sendgrid_api_key"].(string)
+			emailSetting.EmailFromName = data["email_from_name"].(string)
+			emailSetting.EmailFrom = data["email_from"].(string)
+			emailSetting.SmtpHostname = data["smtp_hostname"].(string)
+			emailSetting.SmtpPort = int(data["smtp_port"].(float64))
+			emailSetting.SmtpUsername = data["smtp_username"].(string)
+			emailSetting.SmtpPassword = data["smtp_password"].(string)
+			emailSetting.SmtpNoTLSCheck = data["smtp_no_tls_check"].(bool)
+			emailSetting.SmtpAuthType = data["smtp_auth_type"].(string)
+			emailSetting.SmtpEncryption = data["smtp_encryption"].(string)
+		}
+
+		// write config to the database
+		if err := db.SaveEmailSettings(emailSetting); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot update email settings"})
+		}
+
+		log.Infof("Updated email settings: %v", emailSetting)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated email settings successfully"})
 	}
 }
 

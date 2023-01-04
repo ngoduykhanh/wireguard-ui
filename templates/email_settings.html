@@ -1,0 +1,364 @@
+{{define "title"}}
+Email Settings
+{{end}}
+
+{{define "top_css"}}
+{{end}}
+
+{{define "username"}}
+{{ .username }}
+{{end}}
+
+{{define "page_title"}}
+Email Settings
+{{end}}
+
+{{define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        <!-- <h5 class="mt-4 mb-2">Global Settings</h5> -->
+        <div class="row">
+            <!-- left column -->
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Email Settings</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form role="form" id="frm_email_settings" name="frm_email_settings">
+                        <div class="card-body">
+
+                            <div class="form-group">
+                                <label for="sendgrid_api_key">Sendgrid API Key (If provided, overrules SMTP
+                                    settings)</label>
+                                <input type="text" class="form-control" id="sendgrid_api_key"
+                                       name="sendgrid_api_key" value="{{ .emailSettings.SendgridApiKey }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="email_from_name">Email From Name</label>
+                                <input type="text" class="form-control" id="email_from_name"
+                                       name="email_from_name" placeholder="E.g. WireGuard UI"
+                                       value="{{ .emailSettings.EmailFromName }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="email_from">Email From</label>
+                                <input type="text" class="form-control" id="email_from"
+                                       name="email_from" placeholder="E.g. system@wireguard.com"
+                                       value="{{ .emailSettings.EmailFrom }}">
+                            </div>
+                            <div style="display: flex;">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="smtp_hostname">SMTP Hostname</label>
+                                    <input type="text" class="form-control" id="smtp_hostname"
+                                           name="smtp_hostname" placeholder="E.g. 127.0.0.1"
+                                           value="{{ .emailSettings.SmtpHostname }}">
+                                </div>
+                                <div class="form-group" style="width: 48%; margin-left: 4%">
+                                    <label for="smtp_port">SMTP Port</label>
+                                    <input type="text" class="form-control" id="smtp_port"
+                                           name="smtp_port" placeholder="E.g. 25"
+                                           value="{{ .emailSettings.SmtpPort }}">
+                                </div>
+                            </div>
+                            <div style="display: flex;">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="smtp_username">SMTP Username</label>
+                                    <input type="text" class="form-control" id="smtp_username"
+                                           name="smtp_username" placeholder="E.g. system@wireguard.com"
+                                           value="{{ .emailSettings.SmtpUsername }}">
+                                </div>
+                                <div class="form-group" style="width: 48%; margin-left: 4%">
+                                    <label for="smtp_password">SMTP Password</label>
+                                    <input type="password" class="form-control" id="smtp_password"
+                                           name="smtp_password" placeholder="E.g. *******"
+                                           value="{{ .emailSettings.SmtpPassword }}">
+                                </div>
+                            </div>
+                            <div style="display: flex;">
+                                <div class="form-group" style="width: 48%;">
+                                    <label for="smtp_auth_type">SMTP Auth Type</label>
+                                    <input type="text" class="form-control" id="smtp_auth_type"
+                                           name="smtp_auth_type" placeholder="NONE/LOGIN/PLAIN"
+                                           value="{{ .emailSettings.SmtpAuthType }}">
+                                </div>
+                                <div class="form-group" style="width: 48%; margin-left: 4%">
+                                    <label for="smtp_encryption">SMTP Encryption</label>
+                                    <input type="text" class="form-control" id="smtp_encryption"
+                                           name="smtp_encryption" placeholder="SSL/SSLTLS/TLS/STARTTLS"
+                                           value="{{ .emailSettings.SmtpEncryption }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="icheck-primary d-inline">
+                                    <input type="checkbox" id="smtp_no_tls_check" {{if .emailSettings.SmtpNoTLSCheck
+                                           }}checked{{end}}>
+                                    <label for="smtp_no_tls_check">
+                                        SMTP No TLS Check
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- /.card-body -->
+
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success">Save</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- /.card -->
+            </div>
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Email Template</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <form role="form" id="frm_email_settings2" name="frm_email_settings2">
+                        <div class="card-body">
+
+                            <div class="form-group">
+                                <label for="default_email_subject">Email Subject</label>
+                                <input type="text" class="form-control" id="default_email_subject"
+                                       name="default_email_subject" placeholder="Your Wireguard configuration"
+                                       value="{{ .emailSettings.DefaultEmailSubject }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="default_email_content">Email Content</label>
+                                <textarea class="form-control" id="default_email_content"
+                                          name="default_email_content" rows="10" style="white-space: pre-wrap;">{{ .emailSettings.DefaultEmailContent }}</textarea>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success">Save</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- /.card -->
+            </div>
+            <!-- /.row -->
+        </div>
+    </div>
+</section>
+
+{{end}}
+
+{{define "bottom_js"}}
+<script>
+    function submitEmailSettings() {
+
+        const sendgrid_api_key = $("#sendgrid_api_key").val();
+        const email_from_name = $("#email_from_name").val();
+        const email_from = $("#email_from").val();
+        const smtp_hostname = $("#smtp_hostname").val();
+        let smtp_port = 0;
+        if ($("#smtp_port").val().length !== 0) {
+            smtp_port = parseInt($("#smtp_port").val());
+        }
+        const smtp_username = $("#smtp_username").val();
+        const smtp_password = $("#smtp_password").val();
+        const smtp_auth_type = $("#smtp_auth_type").val();
+        const smtp_encryption = $("#smtp_encryption").val();
+        let smtp_no_tls_check = false;
+        if ($("#smtp_no_tls_check").is(':checked')) {
+            smtp_no_tls_check = true;
+        }
+
+        const data = {
+            "sendgrid_api_key": sendgrid_api_key,
+            "email_from_name": email_from_name,
+            "email_from": email_from,
+            "smtp_hostname": smtp_hostname,
+            "smtp_port": smtp_port,
+            "smtp_username": smtp_username,
+            "smtp_password": smtp_password,
+            "smtp_no_tls_check": smtp_no_tls_check,
+            "smtp_auth_type": smtp_auth_type,
+            "smtp_encryption": smtp_encryption
+        };
+
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: '{{.basePath}}/email-settings',
+            dataType: 'json',
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (data) {
+                toastr.success('Updated email settings successfully');
+            },
+            error: function (jqXHR, exception) {
+                const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                toastr.error(responseJson['message']);
+            }
+        });
+    }
+
+    function submitEmailSettings2() {
+
+        const default_email_subject = $("#default_email_subject").val();
+        const default_email_content = $("#default_email_content").val();
+
+
+        const data = {
+            "default_email_content": default_email_content,
+            "default_email_subject": default_email_subject
+        };
+
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: '{{.basePath}}/email-settings',
+            dataType: 'json',
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function (data) {
+                toastr.success('Updated email default message settings successfully');
+            },
+            error: function (jqXHR, exception) {
+                const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                toastr.error(responseJson['message']);
+            }
+        });
+    }
+
+</script>
+<script>
+
+    // submitHandler
+    function submitHandler(form) {
+        const formId = $(form).attr('id');
+        if (formId === "frm_email_settings") {
+            submitEmailSettings();
+        } else if (formId === "frm_email_settings2") {
+            submitEmailSettings2();
+        }
+    }
+
+    // Global setting form validation
+    $(document).ready(function () {
+        $.validator.setDefaults({
+            submitHandler: function (form) {
+                submitHandler(form);
+            }
+        });
+        $("#frm_email_settings").validate({
+            rules: {
+                email_from_name: {
+                    required: true
+                },
+                email_from: {
+                    required: true
+                },
+                smtp_hostname: {
+                    required: function () {
+                        return $("#sendgrid_api_key").val() === "";
+                    }
+                },
+                smtp_port: {
+                    required: function () {
+                        return $("#sendgrid_api_key").val() === "";
+                    },
+                    digits: true,
+                    range: [0, 65535]
+                },
+                smtp_username: {
+                    required: function () {
+                        return $("#sendgrid_api_key").val() === "";
+                    }
+                },
+                smtp_password: {
+                    required: function () {
+                        return $("#sendgrid_api_key").val() === "";
+                    }
+                },
+                smtp_no_tls_check: {
+                    digits: true
+                },
+                smtp_auth_type: {
+                    required: function () {
+                        return $("#sendgrid_api_key").val() === "";
+                    }
+                },
+                smtp_encryption: {
+                    required: function () {
+                        return $("#sendgrid_api_key").val() === "";
+                    }
+                }
+            },
+            messages: {
+                email_from_name: {
+                    required: "Field is mandatory"
+                },
+                email_from: {
+                    required: "Field is mandatory"
+                },
+                smtp_hostname: {
+                    required: "No Sendgrid API key, this field is mandatory"
+                },
+                smtp_port: {
+                    required: "No Sendgrid API key, this field is mandatory",
+                    digits: "Port must be an integer",
+                    range: "Port must be in range 0..65535"
+                },
+                smtp_username: {
+                    required: "No Sendgrid API key, this field is mandatory"
+                },
+                smtp_password: {
+                    required: "No Sendgrid API key, this field is mandatory"
+                },
+                smtp_auth_type: {
+                    required: "No Sendgrid API key, this field is mandatory"
+                },
+                smtp_encryption: {
+                    required: "No Sendgrid API key, this field is mandatory"
+                }
+            },
+            errorElement: 'span',
+            errorPlacement: function (error, element) {
+                error.addClass('invalid-feedback');
+                element.closest('.form-group').append(error);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+
+        $("#frm_email_settings2").validate({
+            rules: {
+                default_email_subject: {
+                    required: true
+                },
+                default_email_content: {
+                    required: true
+                }
+            },
+            messages: {
+                default_email_subject: {
+                    required: "Field is mandatory"
+                },
+                default_email_content: {
+                    required: "Field is mandatory"
+                }
+            },
+            errorElement: 'span',
+            errorPlacement: function (error, element) {
+                error.addClass('invalid-feedback');
+                element.closest('.form-group').append(error);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+
+    });
+
+</script>
+{{end}}
