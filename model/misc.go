@@ -11,3 +11,9 @@ type BaseData struct {
 	Active      string
 	CurrentUser string
 }
+
+// ClientServerHashes struct, to save hashes to detect changes
+type ClientServerHashes struct {
+	Client string `json:"client"`
+	Server string `json:"server"`
+}
