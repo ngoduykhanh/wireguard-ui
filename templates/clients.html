@@ -70,9 +70,7 @@ Wireguard Clients
             </div>
             <div class="modal-body">
                 <input type="hidden" id="qr_client_id" name="qr_client_id">
-                <a href="" download="" id="qr_code_a">
-                    <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
-                </a>
+                <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
                 <div class="form-group">
                     <div class="icheck-primary d-inline">
                         <input type="checkbox" id="qr_include_fwmark" onchange="regenerateQRCode()">
@@ -393,7 +391,6 @@ Wireguard Clients
         function regenerateQRCode() {
             const client_id = $("#qr_client_id").val();
             const QRCodeImg = $("#qr_code");
-            const QRCodeA = $("#qr_code_a");
             let include_fwmark = false;
             if ($("#qr_include_fwmark").is(':checked')){
                 include_fwmark = true;
@@ -413,9 +410,6 @@ Wireguard Clients
 
                     $(".modal-title").text("Scan QR Code for " + client.name + " profile");
                     QRCodeImg.attr('src', resp.QRCode).show();
-                    QRCodeA.attr('download', resp.Client.name);
-                    QRCodeA.attr('href', resp.QRCode).show();
-
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
