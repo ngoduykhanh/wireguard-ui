@@ -381,7 +381,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 }
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
-func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
+func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
 
 	// if set, read wg.conf template from WgConfTemplate
@@ -416,7 +416,6 @@ func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, cl
 		"serverConfig":   serverConfig,
 		"clientDataList": clientDataList,
 		"globalSettings": globalSettings,
-		"usersList":      usersList,
 	}
 
 	err = t.Execute(f, config)

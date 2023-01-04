@@ -78,34 +78,6 @@ function renderClientList(data) {
     });
 }
 
-function renderUserList(data) {
-    $.each(data, function(index, obj) {
-        let clientStatusHtml = '>'
-
-        // render user html content
-        let html = `<div class="col-sm-6 col-md-6 col-lg-4" id="user_${obj.username}">
-                        <div class="info-box">
-                            <div class="info-box-content">
-                                <div class="btn-group">
-                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#modal_edit_user" data-username="${obj.username}">Edit</button>
-                                </div>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
-                                        data-target="#modal_remove_user" data-username="${obj.username}">Delete</button>
-                                </div>
-                                <hr>
-                                <span class="info-box-text"><i class="fas fa-user"></i> ${obj.username}</span>
-                                <span class="info-box-text"><i class="fas fa-terminal"></i> ${obj.admin? 'Administrator':'Manager'}</span>
-                                </div>
-                        </div>
-                    </div>`
-
-        // add the user html elements to the list
-        $('#users-list').append(html);
-    });
-}
-
-
 function prettyDateTime(timeStr) {
     const dt = new Date(timeStr);
     const offsetMs = dt.getTimezoneOffset() * 60 * 1000;
