@@ -804,7 +804,26 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 				false, fmt.Sprintf("Cannot apply server config: %v", err),
 			})
 		}
+		
+		err = util.UpdateHashes(db)
+		if err != nil {
+			log.Error("Cannot update hashes: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot update hashes: %v", err),
+			})
+		}
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
+	}
+}
+
+// GetHashesChanges handler returns if database hashes have changed
+func GetHashesChanges(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if util.HashesChanged(db) {
+			return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Hashes changed"})
+		} else {
+			return c.JSON(http.StatusOK, jsonHTTPResponse{false, "Hashes not changed"})
+		}
 	}
 }
