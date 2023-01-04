@@ -74,5 +74,5 @@ RUN chmod +x wg-ui
 COPY init.sh .
 
 EXPOSE 5000/tcp
-HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1:5000/_health"]
+HEALTHCHECK CMD ["wget","--output-document=-","--quiet","--tries=1","http://127.0.0.1:$(echo ${BIND_ADDRESS:-5000} | cut -d ':' -f2)/_health"]
 ENTRYPOINT ["./init.sh"]
