@@ -615,7 +615,7 @@ func EmailSettings(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "email_settings.html", map[string]interface{}{
-			"baseData":      model.BaseData{Active: "email-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
+			"baseData":      model.BaseData{Active: "email-settings", CurrentUser: currentUser(c)},
 			"emailSettings": emailSettings,
 		})
 	}
