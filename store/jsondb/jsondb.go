@@ -42,6 +42,7 @@ func (o *JsonDB) Init() error {
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
+	var hashesPath string = path.Join(serverPath, "hashes.json")
 	var userPath string = path.Join(serverPath, "users.json")
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
@@ -100,6 +101,14 @@ func (o *JsonDB) Init() error {
 		globalSetting.ConfigFilePath = util.LookupEnvOrString(util.ConfigFilePathEnvVar, util.DefaultConfigFilePath)
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
+	}
+	
+	// hashes
+	if _, err := os.Stat(hashesPath); os.IsNotExist(err) {
+		clientServerHashes := new(model.ClientServerHashes)
+		clientServerHashes.Client = "none"
+		clientServerHashes.Server = "none"
+		o.conn.Write("server", "hashes", clientServerHashes)
 	}
 
 	// user info
@@ -254,4 +263,17 @@ func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
 
 func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	return o.conn.Write("server", "global_settings", globalSettings)
+}
+
+func (o *JsonDB) GetPath() string {
+	return o.dbPath
+}
+
+func (o *JsonDB) GetHashes() (model.ClientServerHashes, error) {
+	hashes := model.ClientServerHashes{}
+	return hashes, o.conn.Read("server", "hashes", &hashes)
+}
+
+func (o *JsonDB) SaveHashes(hashes model.ClientServerHashes) error {
+	return o.conn.Write("server", "hashes", hashes)
 }
