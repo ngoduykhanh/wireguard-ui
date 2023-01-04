@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"golang.org/x/mod/sumdb/dirhash"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -461,4 +466,40 @@ func LookupEnvOrStrings(key string, defaultVal []string) []string {
 		return strings.Split(val, ",")
 	}
 	return defaultVal
+}
+
+// GetCurrentHash returns current hashes
+func GetCurrentHash(db store.IStore) (string, string) {
+	hashClients, _ := dirhash.HashDir(path.Join(db.GetPath(), "clients"), "prefix", dirhash.Hash1)
+	files := append([]string(nil), "prefix/global_settings.json", "prefix/interfaces.json", "prefix/keypair.json")
+
+	osOpen := func(name string) (io.ReadCloser, error) {
+		return os.Open(filepath.Join(path.Join(db.GetPath(), "server"), strings.TrimPrefix(name, "prefix")))
+	}
+	hashServer, _ := dirhash.Hash1(files, osOpen)
+
+	return hashClients, hashServer
+}
+
+func HashesChanged(db store.IStore) bool {
+	old, _ := db.GetHashes()
+	oldClient := old.Client
+	oldServer := old.Server
+	newClient, newServer := GetCurrentHash(db)
+
+	if oldClient != newClient {
+		fmt.Println("Hash for client differs")
+		return true
+	}
+	if oldServer != newServer {
+		fmt.Println("Hash for server differs")
+		return true
+	}
+	return false
+}
+
+func UpdateHashes(db store.IStore) error {
+	var clientServerHashes model.ClientServerHashes
+	clientServerHashes.Client, clientServerHashes.Server = GetCurrentHash(db)
+	return db.SaveHashes(clientServerHashes)
 }
