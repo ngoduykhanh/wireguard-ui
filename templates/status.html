@@ -41,6 +41,8 @@ Connected Peers
                   <th scope="col">#</th>
                   <th scope="col">Name</th>
                   <th scope="col">Email</th>
+                  <th scope="col">Allocated IPs</th>
+                  <th scope="col">Endpoint</th>
                   <th scope="col">Public Key</th>
                   <th scope="col">Received</th>
                   <th scope="col">Transmitted</th>
@@ -54,6 +56,8 @@ Connected Peers
                 <th scope="row">{{ $idx }}</th>
                 <td>{{ $peer.Name }}</td>
                 <td>{{ $peer.Email }}</td>
+                <td>{{ $peer.AllocatedIP }}</td>
+                <td>{{ $peer.Endpoint }}</td>
                 <td>{{ $peer.PublicKey }}</td>
                 <td title="{{ $peer.ReceivedBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.ReceivedBytes }}))</script></td>
                 <td title="{{ $peer.TransmitBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.TransmitBytes }}))</script></td>
