@@ -24,7 +24,6 @@ var (
 const (
 	DefaultUsername                        = "admin"
 	DefaultPassword                        = "admin"
-	DefaultIsAdmin                         = true
 	DefaultServerAddress                   = "10.252.1.0/24"
 	DefaultServerPort                      = 51820
 	DefaultDNS                             = "1.1.1.1"
