@@ -6,10 +6,8 @@ import (
 
 type IStore interface {
 	Init() error
-	GetUsers() ([]model.User, error)
-	GetUserByName(username string) (model.User, error)
+	GetUser() (model.User, error)
 	SaveUser(user model.User) error
-	DeleteUser(username string) error
 	GetGlobalSettings() (model.GlobalSetting, error)
 	GetEmailSettings() (model.EmailSetting, error)
 	GetServer() (model.Server, error)

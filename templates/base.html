@@ -88,13 +88,7 @@
                     </div>
                     <div class="info">
                         {{if .baseData.CurrentUser}}
-
-                        {{if .baseData.Admin}}
-                        <a href="{{.basePath}}/profile" class="d-block">Administrator: {{.baseData.CurrentUser}}</a>
-                        {{else}}
-                        <a href="{{.basePath}}/profile" class="d-block">Manager: {{.baseData.CurrentUser}}</a>
-                        {{end}}
-
+                        <a href="{{.basePath}}/profile" class="d-block">{{.baseData.CurrentUser}}</a>
                         {{else}}
                         <a href="#" class="d-block">Administrator</a>
                         {{end}}
@@ -113,8 +107,6 @@
                                 </p>
                             </a>
                         </li>
-
-                        {{if .baseData.Admin}}
                         <li class="nav-item">
                             <a href="{{.basePath}}/wg-server" class="nav-link {{if eq .baseData.Active "wg-server" }}active{{end}}">
                                 <i class="nav-icon fas fa-server"></i>
@@ -123,8 +115,6 @@
                                 </p>
                             </a>
                         </li>
-
-
                         <li class="nav-header">SETTINGS</li>
                         <li class="nav-item">
                             <a href="{{.basePath}}/global-settings" class="nav-link {{if eq .baseData.Active "global-settings" }}active{{end}}">
@@ -142,16 +132,6 @@
                             </p>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/users-settings" class="nav-link {{if eq .baseData.Active "users-settings" }}active{{end}}">
-                            <i class="nav-icon fas fa-cog"></i>
-                            <p>
-                                Users Settings
-                            </p>
-                            </a>
-                        </li>
-                        {{end}}
-
                         <li class="nav-header">UTILITIES</li>
                         <li class="nav-item">
                             <a href="{{.basePath}}/status" class="nav-link {{if eq .baseData.Active "status" }}active{{end}}">

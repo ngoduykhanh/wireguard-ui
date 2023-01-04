@@ -99,11 +99,7 @@
         $("#btn_login").click(function () {
             const username = $("#username").val();
             const password = $("#password").val();
-            let rememberMe = false;
-            if ($("#remember").is(':checked')){
-                rememberMe = true;
-            }
-            const data = {"username": username, "password": password, "rememberMe": rememberMe}
+            const data = {"username": username, "password": password}
 
             $.ajax({
                 cache: false,

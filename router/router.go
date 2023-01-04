@@ -88,11 +88,6 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 		log.Fatal(err)
 	}
 
-	tmplUsersSettingsString, err := tmplBox.String("users_settings.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	tmplStatusString, err := tmplBox.String("status.html")
 	if err != nil {
 		log.Fatal(err)
@@ -114,7 +109,6 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 	templates["server.html"] = template.Must(template.New("server").Funcs(funcs).Parse(tmplBaseString + tmplServerString))
 	templates["global_settings.html"] = template.Must(template.New("global_settings").Funcs(funcs).Parse(tmplBaseString + tmplGlobalSettingsString))
 	templates["email_settings.html"] = template.Must(template.New("email_settings").Funcs(funcs).Parse(tmplBaseString + tmplEmailSettingsString))
-	templates["users_settings.html"] = template.Must(template.New("users_settings").Funcs(funcs).Parse(tmplBaseString + tmplUsersSettingsString))
 	templates["status.html"] = template.Must(template.New("status").Funcs(funcs).Parse(tmplBaseString + tmplStatusString))
 	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Funcs(funcs).Parse(tmplBaseString + tmplWakeOnLanHostsString))
 
