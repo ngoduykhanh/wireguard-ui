@@ -808,3 +808,10 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
 	}
 }
+
+// AboutPage handler
+func AboutPage() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.Render(http.StatusOK, "about.html", map[string]interface{}{})
+	}
+}
