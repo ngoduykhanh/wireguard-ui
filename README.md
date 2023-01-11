@@ -68,7 +68,7 @@ Note:
 | `SMTP_USERNAME`             | The SMTP username                                                                                                                                            | N/A                                |
 | `SMTP_PASSWORD`             | The SMTP user password                                                                                                                                       | N/A                                |
 | `SMTP_AUTH_TYPE`            | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                      | `NONE`                             |
-| `SMTP_ENCRYPTION`           | the encryption method. Possible values: `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                   | `STARTTLS`                         |
+| `SMTP_ENCRYPTION`           | the encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                           | `STARTTLS`                         |
 
 ### Defaults for server configuration
 
