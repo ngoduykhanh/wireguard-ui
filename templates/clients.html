@@ -422,7 +422,7 @@ Wireguard Clients
                 cache: false,
                 method: 'GET',
                 url: '{{.basePath}}/api/client/' + client_id,
-                data: {
+                data: { 
                     qrCodeIncludeFwMark: include_fwmark
                 },
                 dataType: 'json',
@@ -610,7 +610,7 @@ Wireguard Clients
                     $(element).removeClass('is-invalid');
                 }
             });
-            //
+            // 
         });
     </script>
 {{end}}
