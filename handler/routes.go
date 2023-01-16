@@ -533,6 +533,8 @@ func Status(db store.IStore) echo.HandlerFunc {
 		LastHandshakeTime time.Time
 		LastHandshakeRel  time.Duration
 		Connected         bool
+		AllocatedIP       string
+		Endpoint          string
 	}
 
 	type DeviceVM struct {
