@@ -30,6 +30,7 @@ const (
 	DefaultMTU                             = 1450
 	DefaultPersistentKeepalive             = 15
 	DefaultForwardMark                     = "0xca6c"
+	DefaultTable                           = "auto"
 	DefaultConfigFilePath                  = "/etc/wireguard/wg0.conf"
 	UsernameEnvVar                         = "WGUI_USERNAME"
 	PasswordEnvVar                         = "WGUI_PASSWORD"
@@ -39,6 +40,7 @@ const (
 	MTUEnvVar                              = "WGUI_MTU"
 	PersistentKeepaliveEnvVar              = "WGUI_PERSISTENT_KEEPALIVE"
 	ForwardMarkEnvVar                      = "WGUI_FORWARD_MARK"
+	TableEnvVar                            = "WGUI_TABLE"
 	ConfigFilePathEnvVar                   = "WGUI_CONFIG_FILE_PATH"
 	ServerAddressesEnvVar                  = "WGUI_SERVER_INTERFACE_ADDRESSES"
 	ServerListenPortEnvVar                 = "WGUI_SERVER_LISTEN_PORT"
