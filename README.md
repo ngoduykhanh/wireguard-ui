@@ -119,7 +119,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'
+ExecStart=/bin/bash /DIR-TO-RESTART-FILE/restart-wg.sh
 
 [Install]
 RequiredBy=wgui.path
