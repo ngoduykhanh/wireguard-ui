@@ -729,20 +729,6 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 func ClientDefaultSettingsSubmit(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		//data := make(map[string]interface{})
-		//err := json.NewDecoder(c.Request().Body).Decode(&data)
-		//if err != nil {
-		//	return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
-		//}
-		//
-		//var clientDefaultSettings model.ClientDefaults
-		//fmt.Println(data["allowed_ips"])
-		//
-		//clientDefaultSettings.AllowedIps = strings.Split(data["allowed_ips"].(string), ",")
-		//clientDefaultSettings.ExtraAllowedIps = strings.Split(data["extra_allowed_ips"].(string), ",")
-		//clientDefaultSettings.EnableAfterCreation = data["enable_after_creation"].(bool)
-		//clientDefaultSettings.UseServerDNS = data["use_server_dns"].(bool)
-
 		var clientDefaultSettings model.ClientDefaults
 		c.Bind(&clientDefaultSettings)
 
