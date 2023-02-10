@@ -119,7 +119,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/systemctl restart wg-quick@wg0.service
+ExecStart=/bin/bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'
 
 [Install]
 RequiredBy=wgui.path
