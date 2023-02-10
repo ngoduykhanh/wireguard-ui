@@ -42,6 +42,7 @@ func (o *JsonDB) Init() error {
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
+	var clientDefaultSettingsPath string = path.Join(serverPath, "client_default_settings.json")
 	var userPath string = path.Join(serverPath, "users.json")
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
@@ -102,6 +103,12 @@ func (o *JsonDB) Init() error {
 		o.conn.Write("server", "global_settings", globalSetting)
 	}
 
+	// client default settings
+	if _, err := os.Stat(clientDefaultSettingsPath); os.IsNotExist(err) {
+		clientDefaultSetting := util.ClientDefaultsFromEnv()
+		o.conn.Write("server", "client_default_settings", clientDefaultSetting)
+	}
+
 	// user info
 	if _, err := os.Stat(userPath); os.IsNotExist(err) {
 		user := new(model.User)
@@ -136,6 +143,12 @@ func (o *JsonDB) SaveUser(user model.User) error {
 func (o *JsonDB) GetGlobalSettings() (model.GlobalSetting, error) {
 	settings := model.GlobalSetting{}
 	return settings, o.conn.Read("server", "global_settings", &settings)
+}
+
+// GetClientDefaultSettings func to query client default settings from the database
+func (o *JsonDB) GetClientDefaultSettings() (model.ClientDefaults, error) {
+	settings := model.ClientDefaults{}
+	return settings, o.conn.Read("server", "client_default_settings", &settings)
 }
 
 // GetServer func to query Server settings from the database
@@ -213,7 +226,7 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 		server, _ := o.GetServer()
 		globalSettings, _ := o.GetGlobalSettings()
 		client := client
-		if !qrCodeSettings.IncludeDNS{
+		if !qrCodeSettings.IncludeDNS {
 			globalSettings.DNSServers = []string{}
 		}
 		if !qrCodeSettings.IncludeMTU {
@@ -254,4 +267,8 @@ func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
 
 func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	return o.conn.Write("server", "global_settings", globalSettings)
+}
+
+func (o *JsonDB) SaveClientDefaultSettings(clientDefaults model.ClientDefaults) error {
+	return o.conn.Write("server", "client_default_settings", clientDefaults)
 }
