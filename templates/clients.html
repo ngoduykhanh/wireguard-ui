@@ -252,6 +252,28 @@ Wireguard Clients
             populateClientList();
         })
 
+        // show search bar and override :contains to be case-insensitive
+        $(document).ready(function () {
+            $("#search-form").show();
+            jQuery.expr[':'].contains = function(a, i, m) {
+                return jQuery(a).text().toUpperCase()
+                    .indexOf(m[3].toUpperCase()) >= 0;
+            };
+        })
+
+        // hide all clients and display only the ones that meet the search criteria (name, email, IP)
+        $('#search-input').keyup(function () {
+            var query = $(this).val();
+            $('.col-lg-4').hide();
+            $(".info-box-text").each(function() {
+                if($(this).children('i.fa-user').length > 0 || $(this).children('i.fa-envelope').length > 0)
+                {
+                    $(this).filter(':contains("' + query + '")').parent().parent().parent().show();
+                }
+                })
+            $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
+        })
+
         // modal_pause_client modal event
         $("#modal_pause_client").on('show.bs.modal', function (event) {
             const button = $(event.relatedTarget);
