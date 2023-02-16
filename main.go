@@ -147,6 +147,7 @@ func main() {
 		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
 	}
 
+	app.GET(util.BasePath+"/about", handler.AboutPage())
 	app.GET(util.BasePath+"/_health", handler.Health())
 	app.GET(util.BasePath+"/favicon", handler.Favicon())
 	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
