@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -29,6 +30,15 @@ import (
 func Health() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return c.String(http.StatusOK, "ok")
+	}
+}
+
+func Favicon() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if favicon, ok := os.LookupEnv(util.FaviconFilePathEnvVar); ok {
+			return c.File(favicon)
+		}
+		return c.Redirect(http.StatusFound, util.BasePath+"/static/custom/img/favicon.ico")
 	}
 }
 
