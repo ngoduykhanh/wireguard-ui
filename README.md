@@ -202,7 +202,13 @@ feature work.
 Go to the project root directory and run the following command:
 
 ```sh
-docker build -t wireguard-ui .
+docker build --build-arg=COMMIT=$(git rev-parse --short HEAD) -t wireguard-ui .
+```
+
+or
+
+```sh
+docker compose build --build-arg=COMMIT=$(git rev-parse --short HEAD)
 ```
 
 ### Build binary file

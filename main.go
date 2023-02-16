@@ -116,6 +116,7 @@ func main() {
 	// set app extra data
 	extraData := make(map[string]string)
 	extraData["appVersion"] = appVersion
+	extraData["gitCommit"] = gitCommit
 	extraData["basePath"] = util.BasePath
 
 	// create rice box for embedded template
