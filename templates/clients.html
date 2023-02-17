@@ -70,7 +70,9 @@ Wireguard Clients
             </div>
             <div class="modal-body">
                 <input type="hidden" id="qr_client_id" name="qr_client_id">
-                <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
+                <a href="" download="" id="qr_code_a">
+                    <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
+                </a>
                 <div class="form-group">
                     <div class="icheck-primary d-inline">
                         <input type="checkbox" id="qr_include_fwmark" onchange="regenerateQRCode()">
@@ -258,6 +260,28 @@ Wireguard Clients
             populateClientList();
         })
 
+        // show search bar and override :contains to be case-insensitive
+        $(document).ready(function () {
+            $("#search-form").show();
+            jQuery.expr[':'].contains = function(a, i, m) {
+                return jQuery(a).text().toUpperCase()
+                    .indexOf(m[3].toUpperCase()) >= 0;
+            };
+        })
+
+        // hide all clients and display only the ones that meet the search criteria (name, email, IP)
+        $('#search-input').keyup(function () {
+            var query = $(this).val();
+            $('.col-lg-4').hide();
+            $(".info-box-text").each(function() {
+                if($(this).children('i.fa-user').length > 0 || $(this).children('i.fa-envelope').length > 0)
+                {
+                    $(this).filter(':contains("' + query + '")').parent().parent().parent().show();
+                }
+                })
+            $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
+        })
+
         // modal_pause_client modal event
         $("#modal_pause_client").on('show.bs.modal', function (event) {
             const button = $(event.relatedTarget);
@@ -402,6 +426,7 @@ Wireguard Clients
         function regenerateQRCode() {
             const client_id = $("#qr_client_id").val();
             const QRCodeImg = $("#qr_code");
+            const QRCodeA = $("#qr_code_a");
             let include_fwmark = false;
             if ($("#qr_include_fwmark").is(':checked')){
                 include_fwmark = true;
@@ -421,6 +446,8 @@ Wireguard Clients
 
                     $(".modal-title").text("Scan QR Code for " + client.name + " profile");
                     QRCodeImg.attr('src', resp.QRCode).show();
+                    QRCodeA.attr('download', resp.Client.name);
+                    QRCodeA.attr('href', resp.QRCode).show();
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
