@@ -147,9 +147,10 @@ func main() {
 		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
 	}
 
-	app.GET(util.BasePath+"/about", handler.AboutPage())
+	app.GET(util.BasePath+"/about", handler.AboutPage(db))
 	app.GET(util.BasePath+"/_health", handler.Health())
-	app.GET(util.BasePath+"/favicon", handler.Favicon())
+	app.GET(util.BasePath+"/favicon", handler.Favicon(db))
+	app.GET(util.BasePath+"/brand-logo", handler.BrandLogo(db))
 	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/update-client", handler.UpdateClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession, handler.ContentTypeJson)
@@ -171,6 +172,8 @@ func main() {
 	app.POST(util.BasePath+"/wake_on_lan_host", handler.SaveWakeOnLanHost(db), handler.ValidSession, handler.ContentTypeJson)
 	app.DELETE(util.BasePath+"/wake_on_lan_host/:mac_address", handler.DeleteWakeOnHost(db), handler.ValidSession, handler.ContentTypeJson)
 	app.PUT(util.BasePath+"/wake_on_lan_host/:mac_address", handler.WakeOnHost(db), handler.ValidSession, handler.ContentTypeJson)
+	app.GET(util.BasePath+"/branding-settings", handler.BrandingSettings(db), handler.ValidSession)
+	app.POST(util.BasePath+"/update-branding", handler.UpdateBranding(db), handler.ValidSession)
 
 	// servers other static files
 	app.GET(util.BasePath+"/static/*", echo.WrapHandler(http.StripPrefix(util.BasePath+"/static/", assetHandler)))

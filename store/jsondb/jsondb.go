@@ -43,6 +43,9 @@ func (o *JsonDB) Init() error {
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
 	var userPath string = path.Join(serverPath, "users.json")
+	var brandingPath string = path.Join(o.dbPath, "branding")
+	var brandNamePath string = path.Join(brandingPath, "brand_name.json")
+
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
 		os.MkdirAll(clientPath, os.ModePerm)
@@ -52,6 +55,9 @@ func (o *JsonDB) Init() error {
 	}
 	if _, err := os.Stat(wakeOnLanHostsPath); os.IsNotExist(err) {
 		os.MkdirAll(wakeOnLanHostsPath, os.ModePerm)
+	}
+	if _, err := os.Stat(brandingPath); os.IsNotExist(err) {
+		os.MkdirAll(brandingPath, os.ModePerm)
 	}
 
 	// server's interface
@@ -116,6 +122,14 @@ func (o *JsonDB) Init() error {
 			user.PasswordHash = hash
 		}
 		o.conn.Write("server", "users", user)
+	}
+	// brand name
+	if _, err := os.Stat(brandNamePath); os.IsNotExist(err) {
+		type brandName struct {
+			BrandName string `json:"brand_name"`
+		}
+		name := brandName{BrandName: "WIREGUARD UI"}
+		o.conn.Write("branding", "brand_name", name)
 	}
 
 	return nil
@@ -213,7 +227,7 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 		server, _ := o.GetServer()
 		globalSettings, _ := o.GetGlobalSettings()
 		client := client
-		if !qrCodeSettings.IncludeDNS{
+		if !qrCodeSettings.IncludeDNS {
 			globalSettings.DNSServers = []string{}
 		}
 		if !qrCodeSettings.IncludeMTU {
@@ -254,4 +268,31 @@ func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
 
 func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	return o.conn.Write("server", "global_settings", globalSettings)
+}
+
+// GetBrandName func to get brand name from the database
+func (o *JsonDB) GetBrandName() string {
+	type brandName struct {
+		BrandName string `json:"brand_name"`
+	}
+	name := brandName{}
+	o.conn.Read("branding", "brand_name", &name)
+
+	if err := o.conn.Read("branding", "brand_name", &name); err != nil {
+		return "WIREGUARD UI"
+	}
+
+	return name.BrandName
+}
+
+func (o *JsonDB) SetBrandName(brandName string) error {
+	type brandNameStruct struct {
+		BrandName string `json:"brand_name"`
+	}
+	name := brandNameStruct{BrandName: brandName}
+	return o.conn.Write("branding", "brand_name", name)
+}
+
+func (o *JsonDB) GetPath() string {
+	return o.dbPath
 }

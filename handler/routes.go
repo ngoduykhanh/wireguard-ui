@@ -5,8 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -33,11 +35,48 @@ func Health() echo.HandlerFunc {
 	}
 }
 
-func Favicon() echo.HandlerFunc {
+func Favicon(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if favicon, ok := os.LookupEnv(util.FaviconFilePathEnvVar); ok {
 			return c.File(favicon)
+		} else {
+			_, err := os.OpenFile(path.Join(db.GetPath(), "branding")+"/favicon.ico", os.O_RDONLY, 0777)
+			if err != nil {
+				return c.Redirect(http.StatusFound, util.BasePath+"/static/custom/img/favicon.ico")
+			}
+			return c.File(path.Join(db.GetPath(), "branding") + "/favicon.ico")
 		}
+	}
+}
+
+func BrandLogo(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		_, err := os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.png", os.O_RDONLY, 0777)
+		if err == nil {
+			return c.File(path.Join(db.GetPath(), "branding") + "/logo.png")
+		}
+
+		_, err = os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.jpg", os.O_RDONLY, 0777)
+		if err == nil {
+			return c.File(path.Join(db.GetPath(), "branding") + "/logo.jpg")
+		}
+
+		_, err = os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.jpeg", os.O_RDONLY, 0777)
+		if err == nil {
+			return c.File(path.Join(db.GetPath(), "branding") + "/logo.jpeg")
+		}
+
+		_, err = os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.gif", os.O_RDONLY, 0777)
+		if err == nil {
+			return c.File(path.Join(db.GetPath(), "branding") + "/logo.gif")
+		}
+
+		_, err = os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.ico", os.O_RDONLY, 0777)
+		if err == nil {
+			return c.File(path.Join(db.GetPath(), "branding") + "/logo.ico")
+		}
+
 		return c.Redirect(http.StatusFound, util.BasePath+"/static/custom/img/favicon.ico")
 	}
 }
@@ -120,7 +159,7 @@ func LoadProfile(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "profile.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "profile", CurrentUser: currentUser(c)},
+			"baseData": model.BaseData{Active: "profile", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 			"userInfo": userInfo,
 		})
 	}
@@ -179,7 +218,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c)},
+			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 			"clientDataList": clientDataList,
 		})
 	}
@@ -532,7 +571,7 @@ func WireGuardServer(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
-			"baseData":        model.BaseData{Active: "wg-server", CurrentUser: currentUser(c)},
+			"baseData":        model.BaseData{Active: "wg-server", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 			"serverInterface": server.Interface,
 			"serverKeyPair":   server.KeyPair,
 		})
@@ -600,7 +639,7 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c)},
+			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 			"globalSettings": globalSettings,
 		})
 	}
@@ -630,7 +669,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		wgClient, err := wgctrl.New()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
-				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 				"error":    err.Error(),
 				"devices":  nil,
 			})
@@ -639,7 +678,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		devices, err := wgClient.Devices()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
-				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 				"error":    err.Error(),
 				"devices":  nil,
 			})
@@ -651,7 +690,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 			clients, err := db.GetClients(false)
 			if err != nil {
 				return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
-					"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+					"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 					"error":    err.Error(),
 					"devices":  nil,
 				})
@@ -697,7 +736,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "status.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+			"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 			"devices":  devicesVm,
 			"error":    "",
 		})
@@ -831,11 +870,75 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 }
 
 // AboutPage handler
-func AboutPage() echo.HandlerFunc {
+func AboutPage(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return c.Render(http.StatusOK, "about.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "about", CurrentUser: currentUser(c)},
+			"baseData": model.BaseData{Active: "about", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
 		})
 	}
 }
 
+// Branding handler
+func BrandingSettings(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.Render(http.StatusOK, "branding_settings.html", map[string]interface{}{
+			"baseData": model.BaseData{Active: "branding-settings", CurrentUser: currentUser(c), BrandName: db.GetBrandName()},
+		})
+	}
+}
+
+func UpdateBranding(db store.IStore) echo.HandlerFunc {
+
+	return func(c echo.Context) error {
+
+		c.Request().ParseMultipartForm(32 << 20)
+		brand_name := c.Request().Form.Get("brand_name")
+		favicon_exist := true
+		logo_exist := true
+
+		// check if favicon exist
+		favicon_file, favicon_handler, err := c.Request().FormFile("favicon")
+		if err != nil {
+			favicon_exist = false
+		} else {
+			defer favicon_file.Close()
+		}
+
+		// check if logo exist
+		logo_file, logo_handler, err := c.Request().FormFile("logo")
+		if err != nil {
+			logo_exist = false
+		} else {
+			defer logo_file.Close()
+		}
+
+		if favicon_exist {
+			f, err := os.OpenFile(path.Join(db.GetPath(), "branding")+"/favicon."+strings.Split(favicon_handler.Filename, ".")[1], os.O_WRONLY|os.O_CREATE, 0777)
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot open " + path.Join(db.GetPath(), "branding") + "/favicon." + strings.Split(favicon_handler.Filename, ".")[1]})
+			}
+			defer f.Close()
+			io.Copy(f, favicon_file)
+		}
+
+		if logo_exist {
+			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.png")
+			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.jpg")
+			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.jpeg")
+			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.gif")
+			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.ico")
+			f, err := os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo."+strings.Split(logo_handler.Filename, ".")[1], os.O_WRONLY|os.O_CREATE, 0777)
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot open " + path.Join(db.GetPath(), "branding") + "/logo." + strings.Split(logo_handler.Filename, ".")[1]})
+			}
+			defer f.Close()
+			io.Copy(f, logo_file)
+		}
+
+		if err := db.SetBrandName(brand_name); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot set brand name"})
+		}
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated branding settings successfully"})
+	}
+}

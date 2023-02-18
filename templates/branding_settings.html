@@ -1,0 +1,202 @@
+{{define "title"}}
+Branding Settings
+{{end}}
+
+{{define "top_css"}}
+{{end}}
+
+{{define "username"}}
+{{ .username }}
+{{end}}
+
+{{define "page_title"}}
+Branding Settings
+{{end}}
+
+{{define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        <!-- <h5 class="mt-4 mb-2">Global Settings</h5> -->
+        <div class="row">
+            <!-- left column -->
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Wireguard-UI Branding Settings</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <!-- form start -->
+                    <form role="form" id="frm_branding_settings" name="frm_branding_settings">
+                        <div class="card-body">
+
+                            <div class="form-group">
+                                <label for="favicon">Favicon</label>
+                                <div class="input-group input-group">
+                                    <input type="text" class="form-control" id="favicon" name="favicon" disabled>
+                                    <span class="input-group-append">
+                                        <label class="btn btn-default">Select favicon<input type="file"
+                                                                                            id="favicon_input"
+                                                                                            accept=".ico" hidden>
+                                        </label>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="brand_logo">Brand logo</label>
+                                <div class="input-group input-group">
+                                    <input type="text" class="form-control" id="brand_logo" name="brand_logo" disabled>
+                                    <span class="input-group-append">
+                                        <label class="btn btn-default">Select logo<input type="file"
+                                                                                         id="brand_logo_input" accept=".png,.jpg,.jpeg,.gif,.ico" hidden>
+                                        </label>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="brand_name">Brand name</label>
+                                <input type="text" class="form-control" id="brand_name"
+                                       name="brand_name" placeholder="WIREGUARD UI"
+                                       value="{{if .baseData.BrandName }}{{ .baseData.BrandName }}{{end}}">
+                            </div>
+                        </div>
+                        <!-- /.card-body -->
+
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success">Save</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- /.card -->
+            </div>
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">Help</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <dl>
+                            <dt>1. Favicon</dt>
+                            <dd>Formats accepted: <code>.ico</code></dd>
+                            <dd>Optional - leave blank or clear to continue using current favicon.</dd>
+                            <dt>2. Brand logo</dt>
+                            <dd>The logo, displayed in the upper left corner.</dd>
+                            <dd>Formats accepted: <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.gif</code>, <code>.ico</code></dd>
+                            <dd>Optional - leave blank or clear to continue using current brand logo.</dd>
+                            <dt>3. Brand name</dt>
+                            <dd>The name, displayed in the upper left corner.</dd>
+                            <dd>Mandatory - must contain at least one symbol.</dd>
+                        </dl>
+                    </div>
+                </div>
+                <!-- /.card -->
+            </div>
+        </div>
+        <!-- /.row -->
+    </div>
+</section>
+
+{{end}}
+
+{{define "bottom_js"}}
+<script>
+    function submitBrandingSettings() {
+
+
+        var data = new FormData();
+        data.append("brand_name", $("#brand_name").val());
+
+        var count = 1;
+        if (typeof document.getElementById("favicon_input").files[0] !== 'undefined') {
+            readFile(data, 'favicon', "favicon_input");
+            count++;
+        }
+        if (typeof document.getElementById("brand_logo_input").files[0] !== 'undefined') {
+            readFile(data, 'logo', "brand_logo_input");
+            count++;
+        }
+
+        function waitForRead() {
+            var temp = 0;
+            for (const pair of data.entries()) {
+                temp++;
+            }
+            if (temp !== count) {
+                setTimeout(() => waitForRead(), 50);
+            } else {
+                $.ajax({
+                    url: "{{.basePath}}/update-branding",
+                    data: data,
+                    processData: false,
+                    contentType: false,
+                    type: "POST",
+                    success: function(data) {
+                        toastr.success('Updated branding successfully');
+                    },
+                    error: function(jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
+            }
+        };
+        waitForRead();
+    }
+
+    function readFile(data, name, element) {
+        var image = document.getElementById(element).files[0];
+        var reader = new FileReader();
+        reader.readAsArrayBuffer(image);
+        reader.onloadend = function () {
+            data.append(name, image);
+        };
+    }
+
+</script>
+<script>
+
+    $("#favicon_input").on('change', function () {
+        $("#favicon").val($("#favicon_input").val());
+    });
+
+    $("#brand_logo_input").on('change', function () {
+        $("#brand_logo").val($("#brand_logo_input").val());
+    });
+
+
+    // Form validation
+    $(document).ready(function () {
+        $.validator.setDefaults({
+            submitHandler: function () {
+                submitBrandingSettings();
+            }
+        });
+        $("#frm_branding_settings").validate({
+            rules: {
+                brand_name: {
+                    required: true
+                }
+            },
+            messages: {
+                brand_name: {
+                    required: "Please enter a brand name"
+                }
+            },
+            errorElement: 'span',
+            errorPlacement: function (error, element) {
+                error.addClass('invalid-feedback');
+                element.closest('.form-group').append(error);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+    });
+
+</script>
+{{end}}

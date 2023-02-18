@@ -98,6 +98,11 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 		log.Fatal(err)
 	}
 
+	brandingSettingsString, err := tmplBox.String("branding_settings.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// create template list
 	funcs := template.FuncMap{
 		"StringsJoin": strings.Join,
@@ -111,6 +116,7 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 	templates["status.html"] = template.Must(template.New("status").Funcs(funcs).Parse(tmplBaseString + tmplStatusString))
 	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Funcs(funcs).Parse(tmplBaseString + tmplWakeOnLanHostsString))
 	templates["about.html"] = template.Must(template.New("about").Funcs(funcs).Parse(tmplBaseString + aboutPageString))
+	templates["branding_settings.html"] = template.Must(template.New("branding_settings").Funcs(funcs).Parse(tmplBaseString + brandingSettingsString))
 
 	e.Logger.SetLevel(log.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())

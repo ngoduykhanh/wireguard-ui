@@ -22,4 +22,7 @@ type IStore interface {
 	DeleteWakeOnHostLanHost(macAddress string) error
 	SaveWakeOnLanHost(host model.WakeOnLanHost) error
 	DeleteWakeOnHost(host model.WakeOnLanHost) error
+	GetBrandName() string
+	SetBrandName(brandName string) error
+	GetPath() string
 }

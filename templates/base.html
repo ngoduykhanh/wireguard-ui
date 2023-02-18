@@ -78,7 +78,9 @@
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
             <a href="{{.basePath}}" class="brand-link">
-                <span class="brand-text">&nbsp; WIREGUARD UI</span>
+                <img src="{{.basePath}}/brand-logo" style="width: 100%">
+                </br>
+                <span class="brand-text">&nbsp; {{.baseData.BrandName}}</span>
             </a>
 
             <!-- Sidebar -->
@@ -124,6 +126,14 @@
                                 <p>
                                     Global Settings
                                 </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{.basePath}}/branding-settings" class="nav-link {{if eq .baseData.Active "branding-settings" }}active{{end}}">
+                            <i class="nav-icon fas fa-cog"></i>
+                            <p>
+                                Branding Settings
+                            </p>
                             </a>
                         </li>
                         <li class="nav-header">UTILITIES</li>
