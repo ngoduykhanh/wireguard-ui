@@ -462,3 +462,20 @@ func LookupEnvOrStrings(key string, defaultVal []string) []string {
 	}
 	return defaultVal
 }
+
+func ParseLogLevel(lvl string) (log.Lvl, error) {
+	switch strings.ToLower(lvl) {
+	case "debug":
+		return log.DEBUG, nil
+	case "info":
+		return log.INFO, nil
+	case "warn":
+		return log.WARN, nil
+	case "error":
+		return log.ERROR, nil
+	case "off":
+		return log.OFF, nil
+	default:
+		return log.DEBUG, fmt.Errorf("not a valid log level: %s", lvl)
+	}
+}
