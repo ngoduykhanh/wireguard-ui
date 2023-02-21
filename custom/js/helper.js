@@ -58,6 +58,7 @@ function renderClientList(data) {
                                 </div>
                                 <hr>
                                 <span class="info-box-text"><i class="fas fa-user"></i> ${obj.Client.name}</span>
+                                <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${obj.Client.public_key}</span>
                                 <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
                                     ${prettyDateTime(obj.Client.created_at)}</span>

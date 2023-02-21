@@ -263,6 +263,7 @@ Wireguard Clients
 
         // hide all clients and display only the ones that meet the search criteria (name, email, IP)
         $('#search-input').keyup(function () {
+            $("#status-selector").val("All");
             var query = $(this).val();
             $('.col-lg-4').hide();
             $(".info-box-text").each(function() {
@@ -273,6 +274,70 @@ Wireguard Clients
                 })
             $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
         })
+
+        $("#status-selector").on('change', function () {
+            $('#search-input').val("");
+            switch ($("#status-selector").val()) {
+                case "All":
+                    $('.col-lg-4').show();
+                    break;
+                case "Enabled":
+                    $('.col-lg-4').hide();
+                    $('[id^="paused_"]').each(function () {
+                        if ($(this).css("visibility") === "hidden") {
+                            $(this).parent().parent().show();
+                        }
+                    });
+                    break;
+                case "Disabled":
+                    $('.col-lg-4').hide();
+                    $('[id^="paused_"]').each(function () {
+                        if ($(this).css("visibility") !== "hidden") {
+                            $(this).parent().parent().show();
+                        }
+                    });
+                    break;
+                case "Connected":
+                    $('.col-lg-4').hide();
+                    $.ajax({
+                        cache: false,
+                        method: 'GET',
+                        url: '{{.basePath}}/status',
+                        success: function (data) {
+                            const returnedHTML = $(data).find(".table-success").get();
+                            var returnedString = "";
+                            returnedHTML.forEach(entry => returnedString += entry.outerHTML);
+                            $(".fa-key").each(function () {
+                                if (returnedString.indexOf($(this).parent().text().trim()) != -1) {
+                                    $(this).closest('.col-lg-4').show();
+                                }
+                            })
+                        }
+                    });
+                    break;
+                case "Disconnected":
+                    $('.col-lg-4').show();
+                    $.ajax({
+                        cache: false,
+                        method: 'GET',
+                        url: '{{.basePath}}/status',
+                        success: function (data) {
+                            const returnedHTML = $(data).find(".table-success").get();
+                            var returnedString = "";
+                            returnedHTML.forEach(entry => returnedString += entry.outerHTML);
+                            $(".fa-key").each(function () {
+                                if (returnedString.indexOf($(this).parent().text().trim()) != -1) {
+                                    $(this).closest('.col-lg-4').hide();
+                                }
+                            })
+                        }
+                    });
+                    break;
+                default:
+                    $('.col-lg-4').show();
+                    break;
+            }
+        });
 
         // modal_pause_client modal event
         $("#modal_pause_client").on('show.bs.modal', function (event) {
