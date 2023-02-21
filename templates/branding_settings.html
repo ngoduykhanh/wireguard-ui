@@ -26,7 +26,7 @@ Branding Settings
                     </div>
                     <!-- /.card-header -->
                     <!-- form start -->
-                    <form role="form" id="frm_branding_settings" name="frm_branding_settings">
+                    <form role="form" id="frm_branding_settings" name="frm_branding_settings" onsubmit="return false">
                         <div class="card-body">
 
                             <div class="form-group">
@@ -48,7 +48,7 @@ Branding Settings
                                     <input type="text" class="form-control" id="brand_logo" name="brand_logo" disabled>
                                     <span class="input-group-append">
                                         <label class="btn btn-default">Select logo<input type="file"
-                                                                                         id="brand_logo_input" accept=".png,.jpg,.jpeg,.gif,.ico" hidden>
+                                                                                         id="brand_logo_input" accept=".svg,.png,.jpg,.jpeg,.gif,.ico" hidden>
                                         </label>
                                     </span>
                                 </div>
@@ -80,10 +80,12 @@ Branding Settings
                         <dl>
                             <dt>1. Favicon</dt>
                             <dd>Formats accepted: <code>.ico</code></dd>
+                            <dd>Maximum file size: 5Mb.</dd>
                             <dd>Optional - leave blank or clear to continue using current favicon.</dd>
                             <dt>2. Brand logo</dt>
                             <dd>The logo, displayed in the upper left corner.</dd>
-                            <dd>Formats accepted: <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.gif</code>, <code>.ico</code></dd>
+                            <dd>Formats accepted: <code>.svg</code>, <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.gif</code>, <code>.ico</code></dd>
+                            <dd>Maximum file size: 10Mb.</dd>
                             <dd>Optional - leave blank or clear to continue using current brand logo.</dd>
                             <dt>3. Brand name</dt>
                             <dd>The name, displayed in the upper left corner.</dd>
@@ -110,12 +112,29 @@ Branding Settings
 
         var count = 1;
         if (typeof document.getElementById("favicon_input").files[0] !== 'undefined') {
-            readFile(data, 'favicon', "favicon_input");
-            count++;
+            const faviconSize = document.getElementById("favicon_input").files[0].size / 1024 ** 2;
+            if(faviconSize<=5) {
+                readFile(data, 'favicon', "favicon_input");
+                count++;
+            } else {
+                toastr.error("Favicon size is bigger than 5Mb.");
+                document.getElementById("favicon_input").value = null;
+                $("#favicon").val($("#favicon_input").val());
+                return false;
+            }
+
         }
         if (typeof document.getElementById("brand_logo_input").files[0] !== 'undefined') {
-            readFile(data, 'logo', "brand_logo_input");
-            count++;
+            const logoSize = document.getElementById("brand_logo_input").files[0].size / 1024 ** 2;
+            if(logoSize<=10) {
+                readFile(data, 'logo', "brand_logo_input");
+                count++;
+            } else {
+                toastr.error("Brand logo size is bigger than 10Mb.");
+                document.getElementById("brand_logo_input").value =null;
+                $("#brand_logo").val($("#brand_logo_input").val());
+                return;
+            }
         }
 
         function waitForRead() {

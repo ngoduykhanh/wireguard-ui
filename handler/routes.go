@@ -52,7 +52,12 @@ func Favicon(db store.IStore) echo.HandlerFunc {
 func BrandLogo(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
-		_, err := os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.png", os.O_RDONLY, 0777)
+		_, err := os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.svg", os.O_RDONLY, 0777)
+		if err == nil {
+			return c.File(path.Join(db.GetPath(), "branding") + "/logo.svg")
+		}
+
+		_, err = os.OpenFile(path.Join(db.GetPath(), "branding")+"/logo.png", os.O_RDONLY, 0777)
 		if err == nil {
 			return c.File(path.Join(db.GetPath(), "branding") + "/logo.png")
 		}
