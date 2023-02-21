@@ -5,13 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
 
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -796,7 +796,7 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 }
 
 // ApplyServerConfig handler to write config file and restart Wireguard server
-func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
+func ApplyServerConfig(db store.IStore, tmplDir fs.FS) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		server, err := db.GetServer()
@@ -818,7 +818,7 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 		}
 
 		// Write config file
-		err = util.WriteWireGuardServerConfig(tmplBox, server, clients, settings)
+		err = util.WriteWireGuardServerConfig(tmplDir, server, clients, settings)
 		if err != nil {
 			log.Error("Cannot apply server config: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
@@ -838,4 +838,3 @@ func AboutPage() echo.HandlerFunc {
 		})
 	}
 }
-
