@@ -112,9 +112,37 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Funcs(funcs).Parse(tmplBaseString + tmplWakeOnLanHostsString))
 	templates["about.html"] = template.Must(template.New("about").Funcs(funcs).Parse(tmplBaseString + aboutPageString))
 
-	e.Logger.SetLevel(log.DEBUG)
+	var lvl log.Lvl
+	switch strings.ToLower(util.LookupEnvOrString(util.LogLevel, "INFO")) {
+	case "debug":
+		lvl = log.DEBUG
+	case "info":
+		lvl = log.INFO
+	case "warn":
+		lvl = log.WARN
+	case "error":
+		lvl = log.ERROR
+	case "off":
+		lvl = log.OFF
+	default:
+		log.Fatalf("not a valid log level: %s", util.LookupEnvOrString(util.LogLevel, "INFO"))
+	}
+
+	e.Logger.SetLevel(lvl)
 	e.Pre(middleware.RemoveTrailingSlash())
-	e.Use(middleware.Logger())
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			resp := c.Response()
+			if resp.Status >= 500 && lvl > log.ERROR { // do not log if response is 5XX but log level is higher than ERROR
+				return next(c)
+			} else if resp.Status >= 400 && lvl > log.WARN { // do not log if response is 4XX but log level is higher than WARN
+				return next(c)
+			} else if lvl > log.DEBUG { // do not log if log level is higher than DEBUG
+				return next(c)
+			}
+			return middleware.Logger()(next)(c)
+		}
+	})
 	e.HideBanner = true
 	e.Validator = NewValidator()
 	e.Renderer = &TemplateRegistry{

@@ -41,6 +41,7 @@ const (
 	PersistentKeepaliveEnvVar              = "WGUI_PERSISTENT_KEEPALIVE"
 	ForwardMarkEnvVar                      = "WGUI_FORWARD_MARK"
 	ConfigFilePathEnvVar                   = "WGUI_CONFIG_FILE_PATH"
+	LogLevel                               = "WGUI_LOG_LEVEL"
 	ServerAddressesEnvVar                  = "WGUI_SERVER_INTERFACE_ADDRESSES"
 	ServerListenPortEnvVar                 = "WGUI_SERVER_LISTEN_PORT"
 	ServerPostUpScriptEnvVar               = "WGUI_SERVER_POST_UP_SCRIPT"
