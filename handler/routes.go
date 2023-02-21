@@ -927,6 +927,7 @@ func UpdateBranding(db store.IStore) echo.HandlerFunc {
 		}
 
 		if logo_exist {
+			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.svg")
 			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.png")
 			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.jpg")
 			os.Remove(path.Join(db.GetPath(), "branding") + "/logo.jpeg")
