@@ -53,6 +53,7 @@ Note:
 | `WGUI_USERNAME`             | The username for the login page. Used for db initialization only                                                                                             | `admin`                            |
 | `WGUI_PASSWORD`             | The password for the user on the login page. Will be hashed automatically. Used for db initialization only                                                   | `admin`                            |
 | `WGUI_PASSWORD_HASH`        | The password hash for the user on the login page. (alternative to `WGUI_PASSWORD`). Used for db initialization only                                          | N/A                                |
+| `WGUI_FAVICON_FILE_PATH`    | The file path used as website favicon                                                                                                                        | Embedded WireGuard logo            |
 | `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings                                                                                                         | Resolved to your public ip address |
 | `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings                                                                                   | `1.1.1.1`                          |
 | `WGUI_MTU`                  | The default MTU used in global settings                                                                                                                      | `1450`                             |
@@ -68,7 +69,7 @@ Note:
 | `SMTP_USERNAME`             | The SMTP username                                                                                                                                            | N/A                                |
 | `SMTP_PASSWORD`             | The SMTP user password                                                                                                                                       | N/A                                |
 | `SMTP_AUTH_TYPE`            | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                      | `NONE`                             |
-| `SMTP_ENCRYPTION`           | the encryption method. Possible values: `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                   | `STARTTLS`                         |
+| `SMTP_ENCRYPTION`           | the encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                           | `STARTTLS`                         |
 
 ### Defaults for server configuration
 
