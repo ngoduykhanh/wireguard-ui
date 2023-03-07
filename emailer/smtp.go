@@ -33,6 +33,8 @@ func authType(authType string) mail.AuthType {
 
 func encryptionType(encryptionType string) mail.Encryption {
 	switch strings.ToUpper(encryptionType) {
+	case "NONE":
+		return mail.EncryptionNone
 	case "SSL":
 		return mail.EncryptionSSL
 	case "SSLTLS":

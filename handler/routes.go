@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -29,6 +30,15 @@ import (
 func Health() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return c.String(http.StatusOK, "ok")
+	}
+}
+
+func Favicon() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if favicon, ok := os.LookupEnv(util.FaviconFilePathEnvVar); ok {
+			return c.File(favicon)
+		}
+		return c.Redirect(http.StatusFound, util.BasePath+"/static/custom/img/favicon.ico")
 	}
 }
 
@@ -674,6 +684,8 @@ func Status(db store.IStore) echo.HandlerFunc {
 		LastHandshakeTime time.Time
 		LastHandshakeRel  time.Duration
 		Connected         bool
+		AllocatedIP       string
+		Endpoint          string
 	}
 
 	type DeviceVM struct {
@@ -721,12 +733,21 @@ func Status(db store.IStore) echo.HandlerFunc {
 			for i := range devices {
 				devVm := DeviceVM{Name: devices[i].Name}
 				for j := range devices[i].Peers {
+					var allocatedIPs string
+					for _, ip := range devices[i].Peers[j].AllowedIPs {
+						if len(allocatedIPs) > 0 {
+							allocatedIPs += "</br>"
+						}
+						allocatedIPs += ip.String()
+					}
 					pVm := PeerVM{
 						PublicKey:         devices[i].Peers[j].PublicKey.String(),
 						ReceivedBytes:     devices[i].Peers[j].ReceiveBytes,
 						TransmitBytes:     devices[i].Peers[j].TransmitBytes,
 						LastHandshakeTime: devices[i].Peers[j].LastHandshakeTime,
 						LastHandshakeRel:  time.Since(devices[i].Peers[j].LastHandshakeTime),
+						AllocatedIP:       allocatedIPs,
+						Endpoint:          devices[i].Peers[j].Endpoint.String(),
 					}
 					pVm.Connected = pVm.LastHandshakeRel.Minutes() < 3.
 
@@ -875,3 +896,13 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
 	}
 }
+
+// AboutPage handler
+func AboutPage() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.Render(http.StatusOK, "about.html", map[string]interface{}{
+			"baseData": model.BaseData{Active: "about", CurrentUser: currentUser(c)},
+		})
+	}
+}
+
