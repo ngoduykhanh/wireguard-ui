@@ -27,22 +27,12 @@ Download the binary file from the release page and run it directly on the host m
 
 ### Using docker compose
 
-You can take a look at this example
-of [docker-compose.yml](https://github.com/ngoduykhanh/wireguard-ui/blob/master/docker-compose.yaml). Please adjust
-volume mount points to work with your setup. Then run it like below:
+The [examples/docker-compose](examples/docker-compose) folder contains example docker-compose files.
+Choose the example which fits you the most, adjust the configuration for your needs, then run it like below:
 
 ```
 docker-compose up
 ```
-
-Note:
-
-- There is a Status page that needs docker to be able to access the network of the host in order to read the
-  wireguard interface stats. See the `cap_add` and `network_mode` options on the docker-compose.yaml
-- Similarly, the `WGUI_MANAGE_START` and `WGUI_MANAGE_RESTART` settings need the same access, in order to restart the
-  wireguard interface.
-- Because the `network_mode` is set to `host`, we don't need to specify the exposed ports. The app will listen on
-  port `5000` by default.
 
 ## Environment Variables
 

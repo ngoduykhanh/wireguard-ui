@@ -1,0 +1,27 @@
+version: "3"
+
+services:
+  wireguard-ui:
+    image: ngoduykhanh/wireguard-ui:latest
+    container_name: wireguard-ui
+    cap_add:
+      - NET_ADMIN
+    # required to show active clients. with this set, you don't need to expose the ui port (5000) anymore
+    network_mode: host
+    environment:
+      - SENDGRID_API_KEY
+      - EMAIL_FROM_ADDRESS
+      - EMAIL_FROM_NAME
+      - SESSION_SECRET
+      - WGUI_USERNAME=admin
+      - WGUI_PASSWORD=admin
+      - WG_CONF_TEMPLATE
+      - WGUI_MANAGE_START=false
+      - WGUI_MANAGE_RESTART=false
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+    volumes:
+      - ./db:/app/db
+      - /etc/wireguard:/etc/wireguard
