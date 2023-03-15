@@ -80,21 +80,24 @@ func init() {
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
 
-	// print app information
-	fmt.Println("Wireguard UI")
-	fmt.Println("App Version\t:", appVersion)
-	fmt.Println("Git Commit\t:", gitCommit)
-	fmt.Println("Git Ref\t\t:", gitRef)
-	fmt.Println("Build Time\t:", buildTime)
-	fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
-	fmt.Println("Authentication\t:", !util.DisableLogin)
-	fmt.Println("Bind address\t:", util.BindAddress)
-	//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
-	fmt.Println("Email from\t:", util.EmailFrom)
-	fmt.Println("Email from name\t:", util.EmailFromName)
-	//fmt.Println("Session secret\t:", util.SessionSecret)
-	fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
-	fmt.Println("Base path\t:", util.BasePath+"/")
+	// print only if log level is INFO or lower
+	if lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO")); lvl <= log.INFO {
+		// print app information
+		fmt.Println("Wireguard UI")
+		fmt.Println("App Version\t:", appVersion)
+		fmt.Println("Git Commit\t:", gitCommit)
+		fmt.Println("Git Ref\t\t:", gitRef)
+		fmt.Println("Build Time\t:", buildTime)
+		fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
+		fmt.Println("Authentication\t:", !util.DisableLogin)
+		fmt.Println("Bind address\t:", util.BindAddress)
+		//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
+		fmt.Println("Email from\t:", util.EmailFrom)
+		fmt.Println("Email from name\t:", util.EmailFromName)
+		//fmt.Println("Session secret\t:", util.SessionSecret)
+		fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
+		fmt.Println("Base path\t:", util.BasePath+"/")
+	}
 }
 
 func main() {
@@ -108,6 +111,7 @@ func main() {
 	// set app extra data
 	extraData := make(map[string]string)
 	extraData["appVersion"] = appVersion
+	extraData["gitCommit"] = gitCommit
 	extraData["basePath"] = util.BasePath
 
 	// create rice box for embedded template
@@ -157,10 +161,16 @@ func main() {
 		app.POST(util.BasePath+"/login", handler.Login(db))
 		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
 		app.GET(util.BasePath+"/profile", handler.LoadProfile(db), handler.ValidSession)
-		app.POST(util.BasePath+"/profile", handler.UpdateProfile(db), handler.ValidSession)
+		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(db), handler.ValidSession, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession)
+		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.NeedsAdmin)
+		app.GET(util.BasePath+"/getusers", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
+		app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
 	}
 
 
+	app.GET(util.BasePath+"/test-hash", handler.GetHashesChanges(db), handler.ValidSession)
 	app.GET(util.BasePath+"/about", handler.AboutPage())
 	app.GET(util.BasePath+"/_health", handler.Health())
 	app.GET(util.BasePath+"/favicon", handler.Favicon())
@@ -170,13 +180,14 @@ func main() {
 	app.POST(util.BasePath+"/client/set-status", handler.SetClientStatus(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/remove-client", handler.RemoveClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.GET(util.BasePath+"/download", handler.DownloadClient(db), handler.ValidSession)
-	app.GET(util.BasePath+"/wg-server", handler.WireGuardServer(db), handler.ValidSession)
-	app.POST(util.BasePath+"/wg-server/interfaces", handler.WireGuardServerInterfaces(db), handler.ValidSession, handler.ContentTypeJson)
-	app.POST(util.BasePath+"/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession, handler.ContentTypeJson)
-	app.GET(util.BasePath+"/global-settings", handler.GlobalSettings(db), handler.ValidSession)
-	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession, handler.ContentTypeJson)
-  app.GET(util.BasePath+"/email-settings", handler.EmailSettings(db), handler.ValidSession)
-	app.POST(util.BasePath+"/email-settings", handler.EmailSettingsSubmit(db), handler.ValidSession)
+	app.GET(util.BasePath+"/wg-server", handler.WireGuardServer(db), handler.ValidSession, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/wg-server/interfaces", handler.WireGuardServerInterfaces(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	app.GET(util.BasePath+"/global-settings", handler.GlobalSettings(db), handler.ValidSession, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+  app.GET(util.BasePath+"/email-settings", handler.EmailSettings(db), handler.ValidSession, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/email-settings", handler.EmailSettingsSubmit(db), handler.ValidSession, handler.NeedsAdmin)
+
 	app.GET(util.BasePath+"/status", handler.Status(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/clients", handler.GetClients(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/client/:id", handler.GetClient(db), handler.ValidSession)
@@ -215,8 +226,13 @@ func initServerConfig(db store.IStore, tmplBox *rice.Box) {
 		log.Fatalf("Cannot get client config: ", err)
 	}
 
+	users, err := db.GetUsers()
+	if err != nil {
+		log.Fatalf("Cannot get user config: ", err)
+	}
+
 	// write config file
-	err = util.WriteWireGuardServerConfig(tmplBox, server, clients, settings)
+	err = util.WriteWireGuardServerConfig(tmplBox, server, clients, users, settings)
 	if err != nil {
 		log.Fatalf("Cannot create server config: ", err)
 	}

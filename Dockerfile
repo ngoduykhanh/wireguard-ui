@@ -4,6 +4,7 @@ LABEL maintainer="Khanh Ngo <k@ndk.name"
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
+ARG COMMIT=
 
 ARG BUILD_DEPENDENCIES="npm \
     yarn"
@@ -54,7 +55,7 @@ RUN cp -r /build/custom/ assets/
 
 # Build
 RUN rice embed-go && \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o wg-ui .
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-X main.gitCommit=${COMMIT}" -a -o wg-ui .
 
 # Release stage
 FROM alpine:3.16
