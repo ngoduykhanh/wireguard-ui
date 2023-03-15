@@ -768,7 +768,7 @@ func ClientDefaultSettings(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "client_default_settings.html", map[string]interface{}{
-			"baseData":              model.BaseData{Active: "client-default-settings", CurrentUser: currentUser(c)},
+			"baseData":              model.BaseData{Active: "client-default-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 			"clientDefaultSettings": clientDefaultSettings,
 		})
 	}
