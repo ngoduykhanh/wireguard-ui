@@ -1,0 +1,145 @@
+{{ define "title"}}
+About
+{{ end }}
+
+{{ define "top_css"}}
+{{ end }}
+
+{{ define "username"}}
+{{ .username }}
+{{ end }}
+
+{{ define "page_title"}}
+About
+{{ end }}
+
+{{ define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        <!-- <h5 class="mt-4 mb-2">Global Settings</h5> -->
+        <div class="row">
+            <!-- left column -->
+            <div class="col-md-6">
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">About Wireguard-UI</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="version" class="control-label">Current version</label>
+                            <input type="text" class="form-control" id="version" value="{{ .appVersion }}" readonly>
+                        </div>
+{{ if .gitCommit }}
+                        <div class="form-group">
+                            <label for="version" class="control-label">git commit hash</label>
+                            <input type="text" class="form-control" id="version" value="{{ .gitCommit }}" readonly>
+                        </div>
+{{ end }}
+                        <div class="form-group">
+                            <label for="currentReleaseDate" class="control-label">Current version release date</label>
+                            <input type="text" class="form-control" id="currentReleaseDate" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="latestRelease" class="control-label">Latest release</label>
+                            <input type="text" class="form-control" id="latestRelease" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="latestReleaseDate" class="control-label">Latest release date</label>
+                            <input type="text" class="form-control" id="latestReleaseDate" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="author" class="control-label">Author</label>
+                            <div id="author">
+                                <a id="authorLink">
+                                    <img id="authorImage"
+                                         style="width: 50px; height: 50px; border-radius: 50%; border: 1px solid #000;">
+                                </a>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contributors" class="control-label">Contributors</label>
+                            <div id="contributors"></div>
+                        </div>
+                        <strong>Copyright &copy;
+                            <script>document.write(new Date().getFullYear())</script>
+                            <a href="https://github.com/ngoduykhanh/wireguard-ui">Wireguard UI</a>.
+                        </strong> All rights reserved.
+
+                    </div>
+                </div>
+                <!-- /.card -->
+            </div>
+        </div>
+        <!-- /.row -->
+    </div>
+</section>
+{{ end }}
+
+{{ define "bottom_js"}}
+<script>
+    $(document).ready(function () {
+
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: 'https://api.github.com/repos/ngoduykhanh/wireguard-ui/releases/tags/' + $("#version").val(),
+            dataType: 'json',
+            contentType: "application/json",
+            success: function (data) {
+                $("#currentReleaseDate").attr("value", data.published_at.split("T")[0]);
+
+            },
+            error: function (jqXHR, exception) {
+                $("#currentReleaseDate").attr("value", "Could not find this version on GitHub.com");
+            }
+        });
+
+
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: 'https://api.github.com/repos/ngoduykhanh/wireguard-ui/releases/latest',
+            dataType: 'json',
+            contentType: "application/json",
+            success: function (data) {
+                $("#latestRelease").attr("value", data.tag_name);
+                $("#latestReleaseDate").attr("value", data.published_at.split("T")[0]);
+                $("#author").attr("value", data.author.login);
+                $("#authorImage").attr("src", data.author.avatar_url);
+                $("#authorImage").after("<b>  " + data.author.login + "</b>");
+                $("#authorLink").attr("href", data.author.html_url);
+
+            },
+            error: function (jqXHR, exception) {
+                $("#latestRelease").attr("value", "Could not connect to GitHub.com");
+                $("#latestReleaseDate").attr("value", "Could not connect to GitHub.com");
+                $("#author").attr("value", "Could not connect to GitHub.com");
+            }
+        });
+
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: 'https://api.github.com/repos/ngoduykhanh/wireguard-ui/contributors',
+            dataType: 'json',
+            contentType: "application/json",
+            success: function (data) {
+                data.forEach(contributor => $("#contributors").append("<a href=\"" + contributor.html_url + "\" title=\"" + contributor.login + "\">" +
+                    "<img src=\"" + contributor.avatar_url + "\" style=\"width: 50px; height: 50px; border-radius: 50%; border: 1px solid #000; margin: 5px;\"/></a>"));
+            },
+            error: function (jqXHR, exception) {
+                $("#contributors").html("<p>Could not connect to GitHub.com</p>");
+            }
+        });
+    });
+
+    $(document).ajaxStop(function () {
+        if (Date.parse($("#currentReleaseDate").val()) < Date.parse($("#latestReleaseDate").val())) {
+            $("#currentReleaseDate").after("<p style=\"color:red\">Current version is out of date</p>")
+        }
+    });
+
+
+</script>
+{{ end }}

@@ -62,6 +62,7 @@ jobs:
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
         goversion: "https://dl.google.com/go/go1.16.1.linux-amd64.tar.gz"
+        pre_command: export CGO_ENABLED=0
         binary_name: "wireguard-ui"
         build_flags: -v
         ldflags: -X "main.appVersion=${{ env.APP_VERSION }}" -X "main.buildTime=${{ env.BUILD_TIME }}" -X main.gitCommit=${{ github.sha }} -X main.gitRef=${{ github.ref }}

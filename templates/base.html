@@ -8,6 +8,8 @@
     <title>{{template "title" .}}</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicon -->
+    <link rel="icon" href="{{.basePath}}/favicon">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="{{.basePath}}/static/plugins/fontawesome-free/css/all.min.css">
@@ -44,24 +46,31 @@
             </ul>
 
             <!-- SEARCH FORM -->
-<!--            <form class="form-inline ml-3">-->
-<!--                <div class="input-group input-group-sm">-->
-<!--                    <input class="form-control form-control-navbar" type="search" placeholder="Search"-->
-<!--                        aria-label="Search">-->
-<!--                    <div class="input-group-append">-->
-<!--                        <button class="btn btn-navbar" type="submit">-->
-<!--                            <i class="fas fa-search"></i>-->
-<!--                        </button>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </form>-->
+            <form class="form-inline ml-3" style="display: none" id="search-form">
+                <div class="input-group input-group-sm">
+                    <input class="form-control form-control-navbar" placeholder="Search"
+                        aria-label="Search" id="search-input">
+                    <div class="input-group-append">
+                        <button class="btn-navbar" type="submit" disabled>
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <select name="status-selector" id="status-selector" class="form-control selectpicker show-tick" style="margin-left: 10px">
+                    <option value="All">All</option>
+                    <option value="Enabled">Enabled</option>
+                    <option value="Disabled">Disabled</option>
+                    <option value="Connected">Connected</option>
+                    <option value="Disconnected">Disconnected</option>
+                </select>
+            </form>
 
             <!-- Right navbar links -->
             <div class="navbar-nav ml-auto">
                 <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                     data-target="#modal_new_client"><i class="nav-icon fas fa-plus"></i> New
                     Client</button>
-                <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
+                <button id="apply-config-button" style="margin-left: 0.5em; display: none;" type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
                     data-target="#modal_apply_config"><i class="nav-icon fas fa-check"></i> Apply
                     Config</button>
                 {{if .baseData.CurrentUser}}
@@ -88,7 +97,13 @@
                     </div>
                     <div class="info">
                         {{if .baseData.CurrentUser}}
-                        <a href="{{.basePath}}/profile" class="d-block">{{.baseData.CurrentUser}}</a>
+
+                        {{if .baseData.Admin}}
+                        <a href="{{.basePath}}/profile" class="d-block">Administrator: {{.baseData.CurrentUser}}</a>
+                        {{else}}
+                        <a href="{{.basePath}}/profile" class="d-block">Manager: {{.baseData.CurrentUser}}</a>
+                        {{end}}
+
                         {{else}}
                         <a href="#" class="d-block">Administrator</a>
                         {{end}}
@@ -107,6 +122,8 @@
                                 </p>
                             </a>
                         </li>
+
+                        {{if .baseData.Admin}}
                         <li class="nav-item">
                             <a href="{{.basePath}}/wg-server" class="nav-link {{if eq .baseData.Active "wg-server" }}active{{end}}">
                                 <i class="nav-icon fas fa-server"></i>
@@ -115,6 +132,8 @@
                                 </p>
                             </a>
                         </li>
+
+
                         <li class="nav-header">SETTINGS</li>
                         <li class="nav-item">
                             <a href="{{.basePath}}/global-settings" class="nav-link {{if eq .baseData.Active "global-settings" }}active{{end}}">
@@ -124,6 +143,16 @@
                                 </p>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a href="{{.basePath}}/users-settings" class="nav-link {{if eq .baseData.Active "users-settings" }}active{{end}}">
+                            <i class="nav-icon fas fa-cog"></i>
+                            <p>
+                                Users Settings
+                            </p>
+                            </a>
+                        </li>
+                        {{end}}
+
                         <li class="nav-header">UTILITIES</li>
                         <li class="nav-item">
                             <a href="{{.basePath}}/status" class="nav-link {{if eq .baseData.Active "status" }}active{{end}}">
@@ -139,6 +168,15 @@
                                 <p>
                                     WoL Hosts
                                 </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">ABOUT</li>
+                        <li class="nav-item">
+                            <a href="{{.basePath}}/about" class="nav-link {{if eq .baseData.Active "about" }}active{{end}}">
+                            <i class="nav-icon fas  fa-solid fa-id-card"></i>
+                            <p>
+                                About
+                            </p>
                             </a>
                         </li>
                     </ul>
@@ -281,7 +319,7 @@
             <!-- /.content -->
         </div>
         <!-- /.content-wrapper -->
-
+        <!--
         <footer class="main-footer">
             <div class="float-right d-none d-sm-block">
                 <b>Version</b> {{ .appVersion }}
@@ -289,7 +327,7 @@
             <strong>Copyright &copy; <script>document.write(new Date().getFullYear())</script> <a href="https://github.com/ngoduykhanh/wireguard-ui">Wireguard UI</a>.</strong> All rights
             reserved.
         </footer>
-
+        -->
         <!-- Control Sidebar -->
         <aside class="control-sidebar control-sidebar-dark">
             <!-- Control sidebar content goes here -->
@@ -320,6 +358,32 @@
             $('[data-toggle="tooltip"]').tooltip()
         })
 
+        $(document).ready(function () {
+
+                $.ajax({
+                    cache: false,
+                    method: 'GET',
+                    url: '{{.basePath}}/test-hash',
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function(data) {
+                        if (data.status) {
+                            $("#apply-config-button").show()
+                        }
+                        else
+                        {
+                            $("#apply-config-button").hide()
+                        }
+                    },
+                    error: function(jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
+
+        });
+
+        
         // populateClient function for render new client info
         // on the client page.
         function populateClient(client_id) {
