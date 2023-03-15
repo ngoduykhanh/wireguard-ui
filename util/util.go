@@ -480,6 +480,7 @@ func ParseLogLevel(lvl string) (log.Lvl, error) {
 	default:
 		return log.DEBUG, fmt.Errorf("not a valid log level: %s", lvl)
 	}
+}
 
 // GetCurrentHash returns current hashes
 func GetCurrentHash(db store.IStore) (string, string) {
