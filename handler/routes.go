@@ -1012,7 +1012,7 @@ func GetHashesChanges(db store.IStore) echo.HandlerFunc {
 func AboutPage() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return c.Render(http.StatusOK, "about.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "about", CurrentUser: currentUser(c)},
+			"baseData": model.BaseData{Active: "about", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 		})
 	}
 }
