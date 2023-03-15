@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"golang.org/x/mod/sumdb/dirhash"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -381,7 +386,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 }
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
-func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, globalSettings model.GlobalSetting) error {
+func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
 
 	// if set, read wg.conf template from WgConfTemplate
@@ -416,6 +421,7 @@ func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, cl
 		"serverConfig":   serverConfig,
 		"clientDataList": clientDataList,
 		"globalSettings": globalSettings,
+		"usersList":      usersList,
 	}
 
 	err = t.Execute(f, config)
@@ -478,4 +484,39 @@ func ParseLogLevel(lvl string) (log.Lvl, error) {
 	default:
 		return log.DEBUG, fmt.Errorf("not a valid log level: %s", lvl)
 	}
+
+// GetCurrentHash returns current hashes
+func GetCurrentHash(db store.IStore) (string, string) {
+	hashClients, _ := dirhash.HashDir(path.Join(db.GetPath(), "clients"), "prefix", dirhash.Hash1)
+	files := append([]string(nil), "prefix/global_settings.json", "prefix/interfaces.json", "prefix/keypair.json")
+
+	osOpen := func(name string) (io.ReadCloser, error) {
+		return os.Open(filepath.Join(path.Join(db.GetPath(), "server"), strings.TrimPrefix(name, "prefix")))
+	}
+	hashServer, _ := dirhash.Hash1(files, osOpen)
+
+	return hashClients, hashServer
+}
+
+func HashesChanged(db store.IStore) bool {
+	old, _ := db.GetHashes()
+	oldClient := old.Client
+	oldServer := old.Server
+	newClient, newServer := GetCurrentHash(db)
+
+	if oldClient != newClient {
+		fmt.Println("Hash for client differs")
+		return true
+	}
+	if oldServer != newServer {
+		fmt.Println("Hash for server differs")
+		return true
+	}
+	return false
+}
+
+func UpdateHashes(db store.IStore) error {
+	var clientServerHashes model.ClientServerHashes
+	clientServerHashes.Client, clientServerHashes.Server = GetCurrentHash(db)
+	return db.SaveHashes(clientServerHashes)
 }
