@@ -14,10 +14,19 @@ func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 		if !isValidSession(c) {
 			nextURL := c.Request().URL
 			if nextURL != nil && c.Request().Method == http.MethodGet {
-				return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf(util.BasePath + "/login?next=%s", c.Request().URL))
+				return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf(util.BasePath+"/login?next=%s", c.Request().URL))
 			} else {
-				return c.Redirect(http.StatusTemporaryRedirect, util.BasePath + "/login")
+				return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/login")
 			}
+		}
+		return next(c)
+	}
+}
+
+func NeedsAdmin(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if !isAdmin(c) {
+			return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/")
 		}
 		return next(c)
 	}
@@ -46,10 +55,29 @@ func currentUser(c echo.Context) string {
 	return username
 }
 
+// isAdmin to get user type: admin or manager
+func isAdmin(c echo.Context) bool {
+	if util.DisableLogin {
+		return true
+	}
+
+	sess, _ := session.Get("session", c)
+	admin := fmt.Sprintf("%t", sess.Values["admin"])
+	return admin == "true"
+}
+
+func setUser(c echo.Context, username string, admin bool) {
+	sess, _ := session.Get("session", c)
+	sess.Values["username"] = username
+	sess.Values["admin"] = admin
+	sess.Save(c.Request(), c.Response())
+}
+
 // clearSession to remove current session
 func clearSession(c echo.Context) {
 	sess, _ := session.Get("session", c)
 	sess.Values["username"] = ""
+	sess.Values["admin"] = false
 	sess.Values["session_token"] = ""
 	sess.Save(c.Request(), c.Response())
 }
