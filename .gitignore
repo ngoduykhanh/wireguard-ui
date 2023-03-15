@@ -20,3 +20,7 @@ node_modules/
 # IDEs
 .vscode
 .idea
+
+# Examples
+examples/docker-compose/config
+examples/docker-compose/db

@@ -24,12 +24,13 @@ var (
 const (
 	DefaultUsername                        = "admin"
 	DefaultPassword                        = "admin"
+	DefaultIsAdmin                         = true
 	DefaultServerAddress                   = "10.252.1.0/24"
 	DefaultServerPort                      = 51820
 	DefaultDNS                             = "1.1.1.1"
 	DefaultMTU                             = 1450
 	DefaultPersistentKeepalive             = 15
-	DefaultForwardMark                     = "0xca6c"
+	DefaultFirewallMark                    = "0xca6c"  // i.e. 51820
 	DefaultConfigFilePath                  = "/etc/wireguard/wg0.conf"
 	UsernameEnvVar                         = "WGUI_USERNAME"
 	PasswordEnvVar                         = "WGUI_PASSWORD"
@@ -39,8 +40,9 @@ const (
 	DNSEnvVar                              = "WGUI_DNS"
 	MTUEnvVar                              = "WGUI_MTU"
 	PersistentKeepaliveEnvVar              = "WGUI_PERSISTENT_KEEPALIVE"
-	ForwardMarkEnvVar                      = "WGUI_FORWARD_MARK"
+	FirewallMarkEnvVar                     = "WGUI_FIREWALL_MARK"
 	ConfigFilePathEnvVar                   = "WGUI_CONFIG_FILE_PATH"
+	LogLevel                               = "WGUI_LOG_LEVEL"
 	ServerAddressesEnvVar                  = "WGUI_SERVER_INTERFACE_ADDRESSES"
 	ServerListenPortEnvVar                 = "WGUI_SERVER_LISTEN_PORT"
 	ServerPostUpScriptEnvVar               = "WGUI_SERVER_POST_UP_SCRIPT"
