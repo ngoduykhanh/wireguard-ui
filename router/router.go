@@ -89,10 +89,6 @@ func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Ec
 	}
   
 	tmplUsersSettingsString, err := tmplBox.String("users_settings.html")
-  if err != nil {
-		log.Fatal(err)
-	}
-
 	if err != nil {
 		log.Fatal(err)
 	}
