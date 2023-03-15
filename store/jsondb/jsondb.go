@@ -43,7 +43,9 @@ func (o *JsonDB) Init() error {
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
 	var clientDefaultSettingsPath string = path.Join(serverPath, "client_default_settings.json")
+	var hashesPath string = path.Join(serverPath, "hashes.json")
 	var userPath string = path.Join(serverPath, "users.json")
+
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
 		os.MkdirAll(clientPath, os.ModePerm)
@@ -53,6 +55,9 @@ func (o *JsonDB) Init() error {
 	}
 	if _, err := os.Stat(wakeOnLanHostsPath); os.IsNotExist(err) {
 		os.MkdirAll(wakeOnLanHostsPath, os.ModePerm)
+	}
+	if _, err := os.Stat(userPath); os.IsNotExist(err) {
+		os.MkdirAll(userPath, os.ModePerm)
 	}
 
 	// server's interface
@@ -97,10 +102,18 @@ func (o *JsonDB) Init() error {
 		globalSetting.DNSServers = util.LookupEnvOrStrings(util.DNSEnvVar, []string{util.DefaultDNS})
 		globalSetting.MTU = util.LookupEnvOrInt(util.MTUEnvVar, util.DefaultMTU)
 		globalSetting.PersistentKeepalive = util.LookupEnvOrInt(util.PersistentKeepaliveEnvVar, util.DefaultPersistentKeepalive)
-		globalSetting.ForwardMark = util.LookupEnvOrString(util.ForwardMarkEnvVar, util.DefaultForwardMark)
+		globalSetting.FirewallMark = util.LookupEnvOrString(util.FirewallMarkEnvVar, util.DefaultFirewallMark)
 		globalSetting.ConfigFilePath = util.LookupEnvOrString(util.ConfigFilePathEnvVar, util.DefaultConfigFilePath)
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
+	}
+	
+	// hashes
+	if _, err := os.Stat(hashesPath); os.IsNotExist(err) {
+		clientServerHashes := new(model.ClientServerHashes)
+		clientServerHashes.Client = "none"
+		clientServerHashes.Server = "none"
+		o.conn.Write("server", "hashes", clientServerHashes)
 	}
 
 	// client default settings
@@ -110,9 +123,11 @@ func (o *JsonDB) Init() error {
 	}
 
 	// user info
-	if _, err := os.Stat(userPath); os.IsNotExist(err) {
+	results, err := o.conn.ReadAll("users")
+	if err != nil || len(results) < 1 {
 		user := new(model.User)
 		user.Username = util.LookupEnvOrString(util.UsernameEnvVar, util.DefaultUsername)
+		user.Admin = util.DefaultIsAdmin
 		user.PasswordHash = util.LookupEnvOrString(util.PasswordHashEnvVar, "")
 		if user.PasswordHash == "" {
 			plaintext := util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
@@ -122,7 +137,7 @@ func (o *JsonDB) Init() error {
 			}
 			user.PasswordHash = hash
 		}
-		o.conn.Write("server", "users", user)
+		o.conn.Write("users", user.Username, user)
 	}
 
 	return nil
@@ -134,9 +149,44 @@ func (o *JsonDB) GetUser() (model.User, error) {
 	return user, o.conn.Read("server", "users", &user)
 }
 
-// SaveUser func to user info to the database
+// GetUsers func to get all users from the database
+func (o *JsonDB) GetUsers() ([]model.User, error) {
+	var users []model.User
+	results, err := o.conn.ReadAll("users")
+	if err != nil {
+		return users, err
+	}
+	for _, i := range results {
+		user := model.User{}
+
+		if err := json.Unmarshal([]byte(i), &user); err != nil {
+			return users, fmt.Errorf("cannot decode user json structure: %v", err)
+		}
+		users = append(users, user)
+
+	}
+	return users, err
+}
+
+// GetUserByName func to get single user from the database
+func (o *JsonDB) GetUserByName(username string) (model.User, error) {
+	user := model.User{}
+
+	if err := o.conn.Read("users", username, &user); err != nil {
+		return user, err
+	}
+
+	return user, nil
+}
+
+// SaveUser func to save user in the database
 func (o *JsonDB) SaveUser(user model.User) error {
-	return o.conn.Write("server", "users", user)
+	return o.conn.Write("users", user.Username, user)
+}
+
+// DeleteUser func to remove user from the database
+func (o *JsonDB) DeleteUser(username string) error {
+	return o.conn.Delete("users", username)
 }
 
 // GetGlobalSettings func to query global settings from the database
@@ -232,9 +282,6 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 		if !qrCodeSettings.IncludeMTU {
 			globalSettings.MTU = 0
 		}
-		if !qrCodeSettings.IncludeFwMark {
-			globalSettings.ForwardMark = ""
-		}
 
 		png, err := qrcode.Encode(util.BuildClientConfig(client, server, globalSettings), qrcode.Medium, 256)
 		if err == nil {
@@ -269,6 +316,20 @@ func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	return o.conn.Write("server", "global_settings", globalSettings)
 }
 
+
 func (o *JsonDB) SaveClientDefaultSettings(clientDefaults model.ClientDefaults) error {
 	return o.conn.Write("server", "client_default_settings", clientDefaults)
+}
+
+func (o *JsonDB) GetPath() string {
+	return o.dbPath
+}
+
+func (o *JsonDB) GetHashes() (model.ClientServerHashes, error) {
+	hashes := model.ClientServerHashes{}
+	return hashes, o.conn.Read("server", "hashes", &hashes)
+}
+
+func (o *JsonDB) SaveHashes(hashes model.ClientServerHashes) error {
+	return o.conn.Write("server", "hashes", hashes)
 }

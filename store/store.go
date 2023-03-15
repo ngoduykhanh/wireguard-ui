@@ -6,8 +6,10 @@ import (
 
 type IStore interface {
 	Init() error
-	GetUser() (model.User, error)
+	GetUsers() ([]model.User, error)
+	GetUserByName(username string) (model.User, error)
 	SaveUser(user model.User) error
+	DeleteUser(username string) error
 	GetGlobalSettings() (model.GlobalSetting, error)
 	GetClientDefaultSettings() (model.ClientDefaults, error)
 	GetServer() (model.Server, error)
@@ -24,4 +26,7 @@ type IStore interface {
 	DeleteWakeOnHostLanHost(macAddress string) error
 	SaveWakeOnLanHost(host model.WakeOnLanHost) error
 	DeleteWakeOnHost(host model.WakeOnLanHost) error
+	GetPath() string
+	SaveHashes(hashes model.ClientServerHashes) error
+	GetHashes() (model.ClientServerHashes, error)
 }

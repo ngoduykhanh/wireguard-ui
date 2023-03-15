@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"golang.org/x/mod/sumdb/dirhash"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
@@ -60,18 +65,12 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		peerPersistentKeepalive = fmt.Sprintf("PersistentKeepalive = %d\n", setting.PersistentKeepalive)
 	}
 
-	forwardMark := ""
-	if setting.ForwardMark != "" {
-		forwardMark = fmt.Sprintf("FwMark = %s\n", setting.ForwardMark)
-	}
-
 	// build the config as string
 	strConfig := "[Interface]\n" +
 		clientAddress +
 		clientPrivateKey +
 		clientDNS +
 		clientMTU +
-		forwardMark +
 		"\n[Peer]\n" +
 		peerPublicKey +
 		peerPresharedKey +
@@ -239,10 +238,12 @@ func GetPublicIP() (model.Interface, error) {
 	ip, err := consensus.ExternalIP()
 	if err != nil {
 		publicInterface.IPAddress = "N/A"
+	} else {
+		publicInterface.IPAddress = ip.String()
 	}
-	publicInterface.IPAddress = ip.String()
 
-	return publicInterface, err
+	// error handling happend above, no need to pass it through
+	return publicInterface, nil
 }
 
 // GetIPFromCIDR get ip from CIDR
@@ -399,7 +400,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 }
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
-func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, globalSettings model.GlobalSetting) error {
+func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
 
 	// if set, read wg.conf template from WgConfTemplate
@@ -434,6 +435,7 @@ func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, cl
 		"serverConfig":   serverConfig,
 		"clientDataList": clientDataList,
 		"globalSettings": globalSettings,
+		"usersList":      usersList,
 	}
 
 	err = t.Execute(f, config)
@@ -479,4 +481,57 @@ func LookupEnvOrStrings(key string, defaultVal []string) []string {
 		return strings.Split(val, ",")
 	}
 	return defaultVal
+}
+
+func ParseLogLevel(lvl string) (log.Lvl, error) {
+	switch strings.ToLower(lvl) {
+	case "debug":
+		return log.DEBUG, nil
+	case "info":
+		return log.INFO, nil
+	case "warn":
+		return log.WARN, nil
+	case "error":
+		return log.ERROR, nil
+	case "off":
+		return log.OFF, nil
+	default:
+		return log.DEBUG, fmt.Errorf("not a valid log level: %s", lvl)
+	}
+}
+
+// GetCurrentHash returns current hashes
+func GetCurrentHash(db store.IStore) (string, string) {
+	hashClients, _ := dirhash.HashDir(path.Join(db.GetPath(), "clients"), "prefix", dirhash.Hash1)
+	files := append([]string(nil), "prefix/global_settings.json", "prefix/interfaces.json", "prefix/keypair.json")
+
+	osOpen := func(name string) (io.ReadCloser, error) {
+		return os.Open(filepath.Join(path.Join(db.GetPath(), "server"), strings.TrimPrefix(name, "prefix")))
+	}
+	hashServer, _ := dirhash.Hash1(files, osOpen)
+
+	return hashClients, hashServer
+}
+
+func HashesChanged(db store.IStore) bool {
+	old, _ := db.GetHashes()
+	oldClient := old.Client
+	oldServer := old.Server
+	newClient, newServer := GetCurrentHash(db)
+
+	if oldClient != newClient {
+		fmt.Println("Hash for client differs")
+		return true
+	}
+	if oldServer != newServer {
+		fmt.Println("Hash for server differs")
+		return true
+	}
+	return false
+}
+
+func UpdateHashes(db store.IStore) error {
+	var clientServerHashes model.ClientServerHashes
+	clientServerHashes.Client, clientServerHashes.Server = GetCurrentHash(db)
+	return db.SaveHashes(clientServerHashes)
 }
