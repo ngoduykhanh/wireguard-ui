@@ -220,10 +220,12 @@ func GetPublicIP() (model.Interface, error) {
 	ip, err := consensus.ExternalIP()
 	if err != nil {
 		publicInterface.IPAddress = "N/A"
+	} else {
+		publicInterface.IPAddress = ip.String()
 	}
-	publicInterface.IPAddress = ip.String()
 
-	return publicInterface, err
+	// error handling happend above, no need to pass it through
+	return publicInterface, nil
 }
 
 // GetIPFromCIDR get ip from CIDR
