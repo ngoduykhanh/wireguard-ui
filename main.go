@@ -88,21 +88,24 @@ func init() {
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
 
-	// print app information
-	fmt.Println("Wireguard UI")
-	fmt.Println("App Version\t:", appVersion)
-	fmt.Println("Git Commit\t:", gitCommit)
-	fmt.Println("Git Ref\t\t:", gitRef)
-	fmt.Println("Build Time\t:", buildTime)
-	fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
-	fmt.Println("Authentication\t:", !util.DisableLogin)
-	fmt.Println("Bind address\t:", util.BindAddress)
-	//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
-	fmt.Println("Email from\t:", util.EmailFrom)
-	fmt.Println("Email from name\t:", util.EmailFromName)
-	//fmt.Println("Session secret\t:", util.SessionSecret)
-	fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
-	fmt.Println("Base path\t:", util.BasePath+"/")
+	// print only if log level is INFO or lower
+	if lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO")); lvl <= log.INFO {
+		// print app information
+		fmt.Println("Wireguard UI")
+		fmt.Println("App Version\t:", appVersion)
+		fmt.Println("Git Commit\t:", gitCommit)
+		fmt.Println("Git Ref\t\t:", gitRef)
+		fmt.Println("Build Time\t:", buildTime)
+		fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
+		fmt.Println("Authentication\t:", !util.DisableLogin)
+		fmt.Println("Bind address\t:", util.BindAddress)
+		//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
+		fmt.Println("Email from\t:", util.EmailFrom)
+		fmt.Println("Email from name\t:", util.EmailFromName)
+		//fmt.Println("Session secret\t:", util.SessionSecret)
+		fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
+		fmt.Println("Base path\t:", util.BasePath+"/")
+	}
 }
 
 func main() {
