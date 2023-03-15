@@ -63,7 +63,7 @@
                 <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                     data-target="#modal_new_client"><i class="nav-icon fas fa-plus"></i> New
                     Client</button>
-                <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
+                <button id="apply-config-button" style="margin-left: 0.5em; display: none;" type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
                     data-target="#modal_apply_config"><i class="nav-icon fas fa-check"></i> Apply
                     Config</button>
                 {{if .baseData.CurrentUser}}
@@ -351,6 +351,32 @@
             $('[data-toggle="tooltip"]').tooltip()
         })
 
+        $(document).ready(function () {
+
+                $.ajax({
+                    cache: false,
+                    method: 'GET',
+                    url: '{{.basePath}}/test-hash',
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function(data) {
+                        if (data.status) {
+                            $("#apply-config-button").show()
+                        }
+                        else
+                        {
+                            $("#apply-config-button").hide()
+                        }
+                    },
+                    error: function(jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
+
+        });
+
+        
         // populateClient function for render new client info
         // on the client page.
         function populateClient(client_id) {
