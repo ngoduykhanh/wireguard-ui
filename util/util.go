@@ -514,11 +514,11 @@ func HashesChanged(db store.IStore) bool {
 	newClient, newServer := GetCurrentHash(db)
 
 	if oldClient != newClient {
-		fmt.Println("Hash for client differs")
+		//fmt.Println("Hash for client differs")
 		return true
 	}
 	if oldServer != newServer {
-		fmt.Println("Hash for server differs")
+		//fmt.Println("Hash for server differs")
 		return true
 	}
 	return false
