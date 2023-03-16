@@ -40,19 +40,11 @@ jobs:
         node-version: '14'
         registry-url: 'https://registry.npmjs.org'
 
-    # prepare assets for go rice
+    # prepare assets
     - name: Prepare assets
       run: |
         chmod +x ./prepare_assets.sh
         ./prepare_assets.sh
-
-    # get go rice tool
-    - name: Get go rice tool
-      run: go get github.com/GeertJohan/go.rice/rice
-
-    # run go rice embed
-    - name: Run go rice embed
-      run: ${HOME}/go/bin/rice embed-go
 
     # build and make the releases
     - name: Build and make the releases

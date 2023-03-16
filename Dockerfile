@@ -43,10 +43,6 @@ RUN mkdir -p assets/plugins && \
     /build/node_modules/jquery-tags-input/ \
     assets/plugins/
 
-# Get go modules and build tool
-RUN go mod download && \
-    go get github.com/GeertJohan/go.rice/rice
-
 # Add sources
 COPY . /build
 
@@ -54,8 +50,7 @@ COPY . /build
 RUN cp -r /build/custom/ assets/
 
 # Build
-RUN rice embed-go && \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-X main.gitCommit=${COMMIT}" -a -o wg-ui .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-X main.gitCommit=${COMMIT}" -a -o wg-ui .
 
 # Release stage
 FROM alpine:3.16

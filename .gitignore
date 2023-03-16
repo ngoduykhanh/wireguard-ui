@@ -16,7 +16,6 @@ wireguard-ui
 vendor/
 assets/
 node_modules/
-rice-box.go
 
 # IDEs
 .vscode

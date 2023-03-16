@@ -3,11 +3,11 @@ package router
 import (
 	"errors"
 	"io"
+	"io/fs"
 	"reflect"
 	"strings"
 	"text/template"
 
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -48,57 +48,57 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 }
 
 // New function
-func New(tmplBox *rice.Box, extraData map[string]string, secret []byte) *echo.Echo {
+func New(tmplDir fs.FS, extraData map[string]string, secret []byte) *echo.Echo {
 	e := echo.New()
 	e.Use(session.Middleware(sessions.NewCookieStore(secret)))
 
 	// read html template file to string
-	tmplBaseString, err := tmplBox.String("base.html")
+	tmplBaseString, err := util.StringFromEmbedFile(tmplDir, "base.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplLoginString, err := tmplBox.String("login.html")
+	tmplLoginString, err := util.StringFromEmbedFile(tmplDir, "login.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplProfileString, err := tmplBox.String("profile.html")
+	tmplProfileString, err := util.StringFromEmbedFile(tmplDir, "profile.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplClientsString, err := tmplBox.String("clients.html")
+	tmplClientsString, err := util.StringFromEmbedFile(tmplDir, "clients.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplServerString, err := tmplBox.String("server.html")
+	tmplServerString, err := util.StringFromEmbedFile(tmplDir, "server.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplGlobalSettingsString, err := tmplBox.String("global_settings.html")
+	tmplGlobalSettingsString, err := util.StringFromEmbedFile(tmplDir, "global_settings.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplUsersSettingsString, err := tmplBox.String("users_settings.html")
+	tmplUsersSettingsString, err := util.StringFromEmbedFile(tmplDir, "users_settings.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplStatusString, err := tmplBox.String("status.html")
+	tmplStatusString, err := util.StringFromEmbedFile(tmplDir, "status.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tmplWakeOnLanHostsString, err := tmplBox.String("wake_on_lan_hosts.html")
+	tmplWakeOnLanHostsString, err := util.StringFromEmbedFile(tmplDir, "wake_on_lan_hosts.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	aboutPageString, err := tmplBox.String("about.html")
+	aboutPageString, err := util.StringFromEmbedFile(tmplDir, "about.html")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -211,18 +211,9 @@ Prepare the assets directory
 ./prepare_assets.sh
 ```
 
-Then you can embed resources by generating Go source code
-
-```sh
-rice embed-go
-go build -o wireguard-ui
-```
-
-Or, append resources to executable as zip file
-
+Then build your executable
 ```sh
 go build -o wireguard-ui
-rice append --exec wireguard-ui
 ```
 
 ## License
