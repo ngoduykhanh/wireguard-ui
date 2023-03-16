@@ -481,7 +481,9 @@ Wireguard Clients
                 cache: false,
                 method: 'GET',
                 url: '{{.basePath}}/api/client/' + client_id,
-                data: JSON.stringify(data),
+                data: {
+                    qrCodeIncludeFwMark: include_fwmark
+                },
                 dataType: 'json',
                 contentType: "application/json",
                 success: function (resp) {
