@@ -23,12 +23,32 @@ func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+func ProtectedHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		sess, err := session.Get("session", c)
+		if err != nil {
+			return err
+		}
+
+		apiKey, ok := sess.Values["api_key"].(string)
+		if !ok || apiKey != util.ApiKey {
+			return echo.NewHTTPError(http.StatusUnauthorized, "Invalid API key")
+		}
+		// Handle the request for authenticated users
+		return next(c)
+	}
+}
+
 func isValidSession(c echo.Context) bool {
 	if util.DisableLogin {
 		return true
 	}
 	sess, _ := session.Get("session", c)
 	cookie, err := c.Cookie("session_token")
+	apiKey, ok := sess.Values["api_key"].(string)
+	if ok && apiKey != util.ApiKey {
+		return false
+	}
 	if err != nil || sess.Values["session_token"] != cookie.Value {
 		return false
 	}

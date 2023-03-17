@@ -40,6 +40,7 @@ var (
 	flagSessionSecret  string
 	flagWgConfTemplate string
 	flagBasePath       string
+	flagApiKey		   string
 )
 
 const (
@@ -69,6 +70,7 @@ func init() {
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
+	flag.StringVar(&flagApiKey, "api-key", util.LookupEnvOrString("WGUI_API_KEY", ""), "Specify API key for auth")
 	flag.Parse()
 
 	// update runtime config
@@ -87,7 +89,7 @@ func init() {
 	util.SessionSecret = []byte(flagSessionSecret)
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
-
+	util.ApiKey = flagApiKey
 	// print app information
 	fmt.Println("Wireguard UI")
 	fmt.Println("App Version\t:", appVersion)
@@ -104,6 +106,7 @@ func init() {
 	fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
 	fmt.Println("Base path\t:", util.BasePath+"/")
 }
+
 
 func main() {
 	db, err := jsondb.New("./db")
