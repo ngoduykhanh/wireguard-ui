@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"github.com/ngoduykhanh/wireguard-ui/util"
+	"github.com/alikhanich/wireguard-ui/util"
 )
 
 func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {

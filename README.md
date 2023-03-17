@@ -1,4 +1,4 @@
-![](https://github.com/ngoduykhanh/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
+![](https://github.com/alikhanich/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
 
 # wireguard-ui
 
@@ -28,7 +28,7 @@ Download the binary file from the release page and run it directly on the host m
 ### Using docker compose
 
 You can take a look at this example
-of [docker-compose.yml](https://github.com/ngoduykhanh/wireguard-ui/blob/master/docker-compose.yaml). Please adjust
+of [docker-compose.yml](https://github.com/alikhanich/wireguard-ui/blob/master/docker-compose.yaml). Please adjust
 volume mount points to work with your setup. Then run it like below:
 
 ```
@@ -60,7 +60,7 @@ Note:
 | `WGUI_PERSISTENT_KEEPALIVE` | The default persistent keepalive for WireGuard in global settings                                                                                            | `15`                               |
 | `WGUI_FORWARD_MARK`         | The default WireGuard forward mark                                                                                                                           | `0xca6c`                           |
 | `WGUI_CONFIG_FILE_PATH`     | The default WireGuard config file path used in global settings                                                                                               | `/etc/wireguard/wg0.conf`          |
-| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/ngoduykhanh/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
+| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/alikhanich/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
 | `EMAIL_FROM_ADDRESS`        | The sender email address                                                                                                                                     | N/A                                |
 | `EMAIL_FROM_NAME`           | The sender name                                                                                                                                              | `WireGuard UI`                     |
 | `SENDGRID_API_KEY`          | The SendGrid api key                                                                                                                                         | N/A                                |
@@ -229,7 +229,7 @@ rice append --exec wireguard-ui
 
 ## License
 
-MIT. See [LICENSE](https://github.com/ngoduykhanh/wireguard-ui/blob/master/LICENSE).
+MIT. See [LICENSE](https://github.com/alikhanich/wireguard-ui/blob/master/LICENSE).
 
 ## Support
 
