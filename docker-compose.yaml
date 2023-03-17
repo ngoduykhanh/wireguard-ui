@@ -14,6 +14,7 @@ services:
       - WGUI_PASSWORD=Negjqgfhjkm1!
       - WGUI_MANAGE_START=false
       - WGUI_MANAGE_RESTART=false
+      - WGUI_API_KEY=test
     logging:
       driver: json-file
       options:
