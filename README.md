@@ -203,6 +203,11 @@ or
 docker compose build --build-arg=COMMIT=$(git rev-parse --short HEAD)
 ```
 
+:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui) which you can pull and use 
+```
+docker pull ngoduykhanh/wireguard-ui
+````
+
 ### Build binary file
 
 Prepare the assets directory
