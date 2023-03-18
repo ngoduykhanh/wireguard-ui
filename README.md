@@ -1,4 +1,4 @@
-![](https://github.com/ngoduykhanh/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
+![](https://github.com/alikhanich/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
 
 # wireguard-ui
 
@@ -27,8 +27,9 @@ Download the binary file from the release page and run it directly on the host m
 
 ### Using docker compose
 
-The [examples/docker-compose](examples/docker-compose) folder contains example docker-compose files.
-Choose the example which fits you the most, adjust the configuration for your needs, then run it like below:
+You can take a look at this example
+of [docker-compose.yml](https://github.com/alikhanich/wireguard-ui/blob/master/docker-compose.yaml). Please adjust
+volume mount points to work with your setup. Then run it like below:
 
 ```
 docker-compose up
@@ -218,7 +219,7 @@ go build -o wireguard-ui
 
 ## License
 
-MIT. See [LICENSE](https://github.com/ngoduykhanh/wireguard-ui/blob/master/LICENSE).
+MIT. See [LICENSE](https://github.com/alikhanich/wireguard-ui/blob/master/LICENSE).
 
 ## Support
 

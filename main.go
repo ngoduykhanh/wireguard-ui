@@ -11,12 +11,12 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/ngoduykhanh/wireguard-ui/emailer"
-	"github.com/ngoduykhanh/wireguard-ui/handler"
-	"github.com/ngoduykhanh/wireguard-ui/router"
-	"github.com/ngoduykhanh/wireguard-ui/store/jsondb"
-	"github.com/ngoduykhanh/wireguard-ui/util"
+	rice "github.com/GeertJohan/go.rice"
+	"github.com/alikhanich/wireguard-ui/emailer"
+	"github.com/alikhanich/wireguard-ui/handler"
+	"github.com/alikhanich/wireguard-ui/router"
+	"github.com/alikhanich/wireguard-ui/store/jsondb"
+	"github.com/alikhanich/wireguard-ui/util"
 )
 
 var (
@@ -41,6 +41,7 @@ var (
 	flagSessionSecret  string
 	flagWgConfTemplate string
 	flagBasePath       string
+	flagApiKey		   string
 )
 
 const (
@@ -80,6 +81,7 @@ func init() {
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
+	flag.StringVar(&flagApiKey, "api-key", util.LookupEnvOrString("WGUI_API_KEY", ""), "Specify API key for auth")
 	flag.Parse()
 
 	// update runtime config
@@ -98,26 +100,24 @@ func init() {
 	util.SessionSecret = []byte(flagSessionSecret)
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
-
-	// print only if log level is INFO or lower
-	if lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO")); lvl <= log.INFO {
-		// print app information
-		fmt.Println("Wireguard UI")
-		fmt.Println("App Version\t:", appVersion)
-		fmt.Println("Git Commit\t:", gitCommit)
-		fmt.Println("Git Ref\t\t:", gitRef)
-		fmt.Println("Build Time\t:", buildTime)
-		fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
-		fmt.Println("Authentication\t:", !util.DisableLogin)
-		fmt.Println("Bind address\t:", util.BindAddress)
-		//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
-		fmt.Println("Email from\t:", util.EmailFrom)
-		fmt.Println("Email from name\t:", util.EmailFromName)
-		//fmt.Println("Session secret\t:", util.SessionSecret)
-		fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
-		fmt.Println("Base path\t:", util.BasePath+"/")
-	}
+	util.ApiKey = flagApiKey
+	// print app information
+	fmt.Println("Wireguard UI")
+	fmt.Println("App Version\t:", appVersion)
+	fmt.Println("Git Commit\t:", gitCommit)
+	fmt.Println("Git Ref\t\t:", gitRef)
+	fmt.Println("Build Time\t:", buildTime)
+	fmt.Println("Git Repo\t:", "https://github.com/alikhanich/wireguard-ui")
+	fmt.Println("Authentication\t:", !util.DisableLogin)
+	fmt.Println("Bind address\t:", util.BindAddress)
+	//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
+	fmt.Println("Email from\t:", util.EmailFrom)
+	fmt.Println("Email from name\t:", util.EmailFromName)
+	//fmt.Println("Session secret\t:", util.SessionSecret)
+	fmt.Println("Custom wg.conf\t:", util.WgConfTemplate)
+	fmt.Println("Base path\t:", util.BasePath+"/")
 }
+
 
 func main() {
 	db, err := jsondb.New("./db")

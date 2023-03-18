@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	"github.com/ngoduykhanh/wireguard-ui/util"
+	"github.com/alikhanich/wireguard-ui/util"
 )
 
 // TemplateRegistry is a custom html/template renderer for Echo framework
@@ -47,11 +47,31 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 	return tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
+func apiKeyMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		apiKey := c.Request().Header.Get("X-API-Key")
+		if apiKey == "" {
+			apiKey = c.QueryParam("api_key")
+		}
+		sess, err := session.Get("session", c)
+		if err != nil {
+			return err
+		}
+		sess.Values["api_key"] = apiKey
+		err = sess.Save(c.Request(), c.Response())
+		if err != nil {
+			return err
+		}
+		return next(c)
+	}
+}
 // New function
 func New(tmplDir fs.FS, extraData map[string]string, secret []byte) *echo.Echo {
 	e := echo.New()
-	e.Use(session.Middleware(sessions.NewCookieStore(secret)))
 
+	store := sessions.NewCookieStore(secret)
+	e.Use(session.Middleware(store))
+	e.Use(apiKeyMiddleware)
 	// read html template file to string
 	tmplBaseString, err := util.StringFromEmbedFile(tmplDir, "base.html")
 	if err != nil {
