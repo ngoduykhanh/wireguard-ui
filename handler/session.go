@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/alikhanich/wireguard-ui/util"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
-	"github.com/alikhanich/wireguard-ui/util"
 )
 
 func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
@@ -30,9 +30,12 @@ func isValidSession(c echo.Context) bool {
 	sess, _ := session.Get("session", c)
 	cookie, err := c.Cookie("session_token")
 	apiKey, ok := sess.Values["api_key"].(string)
-	if ok && apiKey != util.ApiKey {
-		return false
+	if ok && apiKey == util.ApiKey {
+		return true
 	}
+	//if ok && (apiKey != util.ApiKey || apiKey !="") {
+	//	return false
+	//}
 	if err != nil || sess.Values["session_token"] != cookie.Value {
 		return false
 	}
