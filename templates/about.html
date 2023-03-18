@@ -30,6 +30,12 @@ About
                             <label for="version" class="control-label">Current version</label>
                             <input type="text" class="form-control" id="version" value="{{ .appVersion }}" readonly>
                         </div>
+{{ if .gitCommit }}
+                        <div class="form-group">
+                            <label for="version" class="control-label">git commit hash</label>
+                            <input type="text" class="form-control" id="version" value="{{ .gitCommit }}" readonly>
+                        </div>
+{{ end }}
                         <div class="form-group">
                             <label for="currentReleaseDate" class="control-label">Current version release date</label>
                             <input type="text" class="form-control" id="currentReleaseDate" readonly>

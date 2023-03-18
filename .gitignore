@@ -16,8 +16,11 @@ wireguard-ui
 vendor/
 assets/
 node_modules/
-rice-box.go
 
 # IDEs
 .vscode
 .idea
+
+# Examples
+examples/docker-compose/config
+examples/docker-compose/db

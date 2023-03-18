@@ -35,15 +35,6 @@ volume mount points to work with your setup. Then run it like below:
 docker-compose up
 ```
 
-Note:
-
-- There is a Status page that needs docker to be able to access the network of the host in order to read the
-  wireguard interface stats. See the `cap_add` and `network_mode` options on the docker-compose.yaml
-- Similarly, the `WGUI_MANAGE_START` and `WGUI_MANAGE_RESTART` settings need the same access, in order to restart the
-  wireguard interface.
-- Because the `network_mode` is set to `host`, we don't need to specify the exposed ports. The app will listen on
-  port `5000` by default.
-
 ## Environment Variables
 
 | Variable                    | Description                                                                                                                                                  | Default                            |
@@ -53,14 +44,16 @@ Note:
 | `WGUI_USERNAME`             | The username for the login page. Used for db initialization only                                                                                             | `admin`                            |
 | `WGUI_PASSWORD`             | The password for the user on the login page. Will be hashed automatically. Used for db initialization only                                                   | `admin`                            |
 | `WGUI_PASSWORD_HASH`        | The password hash for the user on the login page. (alternative to `WGUI_PASSWORD`). Used for db initialization only                                          | N/A                                |
+| `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings where clients should connect to                                                                         | Resolved to your public ip address |
 | `WGUI_FAVICON_FILE_PATH`    | The file path used as website favicon                                                                                                                        | Embedded WireGuard logo            |
 | `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings                                                                                                         | Resolved to your public ip address |
 | `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings                                                                                   | `1.1.1.1`                          |
 | `WGUI_MTU`                  | The default MTU used in global settings                                                                                                                      | `1450`                             |
 | `WGUI_PERSISTENT_KEEPALIVE` | The default persistent keepalive for WireGuard in global settings                                                                                            | `15`                               |
-| `WGUI_FORWARD_MARK`         | The default WireGuard forward mark                                                                                                                           | `0xca6c`                           |
+| `WGUI_FIREWALL_MARK`        | The default WireGuard firewall mark                                                                                                                          | `0xca6c`  (51820)                  |
 | `WGUI_CONFIG_FILE_PATH`     | The default WireGuard config file path used in global settings                                                                                               | `/etc/wireguard/wg0.conf`          |
-| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/alikhanich/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
+| `WGUI_LOG_LEVEL`            | The default log level. Possible values: `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`                                                                              | `INFO`                             |
+| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/ngoduykhanh/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
 | `EMAIL_FROM_ADDRESS`        | The sender email address                                                                                                                                     | N/A                                |
 | `EMAIL_FROM_NAME`           | The sender name                                                                                                                                              | `WireGuard UI`                     |
 | `SENDGRID_API_KEY`          | The SendGrid api key                                                                                                                                         | N/A                                |
@@ -202,7 +195,13 @@ feature work.
 Go to the project root directory and run the following command:
 
 ```sh
-docker build -t wireguard-ui .
+docker build --build-arg=COMMIT=$(git rev-parse --short HEAD) -t wireguard-ui .
+```
+
+or
+
+```sh
+docker compose build --build-arg=COMMIT=$(git rev-parse --short HEAD)
 ```
 
 ### Build binary file
@@ -213,18 +212,9 @@ Prepare the assets directory
 ./prepare_assets.sh
 ```
 
-Then you can embed resources by generating Go source code
-
-```sh
-rice embed-go
-go build -o wireguard-ui
-```
-
-Or, append resources to executable as zip file
-
+Then build your executable
 ```sh
 go build -o wireguard-ui
-rice append --exec wireguard-ui
 ```
 
 ## License
