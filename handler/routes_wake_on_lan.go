@@ -37,7 +37,7 @@ func GetWakeOnLanHosts(db store.IStore) echo.HandlerFunc {
 		}
 
 		err = c.Render(http.StatusOK, "wake_on_lan_hosts.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "wake_on_lan_hosts", CurrentUser: currentUser(c)},
+			"baseData": model.BaseData{Active: "wake_on_lan_hosts", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 			"hosts":    hosts,
 			"error":    "",
 		})

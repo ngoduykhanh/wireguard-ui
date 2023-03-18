@@ -56,10 +56,10 @@ Global Settings
                                     value="{{if .globalSettings.PersistentKeepalive }}{{ .globalSettings.PersistentKeepalive }}{{end}}">
                             </div>
                             <div class="form-group">
-                                <label for="forward_mark">Forward Mark</label>
-                                <input type="text" class="form-control" id="forward_mark"
-                                    name="forward_mark" placeholder="Forward Mark"
-                                    value="{{ .globalSettings.ForwardMark }}">
+                                <label for="firewall_mark">Firewall Mark</label>
+                                <input type="text" class="form-control" id="firewall_mark"
+                                    name="firewall_mark" placeholder="Firewall Mark"
+                                    value="{{ .globalSettings.FirewallMark }}">
                             </div>
                             <div class="form-group">
                                 <label for="config_file_path">Wireguard Config File Path</label>
@@ -100,8 +100,8 @@ Global Settings
                                 until they reach out to other peers themselves. Adding <code>PersistentKeepalive</code>
                                 can ensure that the connection remains open.</dd>
                             <dd>Leave blank to omit this setting in the Client config.</dd>
-                            <dt>5. Forward Mark</dt>
-                            <dd>Set an <code>fwmark</code> on all packets going out of WireGuard's UDP socket. Default value: <code>0xca6c</code></dd>
+                            <dt>5. Firewall Mark</dt>
+                            <dd>Add a matching <code>fwmark</code> on all packets going out of a WireGuard non-default-route tunnel. Default value: <code>0xca6c</code></dd>
                             <dt>6. Wireguard Config File Path</dt>
                             <dd>The path of your Wireguard server config file. Please make sure the parent directory
                                 exists and is writable.</dd>
@@ -149,9 +149,9 @@ Global Settings
             const dns_servers = $("#dns_servers").val().split(",");
             const mtu = $("#mtu").val();
             const persistent_keepalive = $("#persistent_keepalive").val();
-            const forward_mark = $("#forward_mark").val();
+            const firewall_mark = $("#firewall_mark").val();
             const config_file_path = $("#config_file_path").val();
-            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "forward_mark": forward_mark, "config_file_path": config_file_path};
+            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "firewall_mark": firewall_mark, "config_file_path": config_file_path};
 
             $.ajax({
                 cache: false,
@@ -222,7 +222,7 @@ Global Settings
                     config_file_path: {
                         required: true
                     },
-                    forward_mark: {
+                    firewall_mark: {
                         required: false
                     }
                 },

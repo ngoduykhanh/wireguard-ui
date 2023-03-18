@@ -1,0 +1,294 @@
+{{define "title"}}
+Users Settings
+{{end}}
+
+{{define "top_css"}}
+{{end}}
+
+{{define "username"}}
+{{ .username }}
+{{end}}
+
+{{define "page_title"}}
+Users Settings
+{{end}}
+
+{{define "page_content"}}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row" id="users-list">
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="modal_edit_user">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit User</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="frm_edit_user" id="frm_edit_user">
+                <div class="modal-body">
+                    <div class="form-group" style="display:none">
+                        <input type="text" style="display:none" class="form-control" id="_previous_user_name"
+                               name="_previous_user_name">
+                    </div>
+                    <div class="form-group">
+                        <label for="_user_name" class="control-label">Name</label>
+                        <input type="text" class="form-control" id="_user_name" name="_user_name">
+                    </div>
+                    <div class="form-group">
+                        <label for="_user_password" class="control-label">Password</label>
+                        <input type="password" class="form-control" id="_user_password" name="_user_password" value=""
+                               placeholder="Leave empty to keep the password unchanged">
+                    </div>
+                    <div class="form-group">
+                        <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="_admin">
+                            <label for="_admin">
+                                Admin
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Save</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+
+<div class="modal fade" id="modal_remove_user">
+    <div class="modal-dialog">
+        <div class="modal-content bg-danger">
+            <div class="modal-header">
+                <h4 class="modal-title">Remove</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-outline-dark" id="remove_user_confirm">Apply</button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+{{end}}
+
+{{define "bottom_js"}}
+<script>
+    function populateUsersList() {
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: '{{.basePath}}/getusers',
+            dataType: 'json',
+            contentType: "application/json",
+            success: function (data) {
+                renderUserList(data);
+            },
+            error: function (jqXHR, exception) {
+                const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                toastr.error(responseJson['message']);
+            }
+        });
+    }
+</script>
+<script>
+    // load user list
+    $(document).ready(function () {
+        populateUsersList();
+        let newUserHtml = '<div class="col-sm-2 offset-md-4" style=" text-align: right;">' +
+            '<button style="" id="btn_new_user" type="button" class="btn btn-outline-primary btn-sm" ' +
+            'data-toggle="modal" data-target="#modal_edit_user" data-username="">' +
+            '<i class="nav-icon fas fa-plus"></i> New User</button></div>';
+        $('h1').parents(".row").append(newUserHtml);
+    })
+
+    // modal_remove_user modal event
+    $("#modal_remove_user").on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const user_name = button.data('username');
+        const modal = $(this);
+        modal.find('.modal-body').text("You are about to remove user " + user_name);
+        modal.find('#remove_user_confirm').val(user_name);
+    })
+
+    // remove_user_confirm button event
+    $(document).ready(function () {
+        $("#remove_user_confirm").click(function () {
+            const user_name = $(this).val();
+            const data = {"username": user_name};
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '{{.basePath}}/remove-user',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (data) {
+                    $("#modal_remove_user").modal('hide');
+                    toastr.success('Removed user successfully');
+                    const divElement = document.getElementById('user_' + user_name);
+                    divElement.style.display = "none";
+                    location.reload()
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        });
+    });
+
+    // Edit user modal event
+    $(document).ready(function () {
+        $("#modal_edit_user").on('show.bs.modal', function (event) {
+            let modal = $(this);
+            const button = $(event.relatedTarget);
+            const user_name = button.data('username');
+
+            // update user modal data
+            if (user_name !== "") {
+                $.ajax({
+                    cache: false,
+                    method: 'GET',
+                    url: '{{.basePath}}/api/user/' + user_name,
+                    dataType: 'json',
+                    contentType: "application/json",
+                    success: function (resp) {
+                        const user = resp;
+
+                        modal.find(".modal-title").text("Edit user " + user.username);
+                        modal.find("#_user_name").val(user.username);
+                        modal.find("#_previous_user_name").val(user.username);
+                        modal.find("#_user_password").val("");
+                        modal.find("#_user_password").prop("placeholder", "Leave empty to keep the password unchanged")
+                        modal.find("#_admin").prop("checked", user.admin);
+                    },
+                    error: function (jqXHR, exception) {
+                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson['message']);
+                    }
+                });
+            } else {
+                modal.find(".modal-title").text("Add new user");
+                modal.find("#_user_name").val("");
+                modal.find("#_previous_user_name").val("");
+                modal.find("#_user_password").val("");
+                modal.find("#_user_password").prop("placeholder", "")
+                modal.find("#_admin").prop("checked", false);
+            }
+        });
+    });
+
+    function updateUserInfo() {
+        const username = $("#_user_name").val();
+        const previous_username = $("#_previous_user_name").val();
+        const password = $("#_user_password").val();
+        let admin = false;
+        if ($("#_admin").is(':checked')) {
+            admin = true;
+        }
+        const data = {
+            "username": username,
+            "password": password,
+            "previous_username": previous_username,
+            "admin": admin
+        };
+
+        if (previous_username !== "") {
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '{{.basePath}}/update-user',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (data) {
+                    toastr.success("Updated user information successfully");
+                    location.reload();
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        } else {
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '{{.basePath}}/create-user',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function (data) {
+                    toastr.success("Created user successfully");
+                    location.reload();
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+
+        }
+    }
+
+    $(document).ready(function () {
+        $.validator.setDefaults({
+            submitHandler: function (form) {
+                updateUserInfo();
+            }
+        });
+        // Edit user form validation
+        $("#frm_edit_user").validate({
+            rules: {
+                _user_name: {
+                    required: true
+                },
+                _user_password: {
+                    required: function () {
+                        return $("#_previous_user_name").val() === "";
+                    }
+                },
+            },
+            messages: {
+                _user_name: {
+                    required: "Please enter a username"
+                },
+                _user_password: {
+                    required: "Please input a password"
+                },
+            },
+            errorElement: 'span',
+            errorPlacement: function (error, element) {
+                error.addClass('invalid-feedback');
+                element.closest('.form-group').append(error);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+        //
+    });
+</script>
+{{end}}

@@ -5,13 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"time"
 
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -52,39 +52,54 @@ func LoginPage() echo.HandlerFunc {
 // Login for signing in handler
 func Login(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		user := new(model.User)
-		c.Bind(user)
+		data := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&data)
 
-		dbuser, err := db.GetUser()
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+
+		username := data["username"].(string)
+		password := data["password"].(string)
+		rememberMe := data["rememberMe"].(bool)
+
+		dbuser, err := db.GetUserByName(username)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot query user from DB"})
 		}
 
-		userCorrect := subtle.ConstantTimeCompare([]byte(user.Username), []byte(dbuser.Username)) == 1
+		userCorrect := subtle.ConstantTimeCompare([]byte(username), []byte(dbuser.Username)) == 1
 
 		var passwordCorrect bool
 		if dbuser.PasswordHash != "" {
-			match, err := util.VerifyHash(dbuser.PasswordHash, user.Password)
+			match, err := util.VerifyHash(dbuser.PasswordHash, password)
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify password"})
 			}
 			passwordCorrect = match
 		} else {
-			passwordCorrect = subtle.ConstantTimeCompare([]byte(user.Password), []byte(dbuser.Password)) == 1
+			passwordCorrect = subtle.ConstantTimeCompare([]byte(password), []byte(dbuser.Password)) == 1
 		}
 
 		if userCorrect && passwordCorrect {
 			// TODO: refresh the token
+			ageMax := 0
+			expiration := time.Now().Add(24 * time.Hour)
+			if rememberMe {
+				ageMax = 86400
+				expiration.Add(144 * time.Hour)
+			}
 			sess, _ := session.Get("session", c)
 			sess.Options = &sessions.Options{
 				Path:     util.BasePath,
-				MaxAge:   86400,
+				MaxAge:   ageMax,
 				HttpOnly: true,
 			}
 
 			// set session_token
 			tokenUID := xid.New().String()
-			sess.Values["username"] = user.Username
+			sess.Values["username"] = dbuser.Username
+			sess.Values["admin"] = dbuser.Admin
 			sess.Values["session_token"] = tokenUID
 			sess.Save(c.Request(), c.Response())
 
@@ -92,13 +107,47 @@ func Login(db store.IStore) echo.HandlerFunc {
 			cookie := new(http.Cookie)
 			cookie.Name = "session_token"
 			cookie.Value = tokenUID
-			cookie.Expires = time.Now().Add(24 * time.Hour)
+			cookie.Expires = expiration
 			c.SetCookie(cookie)
 
 			return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Logged in successfully"})
 		}
 
 		return c.JSON(http.StatusUnauthorized, jsonHTTPResponse{false, "Invalid credentials"})
+	}
+}
+
+// GetUsers handler return a JSON list of all users
+func GetUsers(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		usersList, err := db.GetUsers()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot get user list: %v", err),
+			})
+		}
+
+		return c.JSON(http.StatusOK, usersList)
+	}
+}
+
+// GetUser handler returns a JSON object of single user
+func GetUser(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		username := c.Param("username")
+
+		if !isAdmin(c) && (username != currentUser(c)) {
+			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
+		}
+
+		userData, err := db.GetUserByName(username)
+		if err != nil {
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "User not found"})
+		}
+
+		return c.JSON(http.StatusOK, userData)
 	}
 }
 
@@ -113,21 +162,23 @@ func Logout() echo.HandlerFunc {
 // LoadProfile to load user information
 func LoadProfile(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
-		userInfo, err := db.GetUser()
-		if err != nil {
-			log.Error("Cannot get user information: ", err)
-		}
-
 		return c.Render(http.StatusOK, "profile.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "profile", CurrentUser: currentUser(c)},
-			"userInfo": userInfo,
+			"baseData": model.BaseData{Active: "profile", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 		})
 	}
 }
 
-// UpdateProfile to update user information
-func UpdateProfile(db store.IStore) echo.HandlerFunc {
+// UsersSettings handler
+func UsersSettings(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.Render(http.StatusOK, "users_settings.html", map[string]interface{}{
+			"baseData": model.BaseData{Active: "users-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
+		})
+	}
+}
+
+// UpdateUser to update user information
+func UpdateUser(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		data := make(map[string]interface{})
 		err := json.NewDecoder(c.Request().Body).Decode(&data)
@@ -138,8 +189,18 @@ func UpdateProfile(db store.IStore) echo.HandlerFunc {
 
 		username := data["username"].(string)
 		password := data["password"].(string)
+		previousUsername := data["previous_username"].(string)
+		admin := data["admin"].(bool)
 
-		user, err := db.GetUser()
+		if !isAdmin(c) && (previousUsername != currentUser(c)) {
+			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
+		}
+
+		if !isAdmin(c) {
+			admin = false
+		}
+
+		user, err := db.GetUserByName(previousUsername)
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
 		}
@@ -150,6 +211,13 @@ func UpdateProfile(db store.IStore) echo.HandlerFunc {
 			user.Username = username
 		}
 
+		if username != previousUsername {
+			_, err := db.GetUserByName(username)
+			if err == nil {
+				return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "This username is taken"})
+			}
+		}
+
 		if password != "" {
 			hash, err := util.HashPassword(password)
 			if err != nil {
@@ -158,12 +226,96 @@ func UpdateProfile(db store.IStore) echo.HandlerFunc {
 			user.PasswordHash = hash
 		}
 
+		if previousUsername != currentUser(c) {
+			user.Admin = admin
+		}
+
+		if err := db.DeleteUser(previousUsername); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
 		if err := db.SaveUser(user); err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
 		}
-		log.Infof("Updated admin user information successfully")
+		log.Infof("Updated user information successfully")
 
-		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated admin user information successfully"})
+		if previousUsername == currentUser(c) {
+			setUser(c, user.Username, user.Admin)
+		}
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated user information successfully"})
+	}
+}
+
+// CreateUser to create new user
+func CreateUser(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		data := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&data)
+
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+
+		var user model.User
+		username := data["username"].(string)
+		password := data["password"].(string)
+		admin := data["admin"].(bool)
+
+		if username == "" {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		} else {
+			user.Username = username
+		}
+
+		{
+			_, err := db.GetUserByName(username)
+			if err == nil {
+				return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "This username is taken"})
+			}
+		}
+
+		hash, err := util.HashPassword(password)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+		user.PasswordHash = hash
+
+		user.Admin = admin
+
+		if err := db.SaveUser(user); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+		log.Infof("Created user successfully")
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Created user successfully"})
+	}
+}
+
+// RemoveUser handler
+func RemoveUser(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		data := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&data)
+
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+
+		username := data["username"].(string)
+
+		if username == currentUser(c) {
+			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "User cannot delete itself"})
+		}
+		// delete user from database
+
+		if err := db.DeleteUser(username); err != nil {
+			log.Error("Cannot delete user: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot delete user from database"})
+		}
+
+		log.Infof("Removed user: %s", username)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "User removed"})
 	}
 }
 
@@ -179,7 +331,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "clients.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c)},
+			"baseData":       model.BaseData{Active: "", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 			"clientDataList": clientDataList,
 		})
 	}
@@ -532,7 +684,7 @@ func WireGuardServer(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "server.html", map[string]interface{}{
-			"baseData":        model.BaseData{Active: "wg-server", CurrentUser: currentUser(c)},
+			"baseData":        model.BaseData{Active: "wg-server", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 			"serverInterface": server.Interface,
 			"serverKeyPair":   server.KeyPair,
 		})
@@ -600,7 +752,7 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c)},
+			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 			"globalSettings": globalSettings,
 		})
 	}
@@ -630,7 +782,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		wgClient, err := wgctrl.New()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
-				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 				"error":    err.Error(),
 				"devices":  nil,
 			})
@@ -639,7 +791,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		devices, err := wgClient.Devices()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
-				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+				"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 				"error":    err.Error(),
 				"devices":  nil,
 			})
@@ -651,7 +803,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 			clients, err := db.GetClients(false)
 			if err != nil {
 				return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
-					"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+					"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 					"error":    err.Error(),
 					"devices":  nil,
 				})
@@ -697,7 +849,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		}
 
 		return c.Render(http.StatusOK, "status.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c)},
+			"baseData": model.BaseData{Active: "status", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 			"devices":  devicesVm,
 			"error":    "",
 		})
@@ -796,7 +948,7 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 }
 
 // ApplyServerConfig handler to write config file and restart Wireguard server
-func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
+func ApplyServerConfig(db store.IStore, tmplDir fs.FS) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		server, err := db.GetServer()
@@ -811,6 +963,12 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get client config"})
 		}
 
+		users, err := db.GetUsers()
+		if err != nil {
+			log.Error("Cannot get users config: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get users config"})
+		}
+
 		settings, err := db.GetGlobalSettings()
 		if err != nil {
 			log.Error("Cannot get global settings: ", err)
@@ -818,7 +976,7 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 		}
 
 		// Write config file
-		err = util.WriteWireGuardServerConfig(tmplBox, server, clients, settings)
+		err = util.WriteWireGuardServerConfig(tmplDir, server, clients, users, settings)
 		if err != nil {
 			log.Error("Cannot apply server config: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
@@ -826,7 +984,27 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 			})
 		}
 
+		err = util.UpdateHashes(db)
+		if err != nil {
+			log.Error("Cannot update hashes: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
+				false, fmt.Sprintf("Cannot update hashes: %v", err),
+			})
+		}
+
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
+	}
+}
+
+
+// GetHashesChanges handler returns if database hashes have changed
+func GetHashesChanges(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if util.HashesChanged(db) {
+			return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Hashes changed"})
+		} else {
+			return c.JSON(http.StatusOK, jsonHTTPResponse{false, "Hashes not changed"})
+		}
 	}
 }
 
@@ -834,8 +1012,7 @@ func ApplyServerConfig(db store.IStore, tmplBox *rice.Box) echo.HandlerFunc {
 func AboutPage() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return c.Render(http.StatusOK, "about.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "about", CurrentUser: currentUser(c)},
+			"baseData": model.BaseData{Active: "about", CurrentUser: currentUser(c), Admin: isAdmin(c)},
 		})
 	}
 }
-
