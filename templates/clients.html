@@ -71,14 +71,7 @@ Wireguard Clients
             <div class="modal-body">
                 <input type="hidden" id="qr_client_id" name="qr_client_id">
                 <img id="qr_code" class="w-100" style="image-rendering: pixelated;" src="" alt="QR code" />
-                <div class="form-group">
-                    <div class="icheck-primary d-inline">
-                        <input type="checkbox" id="qr_include_fwmark" onchange="regenerateQRCode()">
-                        <label for="qr_include_fwmark">
-                            Include FwMark
-                        </label>
-                    </div>
-                </div>
+                <!-- do not include FwMark in any client configs: it is INVALID. -->
             </div>
         </div>
         <!-- /.modal-content -->
@@ -250,6 +243,93 @@ Wireguard Clients
             populateClientList();
         })
 
+        // show search bar and override :contains to be case-insensitive
+        $(document).ready(function () {
+            $("#search-form").show();
+            jQuery.expr[':'].contains = function(a, i, m) {
+                return jQuery(a).text().toUpperCase()
+                    .indexOf(m[3].toUpperCase()) >= 0;
+            };
+        })
+
+        // hide all clients and display only the ones that meet the search criteria (name, email, IP)
+        $('#search-input').keyup(function () {
+            $("#status-selector").val("All");
+            var query = $(this).val();
+            $('.col-lg-4').hide();
+            $(".info-box-text").each(function() {
+                if($(this).children('i.fa-user').length > 0 || $(this).children('i.fa-envelope').length > 0)
+                {
+                    $(this).filter(':contains("' + query + '")').parent().parent().parent().show();
+                }
+                })
+            $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
+        })
+
+        $("#status-selector").on('change', function () {
+            $('#search-input').val("");
+            switch ($("#status-selector").val()) {
+                case "All":
+                    $('.col-lg-4').show();
+                    break;
+                case "Enabled":
+                    $('.col-lg-4').hide();
+                    $('[id^="paused_"]').each(function () {
+                        if ($(this).css("visibility") === "hidden") {
+                            $(this).parent().parent().show();
+                        }
+                    });
+                    break;
+                case "Disabled":
+                    $('.col-lg-4').hide();
+                    $('[id^="paused_"]').each(function () {
+                        if ($(this).css("visibility") !== "hidden") {
+                            $(this).parent().parent().show();
+                        }
+                    });
+                    break;
+                case "Connected":
+                    $('.col-lg-4').hide();
+                    $.ajax({
+                        cache: false,
+                        method: 'GET',
+                        url: '{{.basePath}}/status',
+                        success: function (data) {
+                            const returnedHTML = $(data).find(".table-success").get();
+                            var returnedString = "";
+                            returnedHTML.forEach(entry => returnedString += entry.outerHTML);
+                            $(".fa-key").each(function () {
+                                if (returnedString.indexOf($(this).parent().text().trim()) != -1) {
+                                    $(this).closest('.col-lg-4').show();
+                                }
+                            })
+                        }
+                    });
+                    break;
+                case "Disconnected":
+                    $('.col-lg-4').show();
+                    $.ajax({
+                        cache: false,
+                        method: 'GET',
+                        url: '{{.basePath}}/status',
+                        success: function (data) {
+                            const returnedHTML = $(data).find(".table-success").get();
+                            var returnedString = "";
+                            returnedHTML.forEach(entry => returnedString += entry.outerHTML);
+                            $(".fa-key").each(function () {
+                                if (returnedString.indexOf($(this).parent().text().trim()) != -1) {
+                                    $(this).closest('.col-lg-4').hide();
+                                }
+                            })
+                        }
+                    });
+                    break;
+                default:
+                    $('.col-lg-4').show();
+                    break;
+            }
+        });
+
         // modal_pause_client modal event
         $("#modal_pause_client").on('show.bs.modal', function (event) {
             const button = $(event.relatedTarget);
@@ -391,6 +471,7 @@ Wireguard Clients
         function regenerateQRCode() {
             const client_id = $("#qr_client_id").val();
             const QRCodeImg = $("#qr_code");
+            const QRCodeA = $("#qr_code_a");
             let include_fwmark = false;
             if ($("#qr_include_fwmark").is(':checked')){
                 include_fwmark = true;
@@ -400,7 +481,7 @@ Wireguard Clients
                 cache: false,
                 method: 'GET',
                 url: '{{.basePath}}/api/client/' + client_id,
-                data: { 
+                data: {
                     qrCodeIncludeFwMark: include_fwmark
                 },
                 dataType: 'json',
@@ -410,6 +491,8 @@ Wireguard Clients
 
                     $(".modal-title").text("Scan QR Code for " + client.name + " profile");
                     QRCodeImg.attr('src', resp.QRCode).show();
+                    QRCodeA.attr('download', resp.Client.name);
+                    QRCodeA.attr('href', resp.QRCode).show();
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
