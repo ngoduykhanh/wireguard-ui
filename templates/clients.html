@@ -472,17 +472,13 @@ Wireguard Clients
             const client_id = $("#qr_client_id").val();
             const QRCodeImg = $("#qr_code");
             const QRCodeA = $("#qr_code_a");
-            let include_fwmark = false;
-            if ($("#qr_include_fwmark").is(':checked')){
-                include_fwmark = true;
-            }
             QRCodeImg.hide();
             $.ajax({
                 cache: false,
                 method: 'GET',
                 url: '{{.basePath}}/api/client/' + client_id,
                 data: {
-                    qrCodeIncludeFwMark: include_fwmark
+
                 },
                 dataType: 'json',
                 contentType: "application/json",
