@@ -7,6 +7,7 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/store"
 	"golang.org/x/mod/sumdb/dirhash"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"net"
 	"os"
@@ -17,7 +18,6 @@ import (
 	"text/template"
 	"time"
 
-	rice "github.com/GeertJohan/go.rice"
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
@@ -382,7 +382,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 }
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
-func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
+func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
 
 	// if set, read wg.conf template from WgConfTemplate
@@ -394,7 +394,7 @@ func WriteWireGuardServerConfig(tmplBox *rice.Box, serverConfig model.Server, cl
 		tmplWireguardConf = string(fileContentBytes)
 	} else {
 		// read default wg.conf template file to string
-		fileContent, err := tmplBox.String("wg.conf")
+		fileContent, err := StringFromEmbedFile(tmplDir, "wg.conf")
 		if err != nil {
 			return err
 		}
@@ -465,6 +465,18 @@ func LookupEnvOrStrings(key string, defaultVal []string) []string {
 	return defaultVal
 }
 
+func StringFromEmbedFile(embed fs.FS, filename string) (string, error) {
+	file, err := embed.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
 func ParseLogLevel(lvl string) (log.Lvl, error) {
 	switch strings.ToLower(lvl) {
 	case "debug":
@@ -502,11 +514,11 @@ func HashesChanged(db store.IStore) bool {
 	newClient, newServer := GetCurrentHash(db)
 
 	if oldClient != newClient {
-		fmt.Println("Hash for client differs")
+		//fmt.Println("Hash for client differs")
 		return true
 	}
 	if oldServer != newServer {
-		fmt.Println("Hash for server differs")
+		//fmt.Println("Hash for server differs")
 		return true
 	}
 	return false
