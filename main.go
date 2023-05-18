@@ -43,14 +43,6 @@ var (
 	flagBasePath       string
 )
 
-const (
-	defaultEmailSubject = "Your wireguard configuration"
-	defaultEmailContent = `Hi,</br>
-<p>In this email you can find your personal configuration for our wireguard server.</p>
-
-<p>Best</p>
-`
-)
 
 // embed the "templates" directory
 //
@@ -65,6 +57,8 @@ var embeddedAssets embed.FS
 func init() {
 
 	// command-line flags and env variables
+	// TODO move ENV_VAR variables and default values to config.go
+
 	flag.BoolVar(&flagDisableLogin, "disable-login", util.LookupEnvOrBool("DISABLE_LOGIN", flagDisableLogin), "Disable authentication on the app. This is potentially dangerous.")
 	flag.StringVar(&flagBindAddress, "bind-address", util.LookupEnvOrString("BIND_ADDRESS", flagBindAddress), "Address:Port to which the app will be bound.")
 	flag.StringVar(&flagSmtpHostname, "smtp-hostname", util.LookupEnvOrString("SMTP_HOSTNAME", flagSmtpHostname), "SMTP Hostname")
@@ -140,6 +134,34 @@ func main() {
 	// create the wireguard config on start, if it doesn't exist
 	initServerConfig(db, tmplDir)
 
+	// check and update email settings if necessary
+	if util.SendgridApiKey != "" {
+		emailSetting, _ := db.GetEmailSettings()
+		emailSetting.SendgridApiKey = util.SendgridApiKey
+		emailSetting.EmailFromName = util.EmailFromName
+		emailSetting.EmailFrom = util.EmailFrom
+		err := db.SaveEmailSettings(emailSetting)
+		if err != nil {
+			panic(err)
+		}
+	}
+	if util.SmtpUsername != "" {
+		emailSetting, _ := db.GetEmailSettings()
+		emailSetting.EmailFromName = util.EmailFromName
+		emailSetting.EmailFrom = util.EmailFrom
+		emailSetting.SmtpHostname = util.SmtpHostname
+		emailSetting.SmtpPort = util.SmtpPort
+		emailSetting.SmtpUsername = util.SmtpUsername
+		emailSetting.SmtpPassword = util.SmtpPassword
+		emailSetting.SmtpNoTLSCheck = util.SmtpNoTLSCheck
+		emailSetting.SmtpAuthType = util.SmtpAuthType
+		emailSetting.SmtpEncryption = util.SmtpEncryption
+		err := db.SaveEmailSettings(emailSetting)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	// register routes
 	app := router.New(tmplDir, extraData, util.SessionSecret)
 
@@ -158,12 +180,6 @@ func main() {
 		app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
 	}
 
-	var sendmail emailer.Emailer
-	if util.SendgridApiKey != "" {
-		sendmail = emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
-	} else {
-		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
-	}
 
 	app.GET(util.BasePath+"/test-hash", handler.GetHashesChanges(db), handler.ValidSession)
 	app.GET(util.BasePath+"/about", handler.AboutPage())
@@ -171,7 +187,7 @@ func main() {
 	app.GET(util.BasePath+"/favicon", handler.Favicon())
 	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/update-client", handler.UpdateClient(db), handler.ValidSession, handler.ContentTypeJson)
-	app.POST(util.BasePath+"/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/email-client", handler.EmailClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/client/set-status", handler.SetClientStatus(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/remove-client", handler.RemoveClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.GET(util.BasePath+"/download", handler.DownloadClient(db), handler.ValidSession)
@@ -180,6 +196,9 @@ func main() {
 	app.POST(util.BasePath+"/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/global-settings", handler.GlobalSettings(db), handler.ValidSession, handler.NeedsAdmin)
 	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+  app.GET(util.BasePath+"/email-settings", handler.EmailSettings(db), handler.ValidSession, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/email-settings", handler.EmailSettingsSubmit(db), handler.ValidSession, handler.NeedsAdmin)
+
 	app.GET(util.BasePath+"/status", handler.Status(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/clients", handler.GetClients(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/client/:id", handler.GetClient(db), handler.ValidSession)

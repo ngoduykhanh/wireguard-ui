@@ -146,6 +146,14 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a href="{{.basePath}}/email-settings" class="nav-link {{if eq .baseData.Active "email-settings" }}active{{end}}">
+                            <i class="nav-icon fas fa-cog"></i>
+                            <p>
+                                Email Settings
+                            </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="{{.basePath}}/users-settings" class="nav-link {{if eq .baseData.Active "users-settings" }}active{{end}}">
                             <i class="nav-icon fas fa-cog"></i>
                             <p>
@@ -154,7 +162,6 @@
                             </a>
                         </li>
                         {{end}}
-
                         <li class="nav-header">UTILITIES</li>
                         <li class="nav-item">
                             <a href="{{.basePath}}/status" class="nav-link {{if eq .baseData.Active "status" }}active{{end}}">
@@ -243,6 +250,14 @@
                                     <input type="checkbox" id="enabled" {{ if .client_defaults.EnableAfterCreation }}checked{{ end }}>
                                     <label for="enabled">
                                         Enable after creation
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="icheck-primary d-inline">
+                                    <input type="checkbox" id="send_email_after_creation" {{ if .client_defaults.EnableAfterCreation }}checked{{ end }}>
+                                    <label for="send_email_after_creation">
+                                        Send email after creation
                                     </label>
                                 </div>
                             </div>
@@ -445,6 +460,7 @@
                 success: function(resp) {
                     $("#modal_new_client").modal('hide');
                     toastr.success('Created new client successfully');
+                        sendEmailAfterCreation(resp.id, resp.email);
                     // Update the home page (clients page) after adding successfully
                     if (window.location.pathname === "{{.basePath}}/") {
                         populateClient(resp.id);
@@ -477,6 +493,31 @@
                 }
             });
         }
+
+        function sendEmailAfterCreation(client_id, client_email) {
+            console.log("Do you even try?");
+            if ($("#send_email_after_creation").is(':checked')) {
+                if (client_email !== "" && client_id) {
+                    const data = {"id": client_id, "email": client_email};
+                    $.ajax({
+                        cache: false,
+                        method: 'POST',
+                        url: '{{.basePath}}/email-client',
+                        dataType: 'json',
+                        contentType: "application/json",
+                        data: JSON.stringify(data),
+                        success: function (resp) {
+                            toastr.success('Sent email to client successfully');
+                        },
+                        error: function (jqXHR, exception) {
+                            const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                            toastr.error(responseJson['message']);
+                        }
+                    });
+                }
+            }
+        }
+
     </script>
     <script>
         //Initialize Select2 Elements
