@@ -203,6 +203,11 @@ or
 docker compose build --build-arg=COMMIT=$(git rev-parse --short HEAD)
 ```
 
+:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui) which you can pull and use 
+```
+docker pull ngoduykhanh/wireguard-ui
+````
+
 ### Build binary file
 
 Prepare the assets directory
@@ -211,18 +216,9 @@ Prepare the assets directory
 ./prepare_assets.sh
 ```
 
-Then you can embed resources by generating Go source code
-
-```sh
-rice embed-go
-go build -o wireguard-ui
-```
-
-Or, append resources to executable as zip file
-
+Then build your executable
 ```sh
 go build -o wireguard-ui
-rice append --exec wireguard-ui
 ```
 
 ## License
