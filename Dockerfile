@@ -52,7 +52,7 @@ COPY . /build
 RUN cp -r /build/custom/ assets/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-X main.appVersion=${APP_VERSION} -X main.buildTime=${BUILD_TIME} -X main.gitCommit=${COMMIT}" -a -o wg-ui .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-X 'main.appVersion=${APP_VERSION}' -X 'main.buildTime=${BUILD_TIME}' -X 'main.gitCommit=${COMMIT}'" -a -o wg-ui .
 
 # Release stage
 FROM alpine:3.16
