@@ -145,6 +145,7 @@
                                 </p>
                             </a>
                         </li>
+                        {{if not .loginDisabled}}
                         <li class="nav-item">
                             <a href="{{.basePath}}/users-settings" class="nav-link {{if eq .baseData.Active "users-settings" }}active{{end}}">
                             <i class="nav-icon fas fa-cog"></i>
@@ -153,6 +154,7 @@
                             </p>
                             </a>
                         </li>
+                        {{end}}
                         {{end}}
 
                         <li class="nav-header">UTILITIES</li>
