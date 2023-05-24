@@ -195,13 +195,13 @@ feature work.
 Go to the project root directory and run the following command:
 
 ```sh
-docker build --build-arg=COMMIT=$(git rev-parse --short HEAD) -t wireguard-ui .
+docker build --build-arg=GIT_COMMIT=$(git rev-parse --short HEAD) -t wireguard-ui .
 ```
 
 or
 
 ```sh
-docker compose build --build-arg=COMMIT=$(git rev-parse --short HEAD)
+docker compose build --build-arg=GIT_COMMIT=$(git rev-parse --short HEAD)
 ```
 
 :information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui) which you can pull and use 

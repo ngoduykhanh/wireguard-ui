@@ -1,12 +1,13 @@
 # Build stage
-FROM golang:1.17-alpine3.16 as builder
-LABEL maintainer="Khanh Ngo <k@ndk.name"
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.17-alpine3.16 as builder
+LABEL maintainer="Khanh Ngo <k@ndk.name>"
 
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
 ARG APP_VERSION=dev
-ARG BUILD_TIME=""
-ARG COMMIT=""
+ARG BUILD_TIME
+ARG GIT_COMMIT
 
 ARG BUILD_DEPENDENCIES="npm \
     yarn"
@@ -52,7 +53,7 @@ COPY . /build
 RUN cp -r /build/custom/ assets/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-X 'main.appVersion=${APP_VERSION}' -X 'main.buildTime=${BUILD_TIME}' -X 'main.gitCommit=${COMMIT}'" -a -o wg-ui .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-X 'main.appVersion=${APP_VERSION}' -X 'main.buildTime=${BUILD_TIME}' -X 'main.gitCommit=${GIT_COMMIT}'" -a -o wg-ui .
 
 # Release stage
 FROM alpine:3.16

@@ -9,16 +9,16 @@ on:
 
 jobs:
   build-image:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # set environment
       - name: Set BUILD_TIME env
         run: echo "BUILD_TIME=$(date)" >> $GITHUB_ENV
 
-      - name: Set COMMIT env
-        run: echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Set GIT_COMMIT env
+        run: echo "GIT_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Environment printer
         uses: managedkaos/print-env@v1.0
@@ -88,11 +88,11 @@ jobs:
         with:
           push: true
           context: .
-          platforms: linux/amd64,linux/arm/v7
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
           tags: ${{ steps.image-tags.outputs.container_images }}
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}
             BUILD_TIME=${{ env.BUILD_TIME }}
-            COMMIT=${{ env.SHORT_SHA }}
+            GIT_COMMIT=${{ env.GIT_COMMIT }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

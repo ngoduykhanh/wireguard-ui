@@ -7,7 +7,7 @@ on:
 jobs:
   releases-matrix:
     name: Release Go Binary
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         # build and publish in parallel: linux/386, linux/amd64, darwin/386, darwin/amd64
@@ -24,7 +24,7 @@ jobs:
           - 7
     steps:
     # get the source code
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     # set environment
     - name: Set APP_VERSION env
