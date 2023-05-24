@@ -93,4 +93,4 @@ jobs:
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}
             BUILD_TIME=${{ env.BUILD_TIME }}
-            COMMIT=${{ env.COMMIT }}
+            COMMIT=${{ env.SHORT_SHA }}
