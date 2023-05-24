@@ -62,6 +62,12 @@ Global Settings
                                     value="{{ .globalSettings.FirewallMark }}">
                             </div>
                             <div class="form-group">
+                                <label for="Table">Table</label>
+                                <input type="text" class="form-control" id="table"
+                                    name="table" placeholder="auto"
+                                    value="{{ .globalSettings.Table }}">
+                            </div>
+                            <div class="form-group">
                                 <label for="config_file_path">Wireguard Config File Path</label>
                                 <input type="text" class="form-control" id="config_file_path"
                                     name="config_file_path" placeholder="E.g. /etc/wireguard/wg0.conf"
@@ -102,7 +108,9 @@ Global Settings
                             <dd>Leave blank to omit this setting in the Client config.</dd>
                             <dt>5. Firewall Mark</dt>
                             <dd>Add a matching <code>fwmark</code> on all packets going out of a WireGuard non-default-route tunnel. Default value: <code>0xca6c</code></dd>
-                            <dt>6. Wireguard Config File Path</dt>
+                            <dt>6. Table</dt>
+                            <dd>Value for the <code>Table</code> setting in the wg conf file. Default value: <code>auto</code></dd>                            
+                            <dt>7. Wireguard Config File Path</dt>
                             <dd>The path of your Wireguard server config file. Please make sure the parent directory
                                 exists and is writable.</dd>
                         </dl>
@@ -150,8 +158,9 @@ Global Settings
             const mtu = $("#mtu").val();
             const persistent_keepalive = $("#persistent_keepalive").val();
             const firewall_mark = $("#firewall_mark").val();
+            const table = $("#table").val();
             const config_file_path = $("#config_file_path").val();
-            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "firewall_mark": firewall_mark, "config_file_path": config_file_path};
+            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "firewall_mark": firewall_mark, "table": table, "config_file_path": config_file_path};
 
             $.ajax({
                 cache: false,
@@ -223,6 +232,9 @@ Global Settings
                         required: true
                     },
                     firewall_mark: {
+                        required: false
+                    },
+                    table: {
                         required: false
                     }
                 },
