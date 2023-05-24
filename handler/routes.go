@@ -357,11 +357,9 @@ func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		clientID := c.Param("id")
-		qrCodeIncludeFwMark := c.QueryParam("qrCodeIncludeFwMark")
 		qrCodeSettings := model.QRCodeSettings{
 			Enabled:       true,
 			IncludeDNS:    true,
-			IncludeFwMark: qrCodeIncludeFwMark == "true",
 			IncludeMTU:    true,
 		}
 
@@ -490,7 +488,6 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		qrCodeSettings := model.QRCodeSettings{
 			Enabled:       true,
 			IncludeDNS:    true,
-			IncludeFwMark: true,
 			IncludeMTU:    true,
 		}
 		clientData, err := db.GetClientByID(payload.ID, qrCodeSettings)
