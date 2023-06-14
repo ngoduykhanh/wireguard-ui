@@ -480,8 +480,8 @@ func LookupEnvOrSecretString(key string, defaultVal string) string {
 			}
 		}
 		// returns file contents if file exists
-		var content string
 		if file, err := os.Open(val); err == nil {
+			var content string
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
 				content += scanner.Text()
