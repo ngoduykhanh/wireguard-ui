@@ -1,11 +1,10 @@
 package util
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ngoduykhanh/wireguard-ui/store"
-	"golang.org/x/mod/sumdb/dirhash"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -17,6 +16,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"golang.org/x/mod/sumdb/dirhash"
 
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/labstack/gommon/log"
@@ -461,6 +463,32 @@ func LookupEnvOrInt(key string, defaultVal int) int {
 func LookupEnvOrStrings(key string, defaultVal []string) []string {
 	if val, ok := os.LookupEnv(key); ok {
 		return strings.Split(val, ",")
+	}
+	return defaultVal
+}
+
+func LookupEnvOrSecretString(key string, defaultVal string) string {
+	blacklist := []string{
+		"wg-ui",
+		"init.sh",
+	}
+	if val, ok := os.LookupEnv(key); ok {
+		// checks if key is blacklisted
+		for i := 0; i < len(blacklist); i++ {
+			if val == blacklist[i] {
+				return val
+			}
+		}
+		// returns file contents if file exists
+		var content string
+		if file, err := os.Open(val); err == nil {
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				content += scanner.Text()
+			}
+			return content
+		}
+		return val
 	}
 	return defaultVal
 }

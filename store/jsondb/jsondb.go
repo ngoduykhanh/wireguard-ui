@@ -107,7 +107,7 @@ func (o *JsonDB) Init() error {
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
 	}
-	
+
 	// hashes
 	if _, err := os.Stat(hashesPath); os.IsNotExist(err) {
 		clientServerHashes := new(model.ClientServerHashes)
@@ -122,9 +122,9 @@ func (o *JsonDB) Init() error {
 		user := new(model.User)
 		user.Username = util.LookupEnvOrString(util.UsernameEnvVar, util.DefaultUsername)
 		user.Admin = util.DefaultIsAdmin
-		user.PasswordHash = util.LookupEnvOrString(util.PasswordHashEnvVar, "")
+		user.PasswordHash = util.LookupEnvOrSecretString(util.PasswordHashEnvVar, "")
 		if user.PasswordHash == "" {
-			plaintext := util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
+			plaintext := util.LookupEnvOrSecretString(util.PasswordEnvVar, util.DefaultPassword)
 			hash, err := util.HashPassword(plaintext)
 			if err != nil {
 				return err
