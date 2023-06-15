@@ -81,7 +81,7 @@ func init() {
 	flag.Parse()
 
 	// command-line flags and env variables w/ secret support
-	var tempflag = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
+	var tempflag string = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
 	if tempflag == "" {
 		flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrFile("SMTP_PASSWORD_FILE", flagSmtpPassword), "SMTP Password File")
 	} else {
