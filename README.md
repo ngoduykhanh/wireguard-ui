@@ -49,7 +49,6 @@ docker-compose up
 | `WGUI_PASSWORD_HASH_FILE`   | Optional filepath for the user login password hash. (alternative to `WGUI_PASSWORD_FILE`). Used for db initialization only. Leave `WGUI_PASSWORD_HASH` blank to take effect | N/A                                |
 | `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings where clients should connect to                                                                                        | Resolved to your public ip address |
 | `WGUI_FAVICON_FILE_PATH`    | The file path used as website favicon                                                                                                                                       | Embedded WireGuard logo            |
-| `WGUI_ENDPOINT_ADDRESS`     | The default endpoint address used in global settings                                                                                                                        | Resolved to your public ip address |
 | `WGUI_DNS`                  | The default DNS servers (comma-separated-list) used in the global settings                                                                                                  | `1.1.1.1`                          |
 | `WGUI_MTU`                  | The default MTU used in global settings                                                                                                                                     | `1450`                             |
 | `WGUI_PERSISTENT_KEEPALIVE` | The default persistent keepalive for WireGuard in global settings                                                                                                           | `15`                               |
@@ -68,7 +67,7 @@ docker-compose up
 | `SMTP_PASSWORD`             | The SMTP user password                                                                                                                                                      | N/A                                |
 | `SMTP_PASSWORD_FILE`        | Optional filepath for the SMTP user password. Leave `SMTP_PASSWORD` blank to take effect                                                                                    | N/A                                |
 | `SMTP_AUTH_TYPE`            | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                                     | `NONE`                             |
-| `SMTP_ENCRYPTION`           | The encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                          | `STARTTLS`                         |
+| `SMTP_ENCRYPTION`           | The encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                          | `STARTTLS`                         |                                                                   | `STARTTLS`                         |
 
 ### Defaults for server configuration
 
