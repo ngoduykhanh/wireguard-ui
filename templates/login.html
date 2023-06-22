@@ -83,8 +83,8 @@
 <script>
     function redirectNext() {
         const urlParams = new URLSearchParams(window.location.search);
-        const nextURL = urlParams.get('next');
-        if (nextURL) {
+        const nextURL = urlParams.get('next').trim();
+        if (nextURL && /(?:^\/[a-zA-Z_])|(?:^\/$)/.test(nextURL)) {
             window.location.href = nextURL;
         } else {
             window.location.href = '/{{.basePath}}';
