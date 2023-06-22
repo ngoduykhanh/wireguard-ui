@@ -67,7 +67,7 @@ docker-compose up
 | `SMTP_PASSWORD`             | The SMTP user password                                                                                                                                                      | N/A                                |
 | `SMTP_PASSWORD_FILE`        | Optional filepath for the SMTP user password. Leave `SMTP_PASSWORD` blank to take effect                                                                                    | N/A                                |
 | `SMTP_AUTH_TYPE`            | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                                     | `NONE`                             |
-| `SMTP_ENCRYPTION`           | The encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                          | `STARTTLS`                         |                                                                   | `STARTTLS`                         |
+| `SMTP_ENCRYPTION`           | The encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                          | `STARTTLS`                         |
 
 ### Defaults for server configuration
 
