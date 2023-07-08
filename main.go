@@ -78,27 +78,35 @@ func init() {
 	flag.StringVar(&flagEmailFromName, "email-from-name", util.LookupEnvOrString("EMAIL_FROM_NAME", flagEmailFromName), "'From' email name.")
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
-	flag.Parse()
 
-	// command-line flags and env variables w/ secret support
-	tempflag := util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
-	if tempflag == "" {
+	var (
+		smtpPasswordLookup  = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
+		sengridApiKeyLookup = util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey)
+		sessionSecretLookup = util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret)
+	)
+
+	// check empty smtpPassword env var
+	if smtpPasswordLookup != "" {
+		flag.StringVar(&flagSmtpPassword, "smtp-password", smtpPasswordLookup, "SMTP Password")
+	} else {
 		flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrFile("SMTP_PASSWORD_FILE", flagSmtpPassword), "SMTP Password File")
-	} else {
-		flag.StringVar(&flagSmtpPassword, "smtp-password", tempflag, "SMTP Password")
 	}
-	tempflag = util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey)
-	if tempflag == "" {
+
+	// check empty sengridApiKey env var
+	if sengridApiKeyLookup != "" {
+		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", sengridApiKeyLookup, "Your sendgrid api key.")
+	} else {
 		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", util.LookupEnvOrFile("SENDGRID_API_KEY_FILE", flagSendgridApiKey), "File containing your sendgrid api key.")
-	} else {
-		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", tempflag, "Your sendgrid api key.")
 	}
-	tempflag = util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret)
-	if tempflag == "" {
+
+	// check empty sessionSecret env var
+	if util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret) != "" {
+		flag.StringVar(&flagSessionSecret, "session-secret", sessionSecretLookup, "The key used to encrypt session cookies.")
+	} else {
 		flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrFile("SESSION_SECRET_FILE", flagSessionSecret), "File containing the key used to encrypt session cookies.")
-	} else {
-		flag.StringVar(&flagSessionSecret, "session-secret", tempflag, "The key used to encrypt session cookies.")
 	}
+
+	flag.Parse()
 
 	// update runtime config
 	util.DisableLogin = flagDisableLogin
