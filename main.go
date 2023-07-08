@@ -100,7 +100,7 @@ func init() {
 	}
 
 	// check empty sessionSecret env var
-	if util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret) != "" {
+	if sessionSecretLookup != "" {
 		flag.StringVar(&flagSessionSecret, "session-secret", sessionSecretLookup, "The key used to encrypt session cookies.")
 	} else {
 		flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrFile("SESSION_SECRET_FILE", flagSessionSecret), "File containing the key used to encrypt session cookies.")
