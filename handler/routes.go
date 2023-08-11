@@ -567,6 +567,45 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
 		}
 
+		// update Wireguard Client PublicKey
+		if client.PublicKey != _client.PublicKey && _client.PublicKey != "" {
+			_, err := wgtypes.ParseKey(_client.PublicKey)
+			if err != nil {
+				log.Error("Cannot verify provided Wireguard public key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard public key"})
+			}
+			// check for duplicates
+			clients, err := db.GetClients(false)
+			if err != nil {
+				log.Error("Cannot get client list for duplicate public key check")
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get client list for duplicate public key check"})
+			}
+			for _, other := range clients {
+				if other.Client.PublicKey == _client.PublicKey {
+					log.Error("Duplicate Public Key")
+					return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Duplicate Public Key"})
+				}
+			}
+
+			// When replacing any PublicKey, discard any locally stored Wireguard Client PrivateKey
+			// Client PubKey no longer corresponds to locally stored PrivKey.
+			// QR code (needs PrivateKey) for this client is no longer possible now.
+
+			if client.PrivateKey != "" {
+				client.PrivateKey = ""
+			}
+
+		}
+
+		// update Wireguard Client PresharedKey
+		if client.PresharedKey != _client.PresharedKey && _client.PresharedKey != "" {
+			_, err := wgtypes.ParseKey(_client.PresharedKey)
+			if err != nil {
+				log.Error("Cannot verify provided Wireguard preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard preshared key"})
+			}
+		}
+
 		// map new data
 		client.Name = _client.Name
 		client.Email = _client.Email
@@ -575,6 +614,8 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
 		client.ExtraAllowedIPs = _client.ExtraAllowedIPs
+		client.PublicKey = _client.PublicKey
+		client.PresharedKey = _client.PresharedKey
 		client.UpdatedAt = time.Now().UTC()
 
 		// write to the database
