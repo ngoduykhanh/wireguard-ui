@@ -38,7 +38,7 @@ var (
 	flagSendgridApiKey string
 	flagEmailFrom      string
 	flagEmailFromName  string = "WireGuard UI"
-	flagSessionSecret  string
+	flagSessionSecret  string = util.RandomString(32)
 	flagWgConfTemplate string
 	flagBasePath       string
 )

@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/fs"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"path"
@@ -528,4 +529,14 @@ func UpdateHashes(db store.IStore) error {
 	var clientServerHashes model.ClientServerHashes
 	clientServerHashes.Client, clientServerHashes.Server = GetCurrentHash(db)
 	return db.SaveHashes(clientServerHashes)
+}
+
+func RandomString(length int) string {
+	var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
 }
