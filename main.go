@@ -146,15 +146,19 @@ func main() {
 
 	app.GET(util.BasePath, handler.WireGuardClients(db), handler.ValidSession)
 
+	// Important: Make sure that all non-GET routes check the request content type using handler.ContentTypeJson to
+	// mitigate CSRF attacks. This is effective, because browsers don't allow setting the Content-Type header on
+	// cross-origin requests.
+
 	if !util.DisableLogin {
 		app.GET(util.BasePath+"/login", handler.LoginPage())
-		app.POST(util.BasePath+"/login", handler.Login(db))
+		app.POST(util.BasePath+"/login", handler.Login(db), handler.ContentTypeJson)
 		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
 		app.GET(util.BasePath+"/profile", handler.LoadProfile(db), handler.ValidSession)
 		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(db), handler.ValidSession, handler.NeedsAdmin)
-		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession)
-		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.NeedsAdmin)
-		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession, handler.ContentTypeJson)
+		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 		app.GET(util.BasePath+"/getusers", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
 		app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
 	}
