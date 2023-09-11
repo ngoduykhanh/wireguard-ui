@@ -38,12 +38,12 @@ func New(dbPath string) (*JsonDB, error) {
 func (o *JsonDB) Init() error {
 	var clientPath string = path.Join(o.dbPath, "clients")
 	var serverPath string = path.Join(o.dbPath, "server")
+	var userPath string = path.Join(o.dbPath, "users")
 	var wakeOnLanHostsPath string = path.Join(o.dbPath, "wake_on_lan_hosts")
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
 	var hashesPath string = path.Join(serverPath, "hashes.json")
-	var userPath string = path.Join(serverPath, "users.json")
 
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
@@ -52,11 +52,11 @@ func (o *JsonDB) Init() error {
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		os.MkdirAll(serverPath, os.ModePerm)
 	}
-	if _, err := os.Stat(wakeOnLanHostsPath); os.IsNotExist(err) {
-		os.MkdirAll(wakeOnLanHostsPath, os.ModePerm)
-	}
 	if _, err := os.Stat(userPath); os.IsNotExist(err) {
 		os.MkdirAll(userPath, os.ModePerm)
+	}
+	if _, err := os.Stat(wakeOnLanHostsPath); os.IsNotExist(err) {
+		os.MkdirAll(wakeOnLanHostsPath, os.ModePerm)
 	}
 
 	// server's interface
@@ -140,12 +140,6 @@ func (o *JsonDB) Init() error {
 	}
 
 	return nil
-}
-
-// GetUser func to query user info from the database
-func (o *JsonDB) GetUser() (model.User, error) {
-	user := model.User{}
-	return user, o.conn.Read("server", "users", &user)
 }
 
 // GetUsers func to get all users from the database
