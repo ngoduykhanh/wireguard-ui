@@ -68,7 +68,10 @@ func (o *JsonDB) Init() error {
 		serverInterface.PostDown = util.LookupEnvOrString(util.ServerPostDownScriptEnvVar, "")
 		serverInterface.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "interfaces", serverInterface)
-		os.Chmod(serverInterfacePath, 0600)
+		err := util.ManagePerms(serverInterfacePath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// server's key pair
@@ -83,7 +86,10 @@ func (o *JsonDB) Init() error {
 		serverKeyPair.PublicKey = key.PublicKey().String()
 		serverKeyPair.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "keypair", serverKeyPair)
-		os.Chmod(serverKeyPairPath, 0600)
+		err = util.ManagePerms(serverKeyPairPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// global settings
@@ -108,7 +114,10 @@ func (o *JsonDB) Init() error {
 		globalSetting.ConfigFilePath = util.LookupEnvOrString(util.ConfigFilePathEnvVar, util.DefaultConfigFilePath)
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
-		os.Chmod(globalSettingPath, 0600)
+		err := util.ManagePerms(globalSettingPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// hashes
@@ -117,7 +126,10 @@ func (o *JsonDB) Init() error {
 		clientServerHashes.Client = "none"
 		clientServerHashes.Server = "none"
 		o.conn.Write("server", "hashes", clientServerHashes)
-		os.Chmod(hashesPath, 0600)
+		err := util.ManagePerms(hashesPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// user info
@@ -136,7 +148,10 @@ func (o *JsonDB) Init() error {
 			user.PasswordHash = hash
 		}
 		o.conn.Write("users", user.Username, user)
-		os.Chmod(path.Join(path.Join(o.dbPath, "users"), user.Username+".json"), 0600)
+		err = util.ManagePerms(path.Join(path.Join(o.dbPath, "users"), user.Username+".json"))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -182,7 +197,10 @@ func (o *JsonDB) GetUserByName(username string) (model.User, error) {
 func (o *JsonDB) SaveUser(user model.User) error {
 	userPath := path.Join(path.Join(o.dbPath, "users"), user.Username+".json")
 	output := o.conn.Write("users", user.Username, user)
-	os.Chmod(userPath, 0600)
+	err := util.ManagePerms(userPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
@@ -295,7 +313,10 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 func (o *JsonDB) SaveClient(client model.Client) error {
 	clientPath := path.Join(path.Join(o.dbPath, "clients"), client.ID+".json")
 	output := o.conn.Write("clients", client.ID, client)
-	os.Chmod(clientPath, 0600)
+	err := util.ManagePerms(clientPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
@@ -306,21 +327,30 @@ func (o *JsonDB) DeleteClient(clientID string) error {
 func (o *JsonDB) SaveServerInterface(serverInterface model.ServerInterface) error {
 	serverInterfacePath := path.Join(path.Join(o.dbPath, "server"), "interfaces.json")
 	output := o.conn.Write("server", "interfaces", serverInterface)
-	os.Chmod(serverInterfacePath, 0600)
+	err := util.ManagePerms(serverInterfacePath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
 func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
 	serverKeyPairPath := path.Join(path.Join(o.dbPath, "server"), "keypair.json")
 	output := o.conn.Write("server", "keypair", serverKeyPair)
-	os.Chmod(serverKeyPairPath, 0600)
+	err := util.ManagePerms(serverKeyPairPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
 func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	globalSettingsPath := path.Join(path.Join(o.dbPath, "server"), "global_settings.json")
 	output := o.conn.Write("server", "global_settings", globalSettings)
-	os.Chmod(globalSettingsPath, 0600)
+	err := util.ManagePerms(globalSettingsPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
@@ -336,6 +366,9 @@ func (o *JsonDB) GetHashes() (model.ClientServerHashes, error) {
 func (o *JsonDB) SaveHashes(hashes model.ClientServerHashes) error {
 	hashesPath := path.Join(path.Join(o.dbPath, "server"), "hashes.json")
 	output := o.conn.Write("server", "hashes", hashes)
-	os.Chmod(hashesPath, 0600)
+	err := util.ManagePerms(hashesPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
