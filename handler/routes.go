@@ -2,6 +2,7 @@ package handler
 
 import (
 	"crypto/subtle"
+	"path/filepath"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -805,6 +806,16 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 	}
 }
 
+func extractDeviceNameFromConfigPath(db store.IStore) string {
+	settings, err := db.GetGlobalSettings()
+	if err != nil {
+		log.Error("Cannot get global settings: ", err)
+	}
+
+    base := filepath.Base(settings.ConfigFilePath)
+    return strings.TrimSuffix(base, filepath.Ext(base))
+}
+
 // Status handler
 func Status(db store.IStore) echo.HandlerFunc {
 	type PeerVM struct {
@@ -835,6 +846,8 @@ func Status(db store.IStore) echo.HandlerFunc {
 			})
 		}
 
+		deviceName := extractDeviceNameFromConfigPath(db)
+
 		devices, err := wgClient.Devices()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
@@ -863,35 +876,37 @@ func Status(db store.IStore) echo.HandlerFunc {
 
 			conv := map[bool]int{true: 1, false: 0}
 			for i := range devices {
-				devVm := DeviceVM{Name: devices[i].Name}
-				for j := range devices[i].Peers {
-					var allocatedIPs string
-					for _, ip := range devices[i].Peers[j].AllowedIPs {
-						if len(allocatedIPs) > 0 {
-							allocatedIPs += "</br>"
+				if devices[i].Name == deviceName {
+					devVm := DeviceVM{Name: devices[i].Name}
+					for j := range devices[i].Peers {
+						var allocatedIPs string
+						for _, ip := range devices[i].Peers[j].AllowedIPs {
+							if len(allocatedIPs) > 0 {
+								allocatedIPs += "</br>"
+							}
+							allocatedIPs += ip.String()
 						}
-						allocatedIPs += ip.String()
-					}
-					pVm := PeerVM{
-						PublicKey:         devices[i].Peers[j].PublicKey.String(),
-						ReceivedBytes:     devices[i].Peers[j].ReceiveBytes,
-						TransmitBytes:     devices[i].Peers[j].TransmitBytes,
-						LastHandshakeTime: devices[i].Peers[j].LastHandshakeTime,
-						LastHandshakeRel:  time.Since(devices[i].Peers[j].LastHandshakeTime),
-						AllocatedIP:       allocatedIPs,
-						Endpoint:          devices[i].Peers[j].Endpoint.String(),
-					}
-					pVm.Connected = pVm.LastHandshakeRel.Minutes() < 3.
+						pVm := PeerVM{
+							PublicKey:         devices[i].Peers[j].PublicKey.String(),
+							ReceivedBytes:     devices[i].Peers[j].ReceiveBytes,
+							TransmitBytes:     devices[i].Peers[j].TransmitBytes,
+							LastHandshakeTime: devices[i].Peers[j].LastHandshakeTime,
+							LastHandshakeRel:  time.Since(devices[i].Peers[j].LastHandshakeTime),
+							AllocatedIP:       allocatedIPs,
+							Endpoint:          devices[i].Peers[j].Endpoint.String(),
+						}
+						pVm.Connected = pVm.LastHandshakeRel.Minutes() < 3.
 
-					if _client, ok := m[pVm.PublicKey]; ok {
-						pVm.Name = _client.Name
-						pVm.Email = _client.Email
+						if _client, ok := m[pVm.PublicKey]; ok {
+							pVm.Name = _client.Name
+							pVm.Email = _client.Email
+						}
+						devVm.Peers = append(devVm.Peers, pVm)
 					}
-					devVm.Peers = append(devVm.Peers, pVm)
+					sort.SliceStable(devVm.Peers, func(i, j int) bool { return devVm.Peers[i].Name < devVm.Peers[j].Name })
+					sort.SliceStable(devVm.Peers, func(i, j int) bool { return conv[devVm.Peers[i].Connected] > conv[devVm.Peers[j].Connected] })
+					devicesVm = append(devicesVm, devVm)
 				}
-				sort.SliceStable(devVm.Peers, func(i, j int) bool { return devVm.Peers[i].Name < devVm.Peers[j].Name })
-				sort.SliceStable(devVm.Peers, func(i, j int) bool { return conv[devVm.Peers[i].Connected] > conv[devVm.Peers[j].Connected] })
-				devicesVm = append(devicesVm, devVm)
 			}
 		}
 
