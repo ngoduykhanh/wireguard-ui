@@ -42,6 +42,15 @@ func Favicon() echo.HandlerFunc {
 	}
 }
 
+func Logo() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if logo, ok := os.LookupEnv(util.LogoFilePathEnvVar); ok {
+			return c.File(logo)
+		}
+		return c.Redirect(http.StatusFound, util.BasePath+"/static/custom/img/logo.png")
+	}
+}
+
 // LoginPage handler
 func LoginPage() echo.HandlerFunc {
 	return func(c echo.Context) error {

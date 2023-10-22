@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>{{template "title" .}}</title>
+    <title>{{.pageTitlePrefix}}{{template "title" .}}</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Favicon -->
@@ -84,10 +84,10 @@
         <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
-        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: {{.accentColor}};">
             <!-- Brand Logo -->
             <a href="{{.basePath}}" class="brand-link">
-                <span class="brand-text">&nbsp; WIREGUARD UI</span>
+                <span class="brand-text">&nbsp; {{.brandText}}</span>
             </a>
 
             <!-- Sidebar -->

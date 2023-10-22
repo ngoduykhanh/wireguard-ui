@@ -41,6 +41,9 @@ var (
 	flagSessionSecret  string = util.RandomString(32)
 	flagWgConfTemplate string
 	flagBasePath       string
+	flagBrandText       string = "WireGuard UI"
+	flagAccentColor     string = "#343a40"
+	flagPageTitlePrefix string
 )
 
 const (
@@ -80,6 +83,10 @@ func init() {
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
+	flag.StringVar(&flagBrandText, "brand-text", util.LookupEnvOrString("WGUI_BRAND_TEXT", flagBrandText), "The UI brand text or name")
+	flag.StringVar(&flagAccentColor, "accent-color", util.LookupEnvOrString("WGUI_ACCENT_COLOR", flagAccentColor), "The UI accent color")
+	flag.StringVar(&flagPageTitlePrefix, "page-title-prefix", util.LookupEnvOrString("WGUI_PAGE_TITLE_PREFIX", flagPageTitlePrefix), "The prefix of the page title")
+
 	flag.Parse()
 
 	// update runtime config
@@ -98,7 +105,10 @@ func init() {
 	util.SessionSecret = []byte(flagSessionSecret)
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
-
+	util.BrandText = flagBrandText
+	util.AccentColor = flagAccentColor
+	util.PageTitlePrefix = flagPageTitlePrefix
+	
 	// print only if log level is INFO or lower
 	if lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO")); lvl <= log.INFO {
 		// print app information
@@ -133,6 +143,9 @@ func main() {
 	extraData["gitCommit"] = gitCommit
 	extraData["basePath"] = util.BasePath
 	extraData["loginDisabled"] = flagDisableLogin
+	extraData["brandText"] = flagBrandText;
+	extraData["accentColor"] = flagAccentColor;
+	extraData["pageTitlePrefix"] = flagPageTitlePrefix;
 
 	// strip the "templates/" prefix from the embedded directory so files can be read by their direct name (e.g.
 	// "base.html" instead of "templates/base.html")
@@ -170,6 +183,7 @@ func main() {
 	app.GET(util.BasePath+"/about", handler.AboutPage())
 	app.GET(util.BasePath+"/_health", handler.Health())
 	app.GET(util.BasePath+"/favicon", handler.Favicon())
+	app.GET(util.BasePath+"/logo", handler.Logo())
 	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/update-client", handler.UpdateClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession, handler.ContentTypeJson)
