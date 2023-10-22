@@ -53,6 +53,9 @@ var (
 	flagWgConfTemplate           string
 	flagBasePath                 string
 	flagSubnetRanges             string
+	flagBrandText                = "WireGuard UI"
+	flagAccentColor              = "#343a40"
+	flagPageTitlePrefix          string
 )
 
 const (
@@ -94,6 +97,9 @@ func init() {
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
 	flag.StringVar(&flagSubnetRanges, "subnet-ranges", util.LookupEnvOrString("SUBNET_RANGES", flagSubnetRanges), "IP ranges to choose from when assigning an IP for a client.")
 	flag.IntVar(&flagSessionMaxDuration, "session-max-duration", util.LookupEnvOrInt("SESSION_MAX_DURATION", flagSessionMaxDuration), "Max time in days a remembered session is refreshed and valid.")
+	flag.StringVar(&flagBrandText, "brand-text", util.LookupEnvOrString("WGUI_BRAND_TEXT", flagBrandText), "The UI brand text or name")
+	flag.StringVar(&flagAccentColor, "accent-color", util.LookupEnvOrString("WGUI_ACCENT_COLOR", flagAccentColor), "The UI accent color")
+	flag.StringVar(&flagPageTitlePrefix, "page-title-prefix", util.LookupEnvOrString("WGUI_PAGE_TITLE_PREFIX", flagPageTitlePrefix), "The prefix of the page title")
 
 	var (
 		smtpPasswordLookup   = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
@@ -143,6 +149,9 @@ func init() {
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
 	util.SubnetRanges = util.ParseSubnetRanges(flagSubnetRanges)
+	util.BrandText = flagBrandText
+	util.AccentColor = flagAccentColor
+	util.PageTitlePrefix = flagPageTitlePrefix
 
 	lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO"))
 
@@ -186,6 +195,9 @@ func main() {
 	extraData["gitCommit"] = gitCommit
 	extraData["basePath"] = util.BasePath
 	extraData["loginDisabled"] = flagDisableLogin
+	extraData["brandText"] = flagBrandText
+	extraData["accentColor"] = flagAccentColor
+	extraData["pageTitlePrefix"] = flagPageTitlePrefix
 
 	// strip the "templates/" prefix from the embedded directory so files can be read by their direct name (e.g.
 	// "base.html" instead of "templates/base.html")
@@ -209,6 +221,8 @@ func main() {
 	app := router.New(tmplDir, extraData, util.SessionSecret)
 
 	app.GET(util.BasePath, handler.WireGuardClients(db), handler.ValidSession, handler.RefreshSession)
+
+	app.GET(util.BasePath+"/logo", handler.Logo())
 
 	// Important: Make sure that all non-GET routes check the request content type using handler.ContentTypeJson to
 	// mitigate CSRF attacks. This is effective, because browsers don't allow setting the Content-Type header on

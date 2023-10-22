@@ -28,6 +28,9 @@ var (
 	BasePath           string
 	SubnetRanges       map[string]([]*net.IPNet)
 	SubnetRangesOrder  []string
+	BrandText          string
+	AccentColor        string
+	PageTitlePrefix    string
 )
 
 const (
@@ -64,6 +67,10 @@ const (
 	DefaultClientExtraAllowedIpsEnvVar     = "WGUI_DEFAULT_CLIENT_EXTRA_ALLOWED_IPS"
 	DefaultClientUseServerDNSEnvVar        = "WGUI_DEFAULT_CLIENT_USE_SERVER_DNS"
 	DefaultClientEnableAfterCreationEnvVar = "WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION"
+	BrandTextEnvVar                        = "WGUI_BRAND_TEXT"
+	AccentColorEnvVar                      = "WGUI_ACCENT_COLOR"
+	PageTitlePrefixEnvVar                  = "WGUI_PAGE_TITLE_PREFIX"
+	LogoFilePathEnvVar                     = "WGUI_LOGO_FILE_PATH"
 )
 
 func ParseBasePath(basePath string) string {
