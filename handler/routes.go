@@ -614,6 +614,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
 		client.ExtraAllowedIPs = _client.ExtraAllowedIPs
+		client.Endpoint = _client.Endpoint
 		client.PublicKey = _client.PublicKey
 		client.PresharedKey = _client.PresharedKey
 		client.UpdatedAt = time.Now().UTC()

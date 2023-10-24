@@ -114,6 +114,10 @@ Wireguard Clients
                                id="_client_extra_allowed_ips">
                     </div>
                     <div class="form-group">
+                        <label for="_client_endpoint" class="control-label">Endpoint</label>
+                        <input type="text" class="form-control" id="_client_endpoint" name="client_endpoint">
+                    </div>
+                    <div class="form-group">
                         <div class="icheck-primary d-inline">
                             <input type="checkbox" id="_use_server_dns">
                             <label for="_use_server_dns">
@@ -477,6 +481,8 @@ Wireguard Clients
                             modal.find("#_client_extra_allowed_ips").addTag(obj);
                         });
 
+                        modal.find("#_client_endpoint").val(client.endpoint);
+
                         modal.find("#_use_server_dns").prop("checked", client.use_server_dns);
                         modal.find("#_enabled").prop("checked", client.enabled);
 
@@ -564,6 +570,8 @@ Wireguard Clients
                 extra_allowed_ips = $("#_client_extra_allowed_ips").val().split(",");
             }
 
+            const endpoint = $("#_client_endpoint").val();
+
             if ($("#_use_server_dns").is(':checked')){
                 use_server_dns = true;
             }
@@ -575,7 +583,8 @@ Wireguard Clients
             }
 
             const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
-                "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key};
+                "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint,
+                "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key};
 
             $.ajax({
                 cache: false,
