@@ -689,7 +689,7 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 
 		// set response header for downloading
 		c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%s.conf", clientData.Client.Name))
-		return c.Stream(http.StatusOK, "text/plain", reader)
+		return c.Stream(http.StatusOK, "text/conf", reader)
 	}
 }
 
