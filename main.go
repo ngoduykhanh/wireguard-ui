@@ -30,6 +30,7 @@ var (
 	flagBindAddress    string = "0.0.0.0:5000"
 	flagSmtpHostname   string = "127.0.0.1"
 	flagSmtpPort       int    = 25
+	flagHelloHostName  string = "localhost"
 	flagSmtpUsername   string
 	flagSmtpPassword   string
 	flagSmtpAuthType   string = "NONE"
@@ -69,6 +70,7 @@ func init() {
 	flag.StringVar(&flagBindAddress, "bind-address", util.LookupEnvOrString("BIND_ADDRESS", flagBindAddress), "Address:Port to which the app will be bound.")
 	flag.StringVar(&flagSmtpHostname, "smtp-hostname", util.LookupEnvOrString("SMTP_HOSTNAME", flagSmtpHostname), "SMTP Hostname")
 	flag.IntVar(&flagSmtpPort, "smtp-port", util.LookupEnvOrInt("SMTP_PORT", flagSmtpPort), "SMTP Port")
+	flag.StringVar(&flagHelloHostName, "hello-hostname", util.LookupEnvOrString("HELLO_HOSTNAME", flagHelloHostName), "Hello HostName")
 	flag.StringVar(&flagSmtpUsername, "smtp-username", util.LookupEnvOrString("SMTP_USERNAME", flagSmtpUsername), "SMTP Username")
 	flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword), "SMTP Password")
 	flag.BoolVar(&flagSmtpNoTLSCheck, "smtp-no-tls-check", util.LookupEnvOrBool("SMTP_NO_TLS_CHECK", flagSmtpNoTLSCheck), "Disable TLS verification for SMTP. This is potentially dangerous.")
@@ -87,6 +89,7 @@ func init() {
 	util.BindAddress = flagBindAddress
 	util.SmtpHostname = flagSmtpHostname
 	util.SmtpPort = flagSmtpPort
+	util.HelloHostName = flagHelloHostName
 	util.SmtpUsername = flagSmtpUsername
 	util.SmtpPassword = flagSmtpPassword
 	util.SmtpAuthType = flagSmtpAuthType
@@ -134,7 +137,7 @@ func main() {
 	extraData["basePath"] = util.BasePath
 	extraData["loginDisabled"] = flagDisableLogin
 
-	// strip the "templates/" prefix from the embedded directory so files can be read by their direct name (e.g.
+	// strip the "templates/" prefix from the embedded directory so files can be read by their directname (e.g.
 	// "base.html" instead of "templates/base.html")
 	tmplDir, _ := fs.Sub(fs.FS(embeddedTemplates), "templates")
 
@@ -151,7 +154,7 @@ func main() {
 		app.POST(util.BasePath+"/login", handler.Login(db))
 		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
 		app.GET(util.BasePath+"/profile", handler.LoadProfile(db), handler.ValidSession)
-		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(db), handler.ValidSession, handler.NeedsAdmin)
+		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(db), handler.ValidSession,handler.NeedsAdmin)
 		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession)
 		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.NeedsAdmin)
 		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.NeedsAdmin)
@@ -163,7 +166,7 @@ func main() {
 	if util.SendgridApiKey != "" {
 		sendmail = emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
 	} else {
-		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
+		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.HelloHostName, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
 	}
 
 	app.GET(util.BasePath+"/test-hash", handler.GetHashesChanges(db), handler.ValidSession)
@@ -180,7 +183,7 @@ func main() {
 	app.POST(util.BasePath+"/wg-server/interfaces", handler.WireGuardServerInterfaces(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	app.POST(util.BasePath+"/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/global-settings", handler.GlobalSettings(db), handler.ValidSession, handler.NeedsAdmin)
-	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession,handler.ContentTypeJson, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/status", handler.Status(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/clients", handler.GetClients(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/client/:id", handler.GetClient(db), handler.ValidSession)
@@ -192,7 +195,7 @@ func main() {
 	app.DELETE(util.BasePath+"/wake_on_lan_host/:mac_address", handler.DeleteWakeOnHost(db), handler.ValidSession, handler.ContentTypeJson)
 	app.PUT(util.BasePath+"/wake_on_lan_host/:mac_address", handler.WakeOnHost(db), handler.ValidSession, handler.ContentTypeJson)
 
-	// strip the "assets/" prefix from the embedded directory so files can be called directly without the "assets/"
+	// strip the "assets/" prefix from the embedded directory so files can be called directly withoutthe "assets/"
 	// prefix
 	assetsDir, _ := fs.Sub(fs.FS(embeddedAssets), "assets")
 	assetHandler := http.FileServer(http.FS(assetsDir))
