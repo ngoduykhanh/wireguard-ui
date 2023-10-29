@@ -1,4 +1,4 @@
-![](https://github.com/ngoduykhanh/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
+![](https://github.com/idressos/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
 
 # wireguard-ui
 
@@ -57,7 +57,7 @@ docker-compose up
 | `WGUI_ACCENT_COLOR`        | The color of the interface sidebar                                                                                                                           | `#343a40`                          |
 | `WGUI_LOGO_FILE_PATH`      | The file path of the website logo                                                                                                                            | Embedded WireGuard logo            |
 | `WGUI_PAGE_TITLE_PREFIX`   | The HTML title prefix for all pages                                                                                                                          | N/A                                |
-| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/ngoduykhanh/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
+| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/idressos/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
 | `EMAIL_FROM_ADDRESS`        | The sender email address                                                                                                                                     | N/A                                |
 | `EMAIL_FROM_NAME`           | The sender name                                                                                                                                              | `WireGuard UI`                     |
 | `SENDGRID_API_KEY`          | The SendGrid api key                                                                                                                                         | N/A                                |
@@ -229,7 +229,7 @@ go build -o wireguard-ui
 
 ## License
 
-MIT. See [LICENSE](https://github.com/ngoduykhanh/wireguard-ui/blob/master/LICENSE).
+MIT. See [LICENSE](https://github.com/idressos/wireguard-ui/blob/master/LICENSE).
 
 ## Support
 
