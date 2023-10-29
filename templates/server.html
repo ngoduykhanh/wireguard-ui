@@ -39,13 +39,13 @@ Wireguard Server Settings
                             </div>
                             <div class="form-group">
                                 <label for="post_up">Post Up Script</label>
-                                <input type="text" class="form-control" id="post_up" name="post_up"
-                                       placeholder="Post Up Script" value="{{ .serverInterface.PostUp }}">
+                                <textarea class="form-control" id="post_up" name="post_up"
+                                       placeholder="Post Up Script">{{ .serverInterface.PostUp }}</textarea>
                             </div>
                             <div class="form-group">
                                 <label for="post_down">Post Down Script</label>
-                                <input type="text" class="form-control" id="post_down" name="post_down"
-                                       placeholder="Post Down Script" value="{{ .serverInterface.PostDown }}">
+                                <textarea class="form-control" id="post_down" name="post_down"
+                                       placeholder="Post Down Script">{{ .serverInterface.PostDown }}</textarea>
                             </div>
                         </div>
                         <!-- /.card-body -->
