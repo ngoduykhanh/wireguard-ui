@@ -48,11 +48,12 @@ var (
 )
 
 const (
-	defaultEmailSubject = "Your wireguard configuration"
-	defaultEmailContent = `Hi,</br>
-<p>In this email you can find your personal configuration for our wireguard server.</p>
+	defaultEmailSubject = "Your VPN configuration"
 
-<p>Best</p>
+	defaultEmailContent = `
+<p>Greetings,</p>
+<p>Please find attached your personal configuration for our VPN server.<br>You may find instructions on how to install the WireGuard VPN client <a href="https://www.wireguard.com/install/">here</a>.</p>
+<p>Best regards.</p>
 `
 )
 
