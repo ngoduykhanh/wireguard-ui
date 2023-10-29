@@ -3,10 +3,10 @@ package jsondb
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path"
 
 	"github.com/ngoduykhanh/wireguard-ui/model"
+	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
 func (o *JsonDB) GetWakeOnLanHosts() ([]model.WakeOnLanHost, error) {
@@ -70,7 +70,11 @@ func (o *JsonDB) SaveWakeOnLanHost(host model.WakeOnLanHost) error {
 
 	wakeOnLanHostPath := path.Join(path.Join(o.dbPath, model.WakeOnLanHostCollectionName), resourceName+".json")
 	output := o.conn.Write(model.WakeOnLanHostCollectionName, resourceName, host)
-	os.Chmod(wakeOnLanHostPath, 0600)
+	err = util.ManagePerms(wakeOnLanHostPath)
+	if err != nil {
+		return err
+	}
+
 	return output
 
 }
