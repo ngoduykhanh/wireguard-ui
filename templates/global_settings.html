@@ -22,7 +22,7 @@ Global Settings
             <div class="col-md-6">
                 <div class="card card-success">
                     <div class="card-header">
-                        <h3 class="card-title">Wireguard Global Settings</h3>
+                        <h3 class="card-title">WireGuard Global Settings</h3>
                     </div>
                     <!-- /.card-header -->
                     <!-- form start -->
@@ -68,7 +68,7 @@ Global Settings
                                     value="{{ .globalSettings.Table }}">
                             </div>
                             <div class="form-group">
-                                <label for="config_file_path">Wireguard Config File Path</label>
+                                <label for="config_file_path">WireGuard Config File Path</label>
                                 <input type="text" class="form-control" id="config_file_path"
                                     name="config_file_path" placeholder="E.g. /etc/wireguard/wg0.conf"
                                     value="{{ .globalSettings.ConfigFilePath }}">
@@ -92,7 +92,7 @@ Global Settings
                     <div class="card-body">
                         <dl>
                             <dt>1. Endpoint Address</dt>
-                            <dd>The public IP address of your Wireguard server that the client will connect to. Click on
+                            <dd>The public IP address of your WireGuard server that the client will connect to. Click on
                                 <strong>Suggest</strong> button to auto detect the public IP address of your server.</dd>
                             <dt>2. DNS Servers</dt>
                             <dd>The DNS servers will be set to client config.</dd>
@@ -110,8 +110,8 @@ Global Settings
                             <dd>Add a matching <code>fwmark</code> on all packets going out of a WireGuard non-default-route tunnel. Default value: <code>0xca6c</code></dd>
                             <dt>6. Table</dt>
                             <dd>Value for the <code>Table</code> setting in the wg conf file. Default value: <code>auto</code></dd>                            
-                            <dt>7. Wireguard Config File Path</dt>
-                            <dd>The path of your Wireguard server config file. Please make sure the parent directory
+                            <dt>7. WireGuard Config File Path</dt>
+                            <dd>The path of your WireGuard server config file. Please make sure the parent directory
                                 exists and is writable.</dd>
                         </dl>
                     </div>
@@ -195,7 +195,7 @@ Global Settings
         }
     </script>
     <script>
-        // Wireguard Interface DNS server tag input
+        // WireGuard Interface DNS server tag input
         $("#dns_servers").tagsInput({
             'width': '100%',
             'height': '75%',

@@ -376,7 +376,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClients handler return a JSON list of Wireguard client data
+// GetClients handler return a JSON list of WireGuard client data
 func GetClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clientDataList, err := db.GetClients(true)
@@ -394,7 +394,7 @@ func GetClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClient handler returns a JSON object of Wireguard client data
+// GetClient handler returns a JSON object of WireGuard client data
 func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clientID := c.Param("id")
@@ -462,12 +462,12 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 		guid := xid.New()
 		client.ID = guid.String()
 
-		// gen Wireguard key pair
+		// gen WireGuard key pair
 		if client.PublicKey == "" {
 			key, err := wgtypes.GeneratePrivateKey()
 			if err != nil {
 				log.Error("Cannot generate wireguard key pair: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 			}
 			client.PrivateKey = key.String()
 			client.PublicKey = key.PublicKey().String()
@@ -475,7 +475,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			_, err := wgtypes.ParseKey(client.PublicKey)
 			if err != nil {
 				log.Error("Cannot verify wireguard public key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard public key"})
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify WireGuard public key"})
 			}
 			// check for duplicates
 			clients, err := db.GetClients(false)
@@ -496,7 +496,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			if err != nil {
 				log.Error("Cannot generated preshared key: ", err)
 				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
-					false, "Cannot generate Wireguard preshared key",
+					false, "Cannot generate WireGuard preshared key",
 				})
 			}
 			client.PresharedKey = presharedKey.String()
@@ -507,7 +507,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			_, err := wgtypes.ParseKey(client.PresharedKey)
 			if err != nil {
 				log.Error("Cannot verify wireguard preshared key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard preshared key"})
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify WireGuard preshared key"})
 			}
 		}
 		client.CreatedAt = time.Now().UTC()
@@ -679,12 +679,12 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
 		}
 
-		// update Wireguard Client PublicKey
+		// update WireGuard Client PublicKey
 		if client.PublicKey != _client.PublicKey && _client.PublicKey != "" {
 			_, err := wgtypes.ParseKey(_client.PublicKey)
 			if err != nil {
-				log.Error("Cannot verify provided Wireguard public key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard public key"})
+				log.Error("Cannot verify provided WireGuard public key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided WireGuard public key"})
 			}
 			// check for duplicates
 			clients, err := db.GetClients(false)
@@ -699,7 +699,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 				}
 			}
 
-			// When replacing any PublicKey, discard any locally stored Wireguard Client PrivateKey
+			// When replacing any PublicKey, discard any locally stored WireGuard Client PrivateKey
 			// Client PubKey no longer corresponds to locally stored PrivKey.
 			// QR code (needs PrivateKey) for this client is no longer possible now.
 
@@ -708,12 +708,12 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			}
 		}
 
-		// update Wireguard Client PresharedKey
+		// update WireGuard Client PresharedKey
 		if client.PresharedKey != _client.PresharedKey && _client.PresharedKey != "" {
 			_, err := wgtypes.ParseKey(_client.PresharedKey)
 			if err != nil {
-				log.Error("Cannot verify provided Wireguard preshared key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard preshared key"})
+				log.Error("Cannot verify provided WireGuard preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided WireGuard preshared key"})
 			}
 		}
 
@@ -880,11 +880,11 @@ func WireGuardServerInterfaces(db store.IStore) echo.HandlerFunc {
 // WireGuardServerKeyPair handler to generate private and public keys
 func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// gen Wireguard key pair
+		// gen WireGuard key pair
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
 			log.Error("Cannot generate wireguard key pair: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 		}
 
 		var serverKeyPair model.ServerKeypair
@@ -893,7 +893,7 @@ func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 		serverKeyPair.UpdatedAt = time.Now().UTC()
 
 		if err := db.SaveServerKeyPair(serverKeyPair); err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 		}
 		log.Infof("Updated wireguard server interfaces settings: %v", serverKeyPair)
 
@@ -1046,7 +1046,7 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 
 		// write config to the database
 		if err := db.SaveGlobalSettings(globalSettings); err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 		}
 
 		log.Infof("Updated global settings: %v", globalSettings)
@@ -1151,7 +1151,7 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// ApplyServerConfig handler to write config file and restart Wireguard server
+// ApplyServerConfig handler to write config file and restart WireGuard server
 func ApplyServerConfig(db store.IStore, tmplDir fs.FS) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		server, err := db.GetServer()
