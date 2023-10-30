@@ -30,6 +30,7 @@ var (
 	flagBindAddress    string = "0.0.0.0:5000"
 	flagSmtpHostname   string = "127.0.0.1"
 	flagSmtpPort       int    = 25
+	flagHelloHostName  string = "localhost"
 	flagSmtpUsername   string
 	flagSmtpPassword   string
 	flagSmtpAuthType   string = "NONE"
@@ -41,14 +42,18 @@ var (
 	flagSessionSecret  string = util.RandomString(32)
 	flagWgConfTemplate string
 	flagBasePath       string
+	flagBrandText       string = "WireGuard UI"
+	flagAccentColor     string = "#343a40"
+	flagPageTitlePrefix string
 )
 
 const (
-	defaultEmailSubject = "Your wireguard configuration"
-	defaultEmailContent = `Hi,</br>
-<p>In this email you can find your personal configuration for our wireguard server.</p>
+	defaultEmailSubject = "Your VPN configuration"
 
-<p>Best</p>
+	defaultEmailContent = `
+<p>Greetings,</p>
+<p>Please find attached your personal configuration for our VPN server.<br>You may find instructions on how to install the WireGuard VPN client <a href="https://www.wireguard.com/install/">here</a>.</p>
+<p>Best regards.</p>
 `
 )
 
@@ -69,6 +74,7 @@ func init() {
 	flag.StringVar(&flagBindAddress, "bind-address", util.LookupEnvOrString("BIND_ADDRESS", flagBindAddress), "Address:Port to which the app will be bound.")
 	flag.StringVar(&flagSmtpHostname, "smtp-hostname", util.LookupEnvOrString("SMTP_HOSTNAME", flagSmtpHostname), "SMTP Hostname")
 	flag.IntVar(&flagSmtpPort, "smtp-port", util.LookupEnvOrInt("SMTP_PORT", flagSmtpPort), "SMTP Port")
+	flag.StringVar(&flagHelloHostName, "hello-hostname", util.LookupEnvOrString("HELLO_HOSTNAME", flagHelloHostName), "Hello HostName")
 	flag.StringVar(&flagSmtpUsername, "smtp-username", util.LookupEnvOrString("SMTP_USERNAME", flagSmtpUsername), "SMTP Username")
 	flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword), "SMTP Password")
 	flag.BoolVar(&flagSmtpNoTLSCheck, "smtp-no-tls-check", util.LookupEnvOrBool("SMTP_NO_TLS_CHECK", flagSmtpNoTLSCheck), "Disable TLS verification for SMTP. This is potentially dangerous.")
@@ -80,6 +86,10 @@ func init() {
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
+	flag.StringVar(&flagBrandText, "brand-text", util.LookupEnvOrString("WGUI_BRAND_TEXT", flagBrandText), "The UI brand text or name")
+	flag.StringVar(&flagAccentColor, "accent-color", util.LookupEnvOrString("WGUI_ACCENT_COLOR", flagAccentColor), "The UI accent color")
+	flag.StringVar(&flagPageTitlePrefix, "page-title-prefix", util.LookupEnvOrString("WGUI_PAGE_TITLE_PREFIX", flagPageTitlePrefix), "The prefix of the page title")
+
 	flag.Parse()
 
 	// update runtime config
@@ -87,6 +97,7 @@ func init() {
 	util.BindAddress = flagBindAddress
 	util.SmtpHostname = flagSmtpHostname
 	util.SmtpPort = flagSmtpPort
+	util.HelloHostName = flagHelloHostName
 	util.SmtpUsername = flagSmtpUsername
 	util.SmtpPassword = flagSmtpPassword
 	util.SmtpAuthType = flagSmtpAuthType
@@ -98,16 +109,19 @@ func init() {
 	util.SessionSecret = []byte(flagSessionSecret)
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
-
+	util.BrandText = flagBrandText
+	util.AccentColor = flagAccentColor
+	util.PageTitlePrefix = flagPageTitlePrefix
+	
 	// print only if log level is INFO or lower
 	if lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO")); lvl <= log.INFO {
 		// print app information
-		fmt.Println("Wireguard UI")
+		fmt.Println("WireGuard UI")
 		fmt.Println("App Version\t:", appVersion)
 		fmt.Println("Git Commit\t:", gitCommit)
 		fmt.Println("Git Ref\t\t:", gitRef)
 		fmt.Println("Build Time\t:", buildTime)
-		fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
+		fmt.Println("Git Repo\t:", "https://github.com/idressos/wireguard-ui")
 		fmt.Println("Authentication\t:", !util.DisableLogin)
 		fmt.Println("Bind address\t:", util.BindAddress)
 		//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
@@ -133,6 +147,9 @@ func main() {
 	extraData["gitCommit"] = gitCommit
 	extraData["basePath"] = util.BasePath
 	extraData["loginDisabled"] = flagDisableLogin
+	extraData["brandText"] = flagBrandText;
+	extraData["accentColor"] = flagAccentColor;
+	extraData["pageTitlePrefix"] = flagPageTitlePrefix;
 
 	// strip the "templates/" prefix from the embedded directory so files can be read by their direct name (e.g.
 	// "base.html" instead of "templates/base.html")
@@ -163,13 +180,14 @@ func main() {
 	if util.SendgridApiKey != "" {
 		sendmail = emailer.NewSendgridApiMail(util.SendgridApiKey, util.EmailFromName, util.EmailFrom)
 	} else {
-		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
+		sendmail = emailer.NewSmtpMail(util.SmtpHostname, util.SmtpPort, util.SmtpUsername, util.SmtpPassword, util.HelloHostName, util.SmtpNoTLSCheck, util.SmtpAuthType, util.EmailFromName, util.EmailFrom, util.SmtpEncryption)
 	}
 
 	app.GET(util.BasePath+"/test-hash", handler.GetHashesChanges(db), handler.ValidSession)
 	app.GET(util.BasePath+"/about", handler.AboutPage())
 	app.GET(util.BasePath+"/_health", handler.Health())
 	app.GET(util.BasePath+"/favicon", handler.Favicon())
+	app.GET(util.BasePath+"/logo", handler.Logo())
 	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/update-client", handler.UpdateClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/email-client", handler.EmailClient(db, sendmail, defaultEmailSubject, defaultEmailContent), handler.ValidSession, handler.ContentTypeJson)

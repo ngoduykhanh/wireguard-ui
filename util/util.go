@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ngoduykhanh/wireguard-ui/store"
-	"golang.org/x/mod/sumdb/dirhash"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -18,6 +16,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"golang.org/x/mod/sumdb/dirhash"
 
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/labstack/gommon/log"
@@ -382,7 +383,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 	return true, nil
 }
 
-// WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
+// WriteWireGuardServerConfig to write WireGuard server config. e.g. wg0.conf
 func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
 
@@ -539,4 +540,9 @@ func RandomString(length int) string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+func ManagePerms(path string) error {
+	err := os.Chmod(path, 0600)
+	return err
 }
