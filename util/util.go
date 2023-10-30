@@ -383,7 +383,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 	return true, nil
 }
 
-// WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
+// WriteWireGuardServerConfig to write WireGuard server config. e.g. wg0.conf
 func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
 

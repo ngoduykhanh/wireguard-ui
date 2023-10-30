@@ -116,7 +116,7 @@ func init() {
 	// print only if log level is INFO or lower
 	if lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO")); lvl <= log.INFO {
 		// print app information
-		fmt.Println("Wireguard UI")
+		fmt.Println("WireGuard UI")
 		fmt.Println("App Version\t:", appVersion)
 		fmt.Println("Git Commit\t:", gitCommit)
 		fmt.Println("Git Ref\t\t:", gitRef)
