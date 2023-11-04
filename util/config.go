@@ -1,24 +1,31 @@
 package util
 
-import "strings"
+import (
+	"net"
+	"strings"
+
+	"github.com/labstack/gommon/log"
+)
 
 // Runtime config
 var (
-	DisableLogin   bool
-	BindAddress    string
-	SmtpHostname   string
-	SmtpPort       int
-	SmtpUsername   string
-	SmtpPassword   string
-	SmtpNoTLSCheck bool
-	SmtpEncryption string
-	SmtpAuthType   string
-	SendgridApiKey string
-	EmailFrom      string
-	EmailFromName  string
-	SessionSecret  []byte
-	WgConfTemplate string
-	BasePath       string
+	DisableLogin      bool
+	BindAddress       string
+	SmtpHostname      string
+	SmtpPort          int
+	SmtpUsername      string
+	SmtpPassword      string
+	SmtpNoTLSCheck    bool
+	SmtpEncryption    string
+	SmtpAuthType      string
+	SendgridApiKey    string
+	EmailFrom         string
+	EmailFromName     string
+	SessionSecret     []byte
+	WgConfTemplate    string
+	BasePath          string
+	SubnetRanges      map[string]([]*net.IPNet)
+	SubnetRangesOrder []string
 )
 
 const (
@@ -65,4 +72,46 @@ func ParseBasePath(basePath string) string {
 		basePath = strings.TrimSuffix(basePath, "/")
 	}
 	return basePath
+}
+
+func ParseSubnetRanges(subnetRangesStr string) map[string]([]*net.IPNet) {
+	subnetRanges := map[string]([]*net.IPNet){}
+	if subnetRangesStr == "" {
+		return subnetRanges
+	}
+	cidrSet := map[string]bool{}
+	subnetRangesStr = strings.TrimSpace(subnetRangesStr)
+	subnetRangesStr = strings.Trim(subnetRangesStr, ";:,")
+	ranges := strings.Split(subnetRangesStr, ";")
+	for _, rng := range ranges {
+		rng = strings.TrimSpace(rng)
+		rngSpl := strings.Split(rng, ":")
+		if len(rngSpl) != 2 {
+			log.Warnf("Unable to parse subnet range: %v. Skipped.", rng)
+			continue
+		}
+		rngName := strings.TrimSpace(rngSpl[0])
+		subnetRanges[rngName] = make([]*net.IPNet, 0)
+		cidrs := strings.Split(rngSpl[1], ",")
+		for _, cidr := range cidrs {
+			cidr = strings.TrimSpace(cidr)
+			_, net, err := net.ParseCIDR(cidr)
+			if err != nil {
+				log.Warnf("[%v] Unable to parse CIDR: %v. Skipped.", rngName, cidr)
+				continue
+			}
+			if cidrSet[net.String()] {
+				log.Warnf("[%v] CIDR already exists: %v. Skipped.", rngName, net.String())
+				continue
+			}
+			cidrSet[net.String()] = true
+			subnetRanges[rngName] = append(subnetRanges[rngName], net)
+		}
+		if len(subnetRanges[rngName]) == 0 {
+			delete(subnetRanges, rngName)
+		} else {
+			SubnetRangesOrder = append(SubnetRangesOrder, rngName)
+		}
+	}
+	return subnetRanges
 }
