@@ -260,6 +260,25 @@ Wireguard Clients
             const divElement = document.getElementById("paused_" + clientID);
             divElement.style.visibility = "visible";
         }
+
+        function updateSubnetRangesList() {
+            $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
+                console.log(data);
+                $("#subnet_ranges option").remove();
+                $("#subnet_ranges").append(
+                    $("<option></option>")
+                        .text("Any")
+                        .val("__default_any__")
+                );
+                $.each(data, function(index, item) {
+                    $("#subnet_ranges").append(
+                        $("<option></option>")
+                            .text(item)
+                            .val(item)
+                    );
+                });
+            });
+        }
     </script>
     <script>
         // load client list

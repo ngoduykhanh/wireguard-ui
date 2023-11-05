@@ -326,15 +326,32 @@ func GetBroadcastIP(n *net.IPNet) net.IP {
 	return broadcast
 }
 
+// GetBroadcastAndNetworkAddrsLookup get the ip address that can't be used with current server interfaces
+func GetBroadcastAndNetworkAddrsLookup(interfaceAddresses []string) map[string]bool {
+	list := make(map[string]bool, 0)
+	for _, ifa := range interfaceAddresses {
+		_, net, err := net.ParseCIDR(ifa)
+		if err != nil {
+			continue
+		}
+
+		broadcastAddr := GetBroadcastIP(net).String()
+		networkAddr := net.IP.String()
+		list[broadcastAddr] = true
+		list[networkAddr] = true
+	}
+	return list
+}
+
 // GetAvailableIP get the ip address that can be allocated from an CIDR
-func GetAvailableIP(cidr string, allocatedList []string) (string, error) {
+// We need interfaceAddresses to find real broadcast and network addresses
+func GetAvailableIP(cidr string, allocatedList, interfaceAddresses []string) (string, error) {
 	ip, net, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return "", err
 	}
 
-	broadcastAddr := GetBroadcastIP(net).String()
-	networkAddr := net.IP.String()
+	unavailableIPs := GetBroadcastAndNetworkAddrsLookup(interfaceAddresses)
 
 	for ip := ip.Mask(net.Mask); net.Contains(ip); inc(ip) {
 		available := true
@@ -345,7 +362,7 @@ func GetAvailableIP(cidr string, allocatedList []string) (string, error) {
 				break
 			}
 		}
-		if available && suggestedAddr != networkAddr && suggestedAddr != broadcastAddr {
+		if available && !unavailableIPs[suggestedAddr] {
 			return suggestedAddr, nil
 		}
 	}

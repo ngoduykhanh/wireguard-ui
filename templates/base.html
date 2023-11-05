@@ -210,6 +210,12 @@
                                 <input type="text" class="form-control" id="client_email" name="client_email">
                             </div>
                             <div class="form-group">
+                                <label for="subnet_ranges" class="control-label">Subnet ranges</label>
+                                <select id="subnet_ranges" class="select2"
+                                    data-placeholder="Select a subnet range" style="width: 100%;">
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label for="client_allocated_ips" class="control-label">IP Allocation</label>
                                 <input type="text" data-role="tagsinput" class="form-control" id="client_allocated_ips">
                             </div>
@@ -368,7 +374,36 @@
 
         $(document).ready(function () {
 
-                $.ajax({
+
+            addGlobalStyle(`
+                .toast-top-right-fix {
+                    top: 67px;
+                    right: 12px;
+                }
+            `, 'toastrToastStyleFix')
+
+            toastr.options.closeDuration = 100;
+            // toastr.options.timeOut = 10000;
+            toastr.options.positionClass = 'toast-top-right-fix';
+
+            updateApplyConfigVisibility()
+
+        });
+
+        function addGlobalStyle(css, id) {
+            if (!document.querySelector('#' + id)) {
+                let head = document.head
+                if (!head) { return }
+                let style = document.createElement('style')
+                style.type = 'text/css'
+                style.id = id
+                style.innerHTML = css
+                head.appendChild(style)
+            }
+        }
+
+        function updateApplyConfigVisibility() {
+            $.ajax({
                     cache: false,
                     method: 'GET',
                     url: '{{.basePath}}/test-hash',
@@ -388,8 +423,7 @@
                         toastr.error(responseJson['message']);
                     }
                 });
-
-        });
+        }
 
         
         // populateClient function for render new client info
@@ -466,19 +500,32 @@
 
         // updateIPAllocationSuggestion function for automatically fill
         // the IP Allocation input with suggested ip addresses
-        function updateIPAllocationSuggestion() {
+        function updateIPAllocationSuggestion(forceDefault = false) {
+            let subnetRange = $("#subnet_ranges").select2('val');
+
+            if (forceDefault || !subnetRange || subnetRange.length === 0) {
+                subnetRange = '__default_any__'
+            }
             $.ajax({
                 cache: false,
                 method: 'GET',
-                url: '{{.basePath}}/api/suggest-client-ips',
+                url: `{{.basePath}}/api/suggest-client-ips?sr=${subnetRange}`,
                 dataType: 'json',
                 contentType: "application/json",
                 success: function(data) {
+                    const allocated_ips = $("#client_allocated_ips").val().split(",");
+                    allocated_ips.forEach(function (item, index) {
+                        $('#client_allocated_ips').removeTag(escape(item));
+                    })
                     data.forEach(function (item, index) {
                         $('#client_allocated_ips').addTag(item);
                     })
                 },
                 error: function(jqXHR, exception) {
+                    const allocated_ips = $("#client_allocated_ips").val().split(",");
+                    allocated_ips.forEach(function (item, index) {
+                        $('#client_allocated_ips').removeTag(escape(item));
+                    })
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
                     toastr.error(responseJson['message']);
                 }
@@ -565,8 +612,15 @@
                 $("#client_preshared_key").val("");
                 $("#client_allocated_ips").importTags('');
                 $("#client_extra_allowed_ips").importTags('');
-                updateIPAllocationSuggestion();
+                updateSubnetRangesList();
+                updateIPAllocationSuggestion(true);
             });
+        });
+
+        // handle subnet range select
+        $('#subnet_ranges').on('select2:select', function (e) {
+            // console.log('Selected Option: ', $("#subnet_ranges").select2('val'));
+            updateIPAllocationSuggestion();
         });
 
         // apply_config_confirm button event
@@ -579,6 +633,7 @@
                     dataType: 'json',
                     contentType: "application/json",
                     success: function(data) {
+                        updateApplyConfigVisibility()
                         $("#modal_apply_config").modal('hide');
                         toastr.success('Applied config successfully');
                     },
