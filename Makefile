@@ -1,3 +1,6 @@
+build-ui:
+	./prepare_assets.sh
+
 build:
 	CGO_ENABLED=0 go build -v -ldflags="-s -w"
 
