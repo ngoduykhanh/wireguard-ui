@@ -410,6 +410,44 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 	return true, nil
 }
 
+// findSubnetRangeForIP to find first SR for IP, and cache the match
+func findSubnetRangeForIP(cidr string) (uint16, error) {
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return 0, err
+	}
+
+	if srName, ok := IPToSubnetRange[ip.String()]; ok {
+		return srName, nil
+	}
+
+	for srIndex, sr := range SubnetRangesOrder {
+		for _, srCIDR := range SubnetRanges[sr] {
+			if srCIDR.Contains(ip) {
+				IPToSubnetRange[ip.String()] = uint16(srIndex)
+				return uint16(srIndex), nil
+			}
+		}
+	}
+	return 0, fmt.Errorf("Subnet range not foud for this IP")
+}
+
+// FillClientSubnetRange to fill subnet ranges client belongs to, does nothing if SRs are not found
+func FillClientSubnetRange(client model.ClientData) model.ClientData {
+	cl := *client.Client
+	for _, ip := range cl.AllocatedIPs {
+		sr, err := findSubnetRangeForIP(ip)
+		if err != nil {
+			continue
+		}
+		cl.SubnetRanges = append(cl.SubnetRanges, SubnetRangesOrder[sr])
+	}
+	return model.ClientData{
+		Client: &cl,
+		QRCode: client.QRCode,
+	}
+}
+
 // ValidateAndFixSubnetRanges to check if subnet ranges are valid for the server configuration
 // Removes all non-valid CIDRs
 func ValidateAndFixSubnetRanges(db store.IStore) error {

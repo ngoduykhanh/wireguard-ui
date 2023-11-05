@@ -18,6 +18,11 @@ function renderClientList(data) {
             allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
         })
 
+        let subnetRangesString = "";
+        if (obj.Client.subnet_ranges && obj.Client.subnet_ranges.length > 0) {
+            subnetRangesString = obj.Client.subnet_ranges.join(',')
+        }
+
         // render client html content
         let html = `<div class="col-sm-6 col-md-6 col-lg-4" id="client_${obj.Client.id}">
                         <div class="info-box">
@@ -59,6 +64,7 @@ function renderClientList(data) {
                                 <hr>
                                 <span class="info-box-text"><i class="fas fa-user"></i> ${obj.Client.name}</span>
                                 <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${obj.Client.public_key}</span>
+                                <span class="info-box-text" style="display: none"><i class="fas fa-subnetrange"></i>${subnetRangesString}</span>
                                 <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
                                     ${prettyDateTime(obj.Client.created_at)}</span>

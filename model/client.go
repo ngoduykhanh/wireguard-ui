@@ -12,6 +12,7 @@ type Client struct {
 	PresharedKey    string    `json:"preshared_key"`
 	Name            string    `json:"name"`
 	Email           string    `json:"email"`
+	SubnetRanges    []string  `json:"subnet_ranges,omitempty"`
 	AllocatedIPs    []string  `json:"allocated_ips"`
 	AllowedIPs      []string  `json:"allowed_ips"`
 	ExtraAllowedIPs []string  `json:"extra_allowed_ips"`
@@ -29,7 +30,7 @@ type ClientData struct {
 }
 
 type QRCodeSettings struct {
-	Enabled       bool
-	IncludeDNS    bool
-	IncludeMTU    bool
+	Enabled    bool
+	IncludeDNS bool
+	IncludeMTU bool
 }
