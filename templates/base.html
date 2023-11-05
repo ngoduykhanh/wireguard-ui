@@ -377,10 +377,10 @@
         $(document).ready(function () {
 
             addGlobalStyle(`
-                .toast-top-right-fix {
-                    top: 67px;
-                    right: 12px;
-                }
+.toast-top-right-fix {
+    top: 67px;
+    right: 12px;
+}
             `, 'toastrToastStyleFix')
 
             toastr.options.closeDuration = 100;
@@ -493,6 +493,7 @@
                     if (window.location.pathname === "{{.basePath}}/") {
                         populateClient(resp.id);
                     }
+                    updateApplyConfigVisibility()
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
