@@ -102,6 +102,71 @@ service. Following is an example:
 
 ### Using systemd
 
+#### Create dedicated wireguard-ui user
+```bash
+useradd -m -r -s /bin/false -d /var/lib/wireguard-ui wireguard-ui
+```
+
+#### Create wireguard config file and set permission with Linux ACL
+```bash
+touch /etc/wireguard/wg0.conf
+setfacl -m wireguard-ui:rw /etc/wireguard/wg0.conf
+```
+
+#### Create environment file for wireguard-ui
+```/etc/wireguard-ui/environment.conf```
+```env
+BASE_PATH="/"
+BIND_ADDRESS="127.0.0.1:5000"
+SESSION_SECRET="veryS3cr3t"
+WGUI_USERNAME="admin"
+WGUI_PASSWORD="my+password"
+WGUI_ENDPOINT_ADDRESS="vpn.example.com"
+WGUI_DNS="1.1.1.1"
+WGUI_MTU="1450"
+WGUI_PERSISTENT_KEEPALIVE="15"
+WGUI_CONFIG_FILE_PATH="/etc/wireguard/wg0.conf"
+WGUI_LOG_LEVEL="DEBUG"
+# WG_CONF_TEMPLATE=
+# EMAIL_FROM_ADDRESS=
+# EMAIL_FROM_NAME=
+# SENDGRID_API_KEY=
+# SMTP_HOSTNAME=
+# SMTP_PORT=
+# SMTP_USERNAME=
+# SMTP_PASSWORD=
+# SMTP_AUTH_TYPE=
+# SMTP_ENCRYPTION=
+```
+
+#### Create systemd service for wireguard-ui
+```/etc/systemd/system/wireguard-ui.service```
+
+```bash
+[Unit]
+Description=WireGuard UI
+ConditionPathExists=/var/lib/wireguard-ui
+After=network.target
+
+[Service]
+Type=simple
+User=wireguard-ui
+Group=wireguard-ui
+
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH CAP_NET_ADMIN CAP_NET_RAW
+AmbientCapabilities=CAP_DAC_READ_SEARCH CAP_NET_ADMIN CAP_NET_RAW
+
+WorkingDirectory=/var/lib/wireguard-ui
+EnvironmentFile=/etc/wireguard-ui/environment.conf
+ExecStart=/usr/local/share/applications/wireguard-ui
+
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
 Create `/etc/systemd/system/wgui.service`
 
 ```bash
@@ -204,7 +269,7 @@ or
 docker compose build --build-arg=GIT_COMMIT=$(git rev-parse --short HEAD)
 ```
 
-:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui) which you can pull and use 
+:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui) which you can pull and use
 ```
 docker pull ngoduykhanh/wireguard-ui
 ````
