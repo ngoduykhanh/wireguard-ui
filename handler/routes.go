@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -385,9 +386,9 @@ func GetClient(db store.IStore) echo.HandlerFunc {
 		}
 
 		qrCodeSettings := model.QRCodeSettings{
-			Enabled:       true,
-			IncludeDNS:    true,
-			IncludeMTU:    true,
+			Enabled:    true,
+			IncludeDNS: true,
+			IncludeMTU: true,
 		}
 
 		clientData, err := db.GetClientByID(clientID, qrCodeSettings)
@@ -405,6 +406,14 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 
 		var client model.Client
 		c.Bind(&client)
+
+		// Validate Telegram userid if provided
+		if client.TgUserid != "" {
+			idNum, err := strconv.ParseInt(client.TgUserid, 10, 64)
+			if err != nil || idNum == 0 {
+				return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Telegram userid must be a non-zero number"})
+			}
+		}
 
 		// read server information
 		server, err := db.GetServer()
@@ -517,9 +526,9 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		}
 
 		qrCodeSettings := model.QRCodeSettings{
-			Enabled:       true,
-			IncludeDNS:    true,
-			IncludeMTU:    true,
+			Enabled:    true,
+			IncludeDNS: true,
+			IncludeMTU: true,
 		}
 		clientData, err := db.GetClientByID(payload.ID, qrCodeSettings)
 		if err != nil {
@@ -575,6 +584,14 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		clientData, err := db.GetClientByID(_client.ID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
+		}
+
+		// Validate Telegram userid if provided
+		if _client.TgUserid != "" {
+			idNum, err := strconv.ParseInt(_client.TgUserid, 10, 64)
+			if err != nil || idNum == 0 {
+				return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Telegram userid must be a non-zero number"})
+			}
 		}
 
 		server, err := db.GetServer()
@@ -644,6 +661,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		// map new data
 		client.Name = _client.Name
 		client.Email = _client.Email
+		client.TgUserid = _client.TgUserid
 		client.Enabled = _client.Enabled
 		client.UseServerDNS = _client.UseServerDNS
 		client.AllocatedIPs = _client.AllocatedIPs
@@ -1114,7 +1132,6 @@ func ApplyServerConfig(db store.IStore, tmplDir fs.FS) echo.HandlerFunc {
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Applied server config successfully"})
 	}
 }
-
 
 // GetHashesChanges handler returns if database hashes have changed
 func GetHashesChanges(db store.IStore) echo.HandlerFunc {

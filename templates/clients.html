@@ -159,6 +159,14 @@ Wireguard Clients
                             <input type="text" class="form-control" id="_client_preshared_key" name="_client_preshared_key">
                         </div>
                     </details>
+                    <details style="margin-top: 0.5rem;">
+                        <summary><strong>Additional configuration</strong>
+                        </summary>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <label for="_client_telegram_userid" class="control-label">Telegram userid</label>
+                            <input type="text" class="form-control" id="_client_telegram_userid" name="_client_telegram_userid">
+                        </div>
+                    </details>
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -573,6 +581,7 @@ Wireguard Clients
 
                         modal.find(".modal-title").text("Edit Client " + client.name);
                         modal.find("#_client_id").val(client.id);
+                        modal.find("#_client_telegram_userid").val(client.telegram_userid);
                         modal.find("#_client_name").val(client.name);
                         modal.find("#_client_email").val(client.email);
 
@@ -681,6 +690,7 @@ Wireguard Clients
             const client_id = $("#_client_id").val();
             const name = $("#_client_name").val();
             const email = $("#_client_email").val();
+            const telegram_userid = $("#_client_telegram_userid").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
             const allowed_ips = $("#_client_allowed_ips").val().split(",");
             let use_server_dns = false;
@@ -704,7 +714,7 @@ Wireguard Clients
                 enabled = true;
             }
 
-            const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
+            const data = {"id": client_id, "name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips,
                 "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint,
                 "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key};
 
