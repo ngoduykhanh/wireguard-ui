@@ -80,6 +80,35 @@ Wireguard Clients
 </div>
 <!-- /.modal -->
 
+<div class="modal fade" id="modal_telegram_client">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Telegram Configuration</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="frm_telegram_client" id="frm_telegram_client">
+                <div class="modal-body">
+                    <input type="hidden" id="tg_client_id" name="tg_client_id">
+                    <div class="form-group">
+                        <label for="tg_client_userid" class="control-label">Telegram userid</label>
+                        <input type="text" class="form-control" id="tg_client_userid" name="tg_client_userid">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Send</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+
 <div class="modal fade" id="modal_edit_client">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -683,6 +712,31 @@ Wireguard Clients
             });
         }
 
+        // submitTelegramClient function for sending a telegram message with the configuration to the client
+        function submitTelegramClient() {
+            const client_id = $("#tg_client_id").val();
+            const userid = $("#tg_client_userid").val();
+            const data = {"id": client_id, "userid": userid};
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '{{.basePath}}/send-telegram-client',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function(resp) {
+                    $("#modal_telegram_client").modal('hide');
+                    toastr.success('Sent config via telegram to client successfully');
+                    // Refresh the home page (clients page) after sending email successfully
+                    location.reload();
+                },
+                error: function(jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
         // submitEditClient function for updating an existing client
         // This sends dialogue data to the back-end when user presses "Save"
         // See e.g. routes.go:UpdateClient for where data is processed/verified.
@@ -745,6 +799,8 @@ Wireguard Clients
                 submitEditClient();
             } else if (formId === "frm_email_client") {
                 submitEmailClient();
+            } else if (formId === "frm_telegram_client") {
+                submitTelegramClient();
             }
         }
 
@@ -779,6 +835,30 @@ Wireguard Clients
 
             modal.find("#qr_client_id").val(client_id);
             regenerateQRCode();
+        });
+
+        $("#modal_telegram_client").on('show.bs.modal', function (event) {
+            let modal = $(this);
+            const button = $(event.relatedTarget);
+            const client_id = button.data('clientid');
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '{{.basePath}}/api/client/' + client_id,
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (resp) {
+                    const client = resp.Client;
+
+                    modal.find(".modal-title").text("Send config to client " + client.name);
+                    modal.find("#tg_client_id").val(client.id);
+                    modal.find("#tg_client_userid").val(client.telegram_userid);
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
         });
 
         $(document).ready(function () {
@@ -822,6 +902,32 @@ Wireguard Clients
                 messages: {
                     e_client_email: {
                         required: "Please enter an email"
+                    },
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+            // Telegram client form validation
+            $("#frm_telegram_client").validate({
+                rules: {
+                    tg_client_userid: {
+                        required: true,
+                        number: true,
+                    },
+                },
+                messages: {
+                    tg_client_userid: {
+                        required: "Please enter a telegram userid",
+                        number: "Please enter a valid telegram userid"
                     },
                 },
                 errorElement: 'span',

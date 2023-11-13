@@ -1,5 +1,15 @@
 function renderClientList(data) {
     $.each(data, function(index, obj) {
+        // render telegram button
+        let telegramButton = ''
+        if (obj.Client.telegram_userid) {
+            telegramButton =    `<div class="btn-group">      
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
+                                        data-target="#modal_telegram_client" data-clientid="${obj.Client.id}"
+                                        data-clientname="${obj.Client.name}">Telegram</button>
+                                </div>`
+        }
+
         // render client status css tag style
         let clientStatusHtml = '>'
         if (obj.Client.enabled) {
@@ -43,7 +53,7 @@ function renderClientList(data) {
                                         data-target="#modal_email_client" data-clientid="${obj.Client.id}"
                                         data-clientname="${obj.Client.name}">Email</button>
                                 </div>
-
+                                ${telegramButton}
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-outline-danger btn-sm">More</button>
                                     <button type="button" class="btn btn-outline-danger btn-sm dropdown-toggle dropdown-icon" 

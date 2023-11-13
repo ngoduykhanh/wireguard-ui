@@ -19,12 +19,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 	"github.com/rs/xid"
+	"github.com/skip2/go-qrcode"
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/store"
+	"github.com/ngoduykhanh/wireguard-ui/telegram"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
@@ -566,6 +568,56 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		}
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Email sent successfully"})
+	}
+}
+
+// SendTelegramClient handler to send the configuration via Telegram
+func SendTelegramClient(db store.IStore) echo.HandlerFunc {
+	type clientIdUseridPayload struct {
+		ID     string `json:"id"`
+		Userid string `json:"userid"`
+	}
+	return func(c echo.Context) error {
+		var payload clientIdUseridPayload
+		c.Bind(&payload)
+
+		qrCodeSettings := model.QRCodeSettings{
+			Enabled:    true,
+			IncludeDNS: true,
+			IncludeMTU: true,
+		}
+		clientData, err := db.GetClientByID(payload.ID, qrCodeSettings)
+		if err != nil {
+			log.Errorf("Cannot generate client id %s config file for downloading: %v", payload.ID, err)
+			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
+		}
+
+		// build config
+		server, _ := db.GetServer()
+		globalSettings, _ := db.GetGlobalSettings()
+		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
+		configData := []byte(config)
+		var qrData []byte
+
+		if clientData.Client.PrivateKey != "" {
+			qrData, err = qrcode.Encode(config, qrcode.Medium, 512)
+			if err != nil {
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "qr gen: " + err.Error()})
+			}
+		}
+
+		userid, err := strconv.ParseInt(clientData.Client.TgUserid, 10, 64)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "userid: " + err.Error()})
+		}
+
+		err = telegram.SendConfig(userid, clientData.Client.Name, configData, qrData)
+
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Telegram message sent successfully"})
 	}
 }
 
