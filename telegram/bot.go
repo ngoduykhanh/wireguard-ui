@@ -2,24 +2,19 @@ package telegram
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
 	"github.com/NicoNex/echotron/v3"
 	"github.com/labstack/gommon/log"
-	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/store"
-	"github.com/skip2/go-qrcode"
 )
 
-type BuildClientConfig func(client model.Client, server model.Server, setting model.GlobalSetting) string
+type SendRequestedConfigsToTelegram func(db store.IStore, userid int64) []string
 
 type TgBotInitDependencies struct {
-	DB                      store.IStore
-	BuildClientConfig       BuildClientConfig
-	TgUseridToClientID      map[int64]([]string)
-	TgUseridToClientIDMutex *sync.RWMutex
+	DB                             store.IStore
+	SendRequestedConfigsToTelegram SendRequestedConfigsToTelegram
 }
 
 var (
@@ -32,12 +27,6 @@ var (
 	TgBotMutex sync.RWMutex
 
 	floodWait = make(map[int64]int64, 0)
-
-	qrCodeSettings = model.QRCodeSettings{
-		Enabled:    true,
-		IncludeDNS: true,
-		IncludeMTU: true,
-	}
 )
 
 func Start(initDeps TgBotInitDependencies) (err error) {
@@ -98,44 +87,19 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 			}
 			floodWait[userid] = time.Now().Unix()
 
-			initDeps.TgUseridToClientIDMutex.RLock()
-			if clids, found := initDeps.TgUseridToClientID[userid]; found && len(clids) > 0 {
-				initDeps.TgUseridToClientIDMutex.RUnlock()
-
-				for _, clid := range clids {
-					func(clid string) {
-						clientData, err := initDeps.DB.GetClientByID(clid, qrCodeSettings)
-						if err != nil {
-							return
-						}
-
-						// build config
-						server, _ := initDeps.DB.GetServer()
-						globalSettings, _ := initDeps.DB.GetGlobalSettings()
-						config := initDeps.BuildClientConfig(*clientData.Client, server, globalSettings)
-						configData := []byte(config)
-						var qrData []byte
-
-						if clientData.Client.PrivateKey != "" {
-							qrData, err = qrcode.Encode(config, qrcode.Medium, 512)
-							if err != nil {
-								return
-							}
-						}
-
-						userid, err := strconv.ParseInt(clientData.Client.TgUserid, 10, 64)
-						if err != nil {
-							return
-						}
-
-						SendConfig(userid, clientData.Client.Name, configData, qrData, true)
-					}(clid)
-					time.Sleep(2 * time.Second)
+			failed := initDeps.SendRequestedConfigsToTelegram(initDeps.DB, userid)
+			if len(failed) > 0 {
+				messageText := "Failed to send configs:\n"
+				for _, f := range failed {
+					messageText += f + "\n"
 				}
-			} else {
-				initDeps.TgUseridToClientIDMutex.RUnlock()
+				bot.SendMessage(
+					messageText,
+					userid,
+					&echotron.MessageOptions{
+						ReplyToMessageID: update.Message.ID,
+					})
 			}
-
 		}
 	}
 	return err
@@ -174,7 +138,7 @@ func SendConfig(userid int64, clientName string, confData, qrData []byte, ignore
 }
 
 func updateFloodWait() {
-	thresholdTS := time.Now().Unix() - 60000*int64(TelegramFloodWait)
+	thresholdTS := time.Now().Unix() - 60*int64(TelegramFloodWait)
 	for userid, ts := range floodWait {
 		if ts < thresholdTS {
 			delete(floodWait, userid)

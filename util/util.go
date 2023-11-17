@@ -20,6 +20,7 @@ import (
 
 	"github.com/ngoduykhanh/wireguard-ui/store"
 	"github.com/ngoduykhanh/wireguard-ui/telegram"
+	"github.com/skip2/go-qrcode"
 	"golang.org/x/mod/sumdb/dirhash"
 
 	externalip "github.com/glendc/go-external-ip"
@@ -28,8 +29,14 @@ import (
 	"github.com/sdomino/scribble"
 )
 
+var qrCodeSettings = model.QRCodeSettings{
+	Enabled:    true,
+	IncludeDNS: true,
+	IncludeMTU: true,
+}
+
 // BuildClientConfig to create wireguard client config string
-var BuildClientConfig telegram.BuildClientConfig = func(client model.Client, server model.Server, setting model.GlobalSetting) string {
+func BuildClientConfig(client model.Client, server model.Server, setting model.GlobalSetting) string {
 	// Interface section
 	clientAddress := fmt.Sprintf("Address = %s\n", strings.Join(client.AllocatedIPs, ","))
 	clientPrivateKey := fmt.Sprintf("PrivateKey = %s\n", client.PrivateKey)
@@ -577,6 +584,57 @@ func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, client
 	f.Close()
 
 	return nil
+}
+
+// SendRequestedConfigsToTelegram to send client all their configs. Returns failed configs list.
+func SendRequestedConfigsToTelegram(db store.IStore, userid int64) []string {
+	failedList := make([]string, 0)
+	TgUseridToClientIDMutex.RLock()
+	if clids, found := TgUseridToClientID[userid]; found && len(clids) > 0 {
+		TgUseridToClientIDMutex.RUnlock()
+
+		for _, clid := range clids {
+			clientData, err := db.GetClientByID(clid, qrCodeSettings)
+			if err != nil {
+				// return fmt.Errorf("unable to get client")
+				failedList = append(failedList, clid)
+				continue
+			}
+
+			// build config
+			server, _ := db.GetServer()
+			globalSettings, _ := db.GetGlobalSettings()
+			config := BuildClientConfig(*clientData.Client, server, globalSettings)
+			configData := []byte(config)
+			var qrData []byte
+
+			if clientData.Client.PrivateKey != "" {
+				qrData, err = qrcode.Encode(config, qrcode.Medium, 512)
+				if err != nil {
+					// return fmt.Errorf("unable to encode qr")
+					failedList = append(failedList, clientData.Client.Name)
+					continue
+				}
+			}
+
+			userid, err := strconv.ParseInt(clientData.Client.TgUserid, 10, 64)
+			if err != nil {
+				// return fmt.Errorf("tg usrid is unreadable")
+				failedList = append(failedList, clientData.Client.Name)
+				continue
+			}
+
+			err = telegram.SendConfig(userid, clientData.Client.Name, configData, qrData, true)
+			if err != nil {
+				failedList = append(failedList, clientData.Client.Name)
+				continue
+			}
+			time.Sleep(2 * time.Second)
+		}
+	} else {
+		TgUseridToClientIDMutex.RUnlock()
+	}
+	return failedList
 }
 
 func LookupEnvOrString(key string, defaultVal string) string {
