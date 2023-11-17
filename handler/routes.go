@@ -611,7 +611,7 @@ func SendTelegramClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "userid: " + err.Error()})
 		}
 
-		err = telegram.SendConfig(userid, clientData.Client.Name, configData, qrData)
+		err = telegram.SendConfig(userid, clientData.Client.Name, configData, qrData, false)
 
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})

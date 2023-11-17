@@ -708,3 +708,65 @@ func ManagePerms(path string) error {
 	err := os.Chmod(path, 0600)
 	return err
 }
+
+func AddTgToClientID(userid int64, clientID string) {
+	TgUseridToClientIDMutex.Lock()
+	defer TgUseridToClientIDMutex.Unlock()
+
+	if _, ok := TgUseridToClientID[userid]; ok && TgUseridToClientID[userid] != nil {
+		TgUseridToClientID[userid] = append(TgUseridToClientID[userid], clientID)
+	} else {
+		TgUseridToClientID[userid] = []string{clientID}
+	}
+}
+
+func UpdateTgToClientID(userid int64, clientID string) {
+	TgUseridToClientIDMutex.Lock()
+	defer TgUseridToClientIDMutex.Unlock()
+
+	// Detach clientID from any existing userid
+	for uid, cls := range TgUseridToClientID {
+		if cls != nil {
+			filtered := filterStringSlice(cls, clientID)
+			if len(filtered) > 0 {
+				TgUseridToClientID[uid] = filtered
+			} else {
+				delete(TgUseridToClientID, uid)
+			}
+		}
+	}
+
+	// Attach it to the new one
+	if _, ok := TgUseridToClientID[userid]; ok && TgUseridToClientID[userid] != nil {
+		TgUseridToClientID[userid] = append(TgUseridToClientID[userid], clientID)
+	} else {
+		TgUseridToClientID[userid] = []string{clientID}
+	}
+}
+
+func RemoveTgToClientID(clientID string) {
+	TgUseridToClientIDMutex.Lock()
+	defer TgUseridToClientIDMutex.Unlock()
+
+	// Detach clientID from any existing userid
+	for uid, cls := range TgUseridToClientID {
+		if cls != nil {
+			filtered := filterStringSlice(cls, clientID)
+			if len(filtered) > 0 {
+				TgUseridToClientID[uid] = filtered
+			} else {
+				delete(TgUseridToClientID, uid)
+			}
+		}
+	}
+}
+
+func filterStringSlice(s []string, excludedStr string) []string {
+	filtered := s[:0]
+	for _, v := range s {
+		if v != excludedStr {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
+}

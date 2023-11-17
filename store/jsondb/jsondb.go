@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/sdomino/scribble"
@@ -158,6 +159,20 @@ func (o *JsonDB) Init() error {
 		err = util.ManagePerms(path.Join(path.Join(o.dbPath, "users"), user.Username+".json"))
 		if err != nil {
 			return err
+		}
+	}
+
+	// init cache
+	clients, err := o.GetClients(false)
+	if err != nil {
+		return nil
+	}
+	for _, cl := range clients {
+		client := cl.Client
+		if len(client.TgUserid) > 3 {
+			if userid, err := strconv.ParseInt(client.TgUserid, 10, 64); err == nil {
+				util.UpdateTgToClientID(userid, client.ID)
+			}
 		}
 	}
 
@@ -314,6 +329,11 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 func (o *JsonDB) SaveClient(client model.Client) error {
 	clientPath := path.Join(path.Join(o.dbPath, "clients"), client.ID+".json")
 	output := o.conn.Write("clients", client.ID, client)
+	if output == nil && len(client.TgUserid) > 3 {
+		if userid, err := strconv.ParseInt(client.TgUserid, 10, 64); err == nil {
+			util.UpdateTgToClientID(userid, client.ID)
+		}
+	}
 	err := util.ManagePerms(clientPath)
 	if err != nil {
 		return err
@@ -322,6 +342,7 @@ func (o *JsonDB) SaveClient(client model.Client) error {
 }
 
 func (o *JsonDB) DeleteClient(clientID string) error {
+	util.RemoveTgToClientID(clientID)
 	return o.conn.Delete("clients", clientID)
 }
 

@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -9,9 +10,17 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/store"
+	"github.com/skip2/go-qrcode"
 )
 
 type BuildClientConfig func(client model.Client, server model.Server, setting model.GlobalSetting) string
+
+type TgBotInitDependencies struct {
+	DB                      store.IStore
+	BuildClientConfig       BuildClientConfig
+	TgUseridToClientID      map[int64]([]string)
+	TgUseridToClientIDMutex *sync.RWMutex
+}
 
 var (
 	TelegramToken            string
@@ -23,13 +32,21 @@ var (
 	TgBotMutex sync.RWMutex
 
 	floodWait = make(map[int64]int64, 0)
+
+	qrCodeSettings = model.QRCodeSettings{
+		Enabled:    true,
+		IncludeDNS: true,
+		IncludeMTU: true,
+	}
 )
 
-func Start(db store.IStore, buildClientConfig BuildClientConfig) (err error) {
+func Start(initDeps TgBotInitDependencies) (err error) {
+	ticker := time.NewTicker(time.Minute)
 	defer func() {
 		TgBotMutex.Lock()
 		TgBot = nil
 		TgBotMutex.Unlock()
+		ticker.Stop()
 		if r := recover(); r != nil {
 			err = fmt.Errorf("[PANIC] recovered from panic: %v", r)
 		}
@@ -56,27 +73,75 @@ func Start(db store.IStore, buildClientConfig BuildClientConfig) (err error) {
 		fmt.Printf("[Telegram] Authorized as %s\n", res.Result.Username)
 	}
 
-	if !TelegramAllowConfRequest {
-		return
-	}
-
-	ticker := time.NewTicker(time.Minute)
 	go func() {
 		for range ticker.C {
 			updateFloodWait()
 		}
 	}()
 
+	if !TelegramAllowConfRequest {
+		return
+	}
+
 	updatesChan := echotron.PollingUpdatesOptions(token, false, echotron.UpdateOptions{AllowedUpdates: []echotron.UpdateType{echotron.MessageUpdate}})
 	for update := range updatesChan {
 		if update.Message != nil {
-			floodWait[update.Message.Chat.ID] = time.Now().Unix()
+			userid := update.Message.Chat.ID
+			if _, wait := floodWait[userid]; wait {
+				bot.SendMessage(
+					fmt.Sprintf("You can only request your configs once per %d minutes", TelegramFloodWait),
+					userid,
+					&echotron.MessageOptions{
+						ReplyToMessageID: update.Message.ID,
+					})
+				continue
+			}
+			floodWait[userid] = time.Now().Unix()
+
+			initDeps.TgUseridToClientIDMutex.RLock()
+			if clids, found := initDeps.TgUseridToClientID[userid]; found && len(clids) > 0 {
+				initDeps.TgUseridToClientIDMutex.RUnlock()
+
+				for _, clid := range clids {
+					func(clid string) {
+						clientData, err := initDeps.DB.GetClientByID(clid, qrCodeSettings)
+						if err != nil {
+							return
+						}
+
+						// build config
+						server, _ := initDeps.DB.GetServer()
+						globalSettings, _ := initDeps.DB.GetGlobalSettings()
+						config := initDeps.BuildClientConfig(*clientData.Client, server, globalSettings)
+						configData := []byte(config)
+						var qrData []byte
+
+						if clientData.Client.PrivateKey != "" {
+							qrData, err = qrcode.Encode(config, qrcode.Medium, 512)
+							if err != nil {
+								return
+							}
+						}
+
+						userid, err := strconv.ParseInt(clientData.Client.TgUserid, 10, 64)
+						if err != nil {
+							return
+						}
+
+						SendConfig(userid, clientData.Client.Name, configData, qrData, true)
+					}(clid)
+					time.Sleep(2 * time.Second)
+				}
+			} else {
+				initDeps.TgUseridToClientIDMutex.RUnlock()
+			}
+
 		}
 	}
 	return err
 }
 
-func SendConfig(userid int64, clientName string, confData, qrData []byte) error {
+func SendConfig(userid int64, clientName string, confData, qrData []byte, ignoreFloodWait bool) error {
 	TgBotMutex.RLock()
 	defer TgBotMutex.RUnlock()
 
@@ -84,8 +149,12 @@ func SendConfig(userid int64, clientName string, confData, qrData []byte) error 
 		return fmt.Errorf("telegram bot is not configured or not available")
 	}
 
-	if _, wait := floodWait[userid]; wait {
+	if _, wait := floodWait[userid]; wait && !ignoreFloodWait {
 		return fmt.Errorf("this client already got their config less than %d minutes ago", TelegramFloodWait)
+	}
+
+	if !ignoreFloodWait {
+		floodWait[userid] = time.Now().Unix()
 	}
 
 	qrAttachment := echotron.NewInputFileBytes("qr.png", qrData)
@@ -101,8 +170,6 @@ func SendConfig(userid int64, clientName string, confData, qrData []byte) error 
 		log.Error(err)
 		return fmt.Errorf("unable to send conf file")
 	}
-
-	floodWait[userid] = time.Now().Unix()
 	return nil
 }
 
