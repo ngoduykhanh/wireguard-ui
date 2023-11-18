@@ -10,6 +10,11 @@ function renderClientList(data) {
                                 </div>`
         }
 
+        let telegramHtml = "";
+        if (obj.Client.telegram_userid && obj.Client.telegram_userid.length > 0) {
+            telegramHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-tguserid"></i>${obj.Client.telegram_userid}</span>`
+        }
+
         // render client status css tag style
         let clientStatusHtml = '>'
         if (obj.Client.enabled) {
@@ -75,6 +80,7 @@ function renderClientList(data) {
                                 <span class="info-box-text"><i class="fas fa-user"></i> ${obj.Client.name}</span>
                                 <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${obj.Client.public_key}</span>
                                 <span class="info-box-text" style="display: none"><i class="fas fa-subnetrange"></i>${subnetRangesString}</span>
+                                ${telegramHtml}
                                 <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
                                     ${prettyDateTime(obj.Client.created_at)}</span>

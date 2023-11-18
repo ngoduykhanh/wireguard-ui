@@ -420,6 +420,11 @@ Wireguard Clients
                 }
                 })
             $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
+            $(".fa-tguserid").each(function () {
+                if ($(this).parent().text().trim().indexOf(query.trim()) != -1) {
+                    $(this).closest('.col-lg-4').show();
+                }
+            })
         })
 
         $("#status-selector").on('change', function () {
