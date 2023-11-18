@@ -69,6 +69,9 @@ docker-compose up
 | `SMTP_PASSWORD_FILE`        | Optional filepath for the SMTP user password. Leave `SMTP_PASSWORD` blank to take effect                                                                                    | N/A                                |
 | `SMTP_AUTH_TYPE`            | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                                     | `NONE`                             |
 | `SMTP_ENCRYPTION`           | The encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                          | `STARTTLS`                         |
+| `TELEGRAM_TOKEN`              | Telegram bot token for distributing configs to clients                                                                                                                    | N/A                                |
+| `TELEGRAM_ALLOW_CONF_REQUEST` | Allow users to get configs from the bot by sending a message                                                                                                              | `false`                            |
+| `TELEGRAM_FLOOD_WAIT`         | Time in minutes before the next conf request is processed                                                                                                                 | `60`                               |
 
 ### Defaults for server configuration
 
