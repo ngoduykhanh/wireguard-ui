@@ -702,8 +702,6 @@ Wireguard Clients
                 success: function(resp) {
                     $("#modal_email_client").modal('hide');
                     toastr.success('Sent email to client successfully');
-                     // Refresh the home page (clients page) after sending email successfully
-                    location.reload();
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -727,8 +725,6 @@ Wireguard Clients
                 success: function(resp) {
                     $("#modal_telegram_client").modal('hide');
                     toastr.success('Sent config via telegram to client successfully');
-                    // Refresh the home page (clients page) after sending email successfully
-                    location.reload();
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
