@@ -204,10 +204,8 @@ or
 docker compose build --build-arg=GIT_COMMIT=$(git rev-parse --short HEAD)
 ```
 
-:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/wireguard-ui/wireguard-ui) which you can pull and use 
-```
-docker pull wireguard-ui/wireguard-ui
-````
+:information_source: A container image is currently unavailable. It is recommended to build your own
+using the above instructions.
 
 ### Build binary file
 
