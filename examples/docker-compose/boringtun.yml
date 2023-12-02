@@ -15,7 +15,7 @@ services:
       - ./config:/etc/wireguard
 
   wireguard-ui:
-    image: ngoduykhanh/wireguard-ui:latest
+    image: wireguard-ui/wireguard-ui:latest
     container_name: wireguard-ui
     cap_add:
       - NET_ADMIN

@@ -13,7 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	"github.com/ngoduykhanh/wireguard-ui/util"
+	"github.com/wireguard-ui/wireguard-ui/util"
 )
 
 // TemplateRegistry is a custom html/template renderer for Echo framework

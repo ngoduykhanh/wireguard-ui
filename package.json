@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Wireguard web interface",
   "main": "index.js",
-  "repository": "git@github.com:ngoduykhanh/wireguard-ui.git",
+  "repository": "git@github.com:wireguard-ui/wireguard-ui.git",
   "author": "Khanh Ngo <k@ndk.name>",
   "license": "MIT",
   "dependencies": {

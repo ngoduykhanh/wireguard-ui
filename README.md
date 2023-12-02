@@ -1,4 +1,4 @@
-![](https://github.com/ngoduykhanh/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
+![](https://github.com/wireguard-ui/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
 
 # wireguard-ui
 
@@ -53,7 +53,7 @@ docker-compose up
 | `WGUI_TABLE`                | The default WireGuard table value settings                                                                                                                   | `auto`                             |
 | `WGUI_CONFIG_FILE_PATH`     | The default WireGuard config file path used in global settings                                                                                               | `/etc/wireguard/wg0.conf`          |
 | `WGUI_LOG_LEVEL`            | The default log level. Possible values: `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`                                                                              | `INFO`                             |
-| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/ngoduykhanh/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
+| `WG_CONF_TEMPLATE`          | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/wireguard-ui/wireguard-ui/blob/master/templates/wg.conf) | N/A                                |
 | `EMAIL_FROM_ADDRESS`        | The sender email address                                                                                                                                     | N/A                                |
 | `EMAIL_FROM_NAME`           | The sender name                                                                                                                                              | `WireGuard UI`                     |
 | `SENDGRID_API_KEY`          | The SendGrid api key                                                                                                                                         | N/A                                |
@@ -204,9 +204,9 @@ or
 docker compose build --build-arg=GIT_COMMIT=$(git rev-parse --short HEAD)
 ```
 
-:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui) which you can pull and use 
+:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/wireguard-ui/wireguard-ui) which you can pull and use 
 ```
-docker pull ngoduykhanh/wireguard-ui
+docker pull wireguard-ui/wireguard-ui
 ````
 
 ### Build binary file
@@ -224,10 +224,4 @@ go build -o wireguard-ui
 
 ## License
 
-MIT. See [LICENSE](https://github.com/ngoduykhanh/wireguard-ui/blob/master/LICENSE).
-
-## Support
-
-If you like the project and want to support it, you can *buy me a coffee* ☕
-
-<a href="https://www.buymeacoffee.com/khanhngo" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+MIT. See [LICENSE](https://github.com/wireguard-ui/wireguard-ui/blob/master/LICENSE).
