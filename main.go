@@ -11,6 +11,9 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"strings"
+	"net"
+	"syscall"
 
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
@@ -199,7 +202,20 @@ func main() {
 	// serves other static files
 	app.GET(util.BasePath+"/static/*", echo.WrapHandler(http.StripPrefix(util.BasePath+"/static/", assetHandler)))
 
-	app.Logger.Fatal(app.Start(util.BindAddress))
+	if strings.HasPrefix(util.BindAddress, "unix://") {
+		// Listen on unix domain socket.
+		// https://github.com/labstack/echo/issues/830
+		syscall.Unlink(util.BindAddress[6:])
+		l, err := net.Listen("unix", util.BindAddress[6:])
+		if err != nil {
+			app.Logger.Fatal(err)
+		}
+		app.Listener = l
+		app.Logger.Fatal(app.Start(""))
+	} else {
+		// Listen on TCP socket
+		app.Logger.Fatal(app.Start(util.BindAddress))
+	}
 }
 
 func initServerConfig(db store.IStore, tmplDir fs.FS) {

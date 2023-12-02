@@ -21,6 +21,9 @@ node_modules/
 .vscode
 .idea
 
+# Vim
+.*.sw[op]
+
 # Examples
 examples/docker-compose/config
 examples/docker-compose/db
