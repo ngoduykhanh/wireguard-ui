@@ -429,7 +429,7 @@ func findSubnetRangeForIP(cidr string) (uint16, error) {
 			}
 		}
 	}
-	return 0, fmt.Errorf("Subnet range not foud for this IP")
+	return 0, fmt.Errorf("Subnet range not found for this IP")
 }
 
 // FillClientSubnetRange to fill subnet ranges client belongs to, does nothing if SRs are not found

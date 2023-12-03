@@ -30,7 +30,7 @@ type ClientData struct {
 }
 
 type QRCodeSettings struct {
-	Enabled    bool
-	IncludeDNS bool
-	IncludeMTU bool
+	Enabled       bool
+	IncludeDNS    bool
+	IncludeMTU    bool
 }
