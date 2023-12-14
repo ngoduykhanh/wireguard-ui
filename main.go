@@ -41,6 +41,7 @@ var (
 	flagSessionSecret  string = util.RandomString(32)
 	flagWgConfTemplate string
 	flagBasePath       string
+	flagDBPath         string = "./db"
 )
 
 const (
@@ -80,6 +81,7 @@ func init() {
 	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
+	flag.StringVar(&flagDBPath, "database-path", util.LookupEnvOrString("WG_DATABASE_PATH", flagDBPath), "The custom path to database.")
 	flag.Parse()
 
 	// update runtime config
@@ -120,7 +122,7 @@ func init() {
 }
 
 func main() {
-	db, err := jsondb.New("./db")
+	db, err := jsondb.New(flagDBPath)
 	if err != nil {
 		panic(err)
 	}
