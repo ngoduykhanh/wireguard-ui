@@ -63,7 +63,7 @@ docker-compose up
 | `SMTP_PASSWORD`             | The SMTP user password                                                                                                                                       | N/A                                |
 | `SMTP_AUTH_TYPE`            | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                      | `NONE`                             |
 | `SMTP_ENCRYPTION`           | the encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                           | `STARTTLS`                         |
-
+| `WG_DATABASE_PATH`          | The path to database where stores all WG data                                                                                                                | `/etc/wireguard/db`                      |
 ### Defaults for server configuration
 
 These environment variables are used to control the default server settings used when initializing the database.
