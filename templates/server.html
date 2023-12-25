@@ -43,6 +43,12 @@ Wireguard Server Settings
                                        placeholder="Post Up Script" value="{{ .serverInterface.PostUp }}">
                             </div>
                             <div class="form-group">
+                                <label for="pre_down">Pre Down Script</label>
+                                <input type="text" class="form-control" id="pre_down" name="pre_down"
+                                       placeholder="Pre Down Script" value="{{ .serverInterface.PreDown }}">
+                            </div>
+
+                            <div class="form-group">
                                 <label for="post_down">Post Down Script</label>
                                 <input type="text" class="form-control" id="post_down" name="post_down"
                                        placeholder="Post Down Script" value="{{ .serverInterface.PostDown }}">
@@ -130,8 +136,9 @@ Wireguard Server Settings
             const addresses = $("#addresses").val().split(",");
             const listen_port = $("#listen_port").val();
             const post_up = $("#post_up").val();
+            const pre_down = $("#pre_down").val();
             const post_down = $("#post_down").val();
-            const data = {"addresses": addresses, "listen_port": listen_port, "post_up": post_up, "post_down": post_down};
+            const data = {"addresses": addresses, "listen_port": listen_port, "post_up": post_up, "pre_down": pre_down, "post_down": post_down};
 
             $.ajax({
                 cache: false,
@@ -160,6 +167,7 @@ Wireguard Server Settings
             'defaultText': 'Add More',
             'removeWithBackspace': true,
             'minChars': 0,
+            'minInputWidth': '100%',
             'placeholderColor': '#666666'
         });
 

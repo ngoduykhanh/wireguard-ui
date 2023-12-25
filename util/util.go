@@ -1,11 +1,10 @@
 package util
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ngoduykhanh/wireguard-ui/store"
-	"golang.org/x/mod/sumdb/dirhash"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -18,6 +17,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"golang.org/x/mod/sumdb/dirhash"
 
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/labstack/gommon/log"
@@ -466,6 +468,20 @@ func LookupEnvOrStrings(key string, defaultVal []string) []string {
 	return defaultVal
 }
 
+func LookupEnvOrFile(key string, defaultVal string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		if file, err := os.Open(val); err == nil {
+			var content string
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				content += scanner.Text()
+			}
+			return content
+		}
+	}
+	return defaultVal
+}
+
 func StringFromEmbedFile(embed fs.FS, filename string) (string, error) {
 	file, err := embed.Open(filename)
 	if err != nil {
@@ -539,4 +555,9 @@ func RandomString(length int) string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+func ManagePerms(path string) error {
+	err := os.Chmod(path, 0600)
+	return err
 }
