@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -25,6 +26,8 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/store"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
+
+var usernameRegexp = regexp.MustCompile("^\\w[\\w\\-.]*$")
 
 // Health check handler
 func Health() echo.HandlerFunc {
@@ -62,6 +65,10 @@ func Login(db store.IStore) echo.HandlerFunc {
 		username := data["username"].(string)
 		password := data["password"].(string)
 		rememberMe := data["rememberMe"].(bool)
+
+		if !usernameRegexp.MatchString(username) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
 
 		dbuser, err := db.GetUserByName(username)
 		if err != nil {
@@ -135,8 +142,11 @@ func GetUsers(db store.IStore) echo.HandlerFunc {
 // GetUser handler returns a JSON object of single user
 func GetUser(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		username := c.Param("username")
+
+		if !usernameRegexp.MatchString(username) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
 
 		if !isAdmin(c) && (username != currentUser(c)) {
 			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
@@ -200,12 +210,16 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 			admin = false
 		}
 
+		if !usernameRegexp.MatchString(previousUsername) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
+
 		user, err := db.GetUserByName(previousUsername)
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
 		}
 
-		if username == "" {
+		if username == "" || !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
 		} else {
 			user.Username = username
@@ -261,7 +275,7 @@ func CreateUser(db store.IStore) echo.HandlerFunc {
 		password := data["password"].(string)
 		admin := data["admin"].(bool)
 
-		if username == "" {
+		if username == "" || !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
 		} else {
 			user.Username = username
@@ -302,6 +316,10 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 		}
 
 		username := data["username"].(string)
+
+		if !usernameRegexp.MatchString(username) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
 
 		if username == currentUser(c) {
 			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "User cannot delete itself"})
@@ -357,6 +375,11 @@ func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		clientID := c.Param("id")
+
+		if _, err := xid.FromString(clientID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		qrCodeSettings := model.QRCodeSettings{
 			Enabled:       true,
 			IncludeDNS:    true,
@@ -485,6 +508,10 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		c.Bind(&payload)
 		// TODO validate email
 
+		if _, err := xid.FromString(payload.ID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		qrCodeSettings := model.QRCodeSettings{
 			Enabled:       true,
 			IncludeDNS:    true,
@@ -535,6 +562,10 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 
 		var _client model.Client
 		c.Bind(&_client)
+
+		if _, err := xid.FromString(_client.ID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
 
 		// validate client existence
 		clientData, err := db.GetClientByID(_client.ID, model.QRCodeSettings{Enabled: false})
@@ -642,6 +673,10 @@ func SetClientStatus(db store.IStore) echo.HandlerFunc {
 		clientID := data["id"].(string)
 		status := data["status"].(bool)
 
+		if _, err := xid.FromString(clientID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		clientData, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
@@ -665,6 +700,10 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 		clientID := c.QueryParam("clientid")
 		if clientID == "" {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Missing clientid parameter"})
+		}
+
+		if _, err := xid.FromString(clientID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
 		}
 
 		clientData, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
@@ -699,6 +738,10 @@ func RemoveClient(db store.IStore) echo.HandlerFunc {
 
 		client := new(model.Client)
 		c.Bind(client)
+
+		if _, err := xid.FromString(client.ID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
 
 		// delete client from database
 

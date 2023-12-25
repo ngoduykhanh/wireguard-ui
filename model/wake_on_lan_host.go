@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"net"
 	"strings"
 	"time"
 )
@@ -18,7 +19,13 @@ func (host WakeOnLanHost) ResolveResourceName() (string, error) {
 		return "", errors.New("mac Address is Empty")
 	}
 	resourceName = strings.ToUpper(resourceName)
-	return strings.ReplaceAll(resourceName, ":", "-"), nil
+	resourceName = strings.ReplaceAll(resourceName, ":", "-")
+
+	if _, err := net.ParseMAC(resourceName); err != nil {
+		return "", errors.New("invalid mac address")
+	}
+
+	return resourceName, nil
 }
 
 const WakeOnLanHostCollectionName = "wake_on_lan_hosts"
