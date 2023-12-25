@@ -556,3 +556,8 @@ func RandomString(length int) string {
 	}
 	return string(b)
 }
+
+func ManagePerms(path string) error {
+	err := os.Chmod(path, 0600)
+	return err
+}
