@@ -1,11 +1,10 @@
 package util
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ngoduykhanh/wireguard-ui/store"
-	"golang.org/x/mod/sumdb/dirhash"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -18,6 +17,9 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/ngoduykhanh/wireguard-ui/store"
+	"golang.org/x/mod/sumdb/dirhash"
 
 	externalip "github.com/glendc/go-external-ip"
 	"github.com/labstack/gommon/log"
@@ -462,6 +464,20 @@ func LookupEnvOrInt(key string, defaultVal int) int {
 func LookupEnvOrStrings(key string, defaultVal []string) []string {
 	if val, ok := os.LookupEnv(key); ok {
 		return strings.Split(val, ",")
+	}
+	return defaultVal
+}
+
+func LookupEnvOrFile(key string, defaultVal string) string {
+	if val, ok := os.LookupEnv(key); ok {
+		if file, err := os.Open(val); err == nil {
+			var content string
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				content += scanner.Text()
+			}
+			return content
+		}
 	}
 	return defaultVal
 }

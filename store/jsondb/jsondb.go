@@ -128,13 +128,20 @@ func (o *JsonDB) Init() error {
 		user.Admin = util.DefaultIsAdmin
 		user.PasswordHash = util.LookupEnvOrString(util.PasswordHashEnvVar, "")
 		if user.PasswordHash == "" {
-			plaintext := util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
-			hash, err := util.HashPassword(plaintext)
-			if err != nil {
-				return err
+			user.PasswordHash = util.LookupEnvOrFile(util.PasswordHashFileEnvVar, "")
+			if user.PasswordHash == "" {
+				plaintext := util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
+				if plaintext == util.DefaultPassword {
+					plaintext = util.LookupEnvOrFile(util.PasswordFileEnvVar, util.DefaultPassword)
+				}
+				hash, err := util.HashPassword(plaintext)
+				if err != nil {
+					return err
+				}
+				user.PasswordHash = hash
 			}
-			user.PasswordHash = hash
 		}
+
 		o.conn.Write("users", user.Username, user)
 		os.Chmod(path.Join(path.Join(o.dbPath, "users"), user.Username+".json"), 0600)
 	}
