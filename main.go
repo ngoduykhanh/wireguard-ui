@@ -4,13 +4,17 @@ import (
 	"embed"
 	"flag"
 	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
-	"github.com/ngoduykhanh/wireguard-ui/store"
 	"io/fs"
 	"net/http"
 	"os"
 	"time"
+	"strings"
+	"net"
+	"syscall"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/store"
 
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
@@ -38,7 +42,7 @@ var (
 	flagSendgridApiKey string
 	flagEmailFrom      string
 	flagEmailFromName  string = "WireGuard UI"
-	flagSessionSecret  string
+	flagSessionSecret  string = util.RandomString(32)
 	flagWgConfTemplate string
 	flagBasePath       string
 )
@@ -70,16 +74,41 @@ func init() {
 	flag.StringVar(&flagSmtpHostname, "smtp-hostname", util.LookupEnvOrString("SMTP_HOSTNAME", flagSmtpHostname), "SMTP Hostname")
 	flag.IntVar(&flagSmtpPort, "smtp-port", util.LookupEnvOrInt("SMTP_PORT", flagSmtpPort), "SMTP Port")
 	flag.StringVar(&flagSmtpUsername, "smtp-username", util.LookupEnvOrString("SMTP_USERNAME", flagSmtpUsername), "SMTP Username")
-	flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword), "SMTP Password")
 	flag.BoolVar(&flagSmtpNoTLSCheck, "smtp-no-tls-check", util.LookupEnvOrBool("SMTP_NO_TLS_CHECK", flagSmtpNoTLSCheck), "Disable TLS verification for SMTP. This is potentially dangerous.")
 	flag.StringVar(&flagSmtpEncryption, "smtp-encryption", util.LookupEnvOrString("SMTP_ENCRYPTION", flagSmtpEncryption), "SMTP Encryption : NONE, SSL, SSLTLS, TLS or STARTTLS (by default)")
 	flag.StringVar(&flagSmtpAuthType, "smtp-auth-type", util.LookupEnvOrString("SMTP_AUTH_TYPE", flagSmtpAuthType), "SMTP Auth Type : PLAIN, LOGIN or NONE.")
-	flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey), "Your sendgrid api key.")
 	flag.StringVar(&flagEmailFrom, "email-from", util.LookupEnvOrString("EMAIL_FROM_ADDRESS", flagEmailFrom), "'From' email address.")
 	flag.StringVar(&flagEmailFromName, "email-from-name", util.LookupEnvOrString("EMAIL_FROM_NAME", flagEmailFromName), "'From' email name.")
-	flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret), "The key used to encrypt session cookies.")
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
+
+	var (
+		smtpPasswordLookup  = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
+		sengridApiKeyLookup = util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey)
+		sessionSecretLookup = util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret)
+	)
+
+	// check empty smtpPassword env var
+	if smtpPasswordLookup != "" {
+		flag.StringVar(&flagSmtpPassword, "smtp-password", smtpPasswordLookup, "SMTP Password")
+	} else {
+		flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrFile("SMTP_PASSWORD_FILE", flagSmtpPassword), "SMTP Password File")
+	}
+
+	// check empty sengridApiKey env var
+	if sengridApiKeyLookup != "" {
+		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", sengridApiKeyLookup, "Your sendgrid api key.")
+	} else {
+		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", util.LookupEnvOrFile("SENDGRID_API_KEY_FILE", flagSendgridApiKey), "File containing your sendgrid api key.")
+	}
+
+	// check empty sessionSecret env var
+	if sessionSecretLookup != "" {
+		flag.StringVar(&flagSessionSecret, "session-secret", sessionSecretLookup, "The key used to encrypt session cookies.")
+	} else {
+		flag.StringVar(&flagSessionSecret, "session-secret", util.LookupEnvOrFile("SESSION_SECRET_FILE", flagSessionSecret), "File containing the key used to encrypt session cookies.")
+	}
+
 	flag.Parse()
 
 	// update runtime config
@@ -146,15 +175,19 @@ func main() {
 
 	app.GET(util.BasePath, handler.WireGuardClients(db), handler.ValidSession)
 
+	// Important: Make sure that all non-GET routes check the request content type using handler.ContentTypeJson to
+	// mitigate CSRF attacks. This is effective, because browsers don't allow setting the Content-Type header on
+	// cross-origin requests.
+
 	if !util.DisableLogin {
 		app.GET(util.BasePath+"/login", handler.LoginPage())
-		app.POST(util.BasePath+"/login", handler.Login(db))
+		app.POST(util.BasePath+"/login", handler.Login(db), handler.ContentTypeJson)
 		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
 		app.GET(util.BasePath+"/profile", handler.LoadProfile(db), handler.ValidSession)
 		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(db), handler.ValidSession, handler.NeedsAdmin)
-		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession)
-		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.NeedsAdmin)
-		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession, handler.ContentTypeJson)
+		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 		app.GET(util.BasePath+"/getusers", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
 		app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
 	}
@@ -199,7 +232,20 @@ func main() {
 	// serves other static files
 	app.GET(util.BasePath+"/static/*", echo.WrapHandler(http.StripPrefix(util.BasePath+"/static/", assetHandler)))
 
-	app.Logger.Fatal(app.Start(util.BindAddress))
+	if strings.HasPrefix(util.BindAddress, "unix://") {
+		// Listen on unix domain socket.
+		// https://github.com/labstack/echo/issues/830
+		syscall.Unlink(util.BindAddress[6:])
+		l, err := net.Listen("unix", util.BindAddress[6:])
+		if err != nil {
+			app.Logger.Fatal(err)
+		}
+		app.Listener = l
+		app.Logger.Fatal(app.Start(""))
+	} else {
+		// Listen on TCP socket
+		app.Logger.Fatal(app.Start(util.BindAddress))
+	}
 }
 
 func initServerConfig(db store.IStore, tmplDir fs.FS) {

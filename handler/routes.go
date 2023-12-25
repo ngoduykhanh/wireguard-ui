@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -25,6 +26,8 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/store"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
+
+var usernameRegexp = regexp.MustCompile("^\\w[\\w\\-.]*$")
 
 // Health check handler
 func Health() echo.HandlerFunc {
@@ -62,6 +65,10 @@ func Login(db store.IStore) echo.HandlerFunc {
 		username := data["username"].(string)
 		password := data["password"].(string)
 		rememberMe := data["rememberMe"].(bool)
+
+		if !usernameRegexp.MatchString(username) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
 
 		dbuser, err := db.GetUserByName(username)
 		if err != nil {
@@ -135,8 +142,11 @@ func GetUsers(db store.IStore) echo.HandlerFunc {
 // GetUser handler returns a JSON object of single user
 func GetUser(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		username := c.Param("username")
+
+		if !usernameRegexp.MatchString(username) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
 
 		if !isAdmin(c) && (username != currentUser(c)) {
 			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
@@ -200,12 +210,16 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 			admin = false
 		}
 
+		if !usernameRegexp.MatchString(previousUsername) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
+
 		user, err := db.GetUserByName(previousUsername)
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
 		}
 
-		if username == "" {
+		if username == "" || !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
 		} else {
 			user.Username = username
@@ -261,7 +275,7 @@ func CreateUser(db store.IStore) echo.HandlerFunc {
 		password := data["password"].(string)
 		admin := data["admin"].(bool)
 
-		if username == "" {
+		if username == "" || !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
 		} else {
 			user.Username = username
@@ -302,6 +316,10 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 		}
 
 		username := data["username"].(string)
+
+		if !usernameRegexp.MatchString(username) {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
+		}
 
 		if username == currentUser(c) {
 			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "User cannot delete itself"})
@@ -357,6 +375,11 @@ func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 
 		clientID := c.Param("id")
+
+		if _, err := xid.FromString(clientID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		qrCodeSettings := model.QRCodeSettings{
 			Enabled:       true,
 			IncludeDNS:    true,
@@ -485,6 +508,10 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		c.Bind(&payload)
 		// TODO validate email
 
+		if _, err := xid.FromString(payload.ID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		qrCodeSettings := model.QRCodeSettings{
 			Enabled:       true,
 			IncludeDNS:    true,
@@ -536,6 +563,10 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		var _client model.Client
 		c.Bind(&_client)
 
+		if _, err := xid.FromString(_client.ID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		// validate client existence
 		clientData, err := db.GetClientByID(_client.ID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
@@ -567,6 +598,45 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
 		}
 
+		// update Wireguard Client PublicKey
+		if client.PublicKey != _client.PublicKey && _client.PublicKey != "" {
+			_, err := wgtypes.ParseKey(_client.PublicKey)
+			if err != nil {
+				log.Error("Cannot verify provided Wireguard public key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard public key"})
+			}
+			// check for duplicates
+			clients, err := db.GetClients(false)
+			if err != nil {
+				log.Error("Cannot get client list for duplicate public key check")
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get client list for duplicate public key check"})
+			}
+			for _, other := range clients {
+				if other.Client.PublicKey == _client.PublicKey {
+					log.Error("Duplicate Public Key")
+					return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Duplicate Public Key"})
+				}
+			}
+
+			// When replacing any PublicKey, discard any locally stored Wireguard Client PrivateKey
+			// Client PubKey no longer corresponds to locally stored PrivKey.
+			// QR code (needs PrivateKey) for this client is no longer possible now.
+
+			if client.PrivateKey != "" {
+				client.PrivateKey = ""
+			}
+
+		}
+
+		// update Wireguard Client PresharedKey
+		if client.PresharedKey != _client.PresharedKey && _client.PresharedKey != "" {
+			_, err := wgtypes.ParseKey(_client.PresharedKey)
+			if err != nil {
+				log.Error("Cannot verify provided Wireguard preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard preshared key"})
+			}
+		}
+
 		// map new data
 		client.Name = _client.Name
 		client.Email = _client.Email
@@ -575,6 +645,9 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		client.AllocatedIPs = _client.AllocatedIPs
 		client.AllowedIPs = _client.AllowedIPs
 		client.ExtraAllowedIPs = _client.ExtraAllowedIPs
+		client.Endpoint = _client.Endpoint
+		client.PublicKey = _client.PublicKey
+		client.PresharedKey = _client.PresharedKey
 		client.UpdatedAt = time.Now().UTC()
 
 		// write to the database
@@ -601,6 +674,10 @@ func SetClientStatus(db store.IStore) echo.HandlerFunc {
 		clientID := data["id"].(string)
 		status := data["status"].(bool)
 
+		if _, err := xid.FromString(clientID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		clientData, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, err.Error()})
@@ -626,6 +703,10 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Missing clientid parameter"})
 		}
 
+		if _, err := xid.FromString(clientID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
+
 		clientData, err := db.GetClientByID(clientID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			log.Errorf("Cannot generate client id %s config file for downloading: %v", clientID, err)
@@ -648,7 +729,7 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 
 		// set response header for downloading
 		c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%s.conf", clientData.Client.Name))
-		return c.Stream(http.StatusOK, "text/plain", reader)
+		return c.Stream(http.StatusOK, "text/conf", reader)
 	}
 }
 
@@ -658,6 +739,10 @@ func RemoveClient(db store.IStore) echo.HandlerFunc {
 
 		client := new(model.Client)
 		c.Bind(client)
+
+		if _, err := xid.FromString(client.ID); err != nil {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
+		}
 
 		// delete client from database
 
