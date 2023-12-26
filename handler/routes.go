@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -1018,10 +1019,14 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 					fmt.Sprintf("Cannot suggest ip allocation: failed to get available ip from network %s", cidr),
 				})
 			}
+			var newAddr string
 			if strings.Contains(ip, ":") {
-				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/128", ip))
+				newAddr = fmt.Sprintf("%s/128", ip)
 			} else {
-				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
+				newAddr = fmt.Sprintf("%s/32", ip)
+			}
+			if !slices.Contains(suggestedIPs, newAddr) {
+				suggestedIPs = slices.Insert(suggestedIPs, len(suggestedIPs), newAddr)
 			}
 		}
 
