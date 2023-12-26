@@ -840,6 +840,22 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 	}
 }
 
+// ClientDefaultSettings handler
+func ClientDefaultSettings(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		clientDefaultSettings, err := db.GetClientDefaultSettings()
+		if err != nil {
+			log.Error("Cannot get client default settings: ", err)
+		}
+
+		return c.Render(http.StatusOK, "client_default_settings.html", map[string]interface{}{
+			"baseData":              model.BaseData{Active: "client-default-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
+			"clientDefaultSettings": clientDefaultSettings,
+		})
+	}
+}
+
 // Status handler
 func Status(db store.IStore) echo.HandlerFunc {
 	type PeerVM struct {
@@ -961,6 +977,36 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 		log.Infof("Updated global settings: %v", globalSettings)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated global settings successfully"})
+	}
+}
+
+// ClientDefaultSettingsSubmit handler to update the client default settings
+func ClientDefaultSettingsSubmit(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+
+		var clientDefaultSettings model.ClientDefaults
+		c.Bind(&clientDefaultSettings)
+
+		// validate the input allowed ips list
+		if util.ValidateCIDRList(clientDefaultSettings.AllowedIps, true) == false {
+			log.Warnf("Invalid Allowed IPs list input from user: %v", clientDefaultSettings.AllowedIps)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Allowed IPs must be in CIDR format"})
+		}
+
+		// validate the input extra allowed ips list
+		if util.ValidateCIDRList(clientDefaultSettings.ExtraAllowedIps, true) == false {
+			log.Warnf("Invalid Extra Allowed IPs list input from user: %v", clientDefaultSettings.ExtraAllowedIps)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
+		}
+
+		// write config to the database
+		if err := db.SaveClientDefaultSettings(clientDefaultSettings); err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Error saving client default settings"})
+		}
+
+		log.Infof("Updated client default settings: %v", clientDefaultSettings)
+
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated client default settings successfully"})
 	}
 }
 

@@ -36,7 +36,7 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 			data.(map[string]interface{})[k] = v
 		}
 
-		data.(map[string]interface{})["client_defaults"] = util.ClientDefaultsFromEnv()
+		data.(map[string]interface{})["client_defaults"] = util.ClientDefaultsFromDatabase()
 	}
 
 	// login page does not need the base layout
@@ -83,6 +83,11 @@ func New(tmplDir fs.FS, extraData map[string]interface{}, secret []byte) *echo.E
 		log.Fatal(err)
 	}
 
+	tmplClientDefaultSettingsString, err := util.StringFromEmbedFile("client_default_settings.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+  
 	tmplUsersSettingsString, err := util.StringFromEmbedFile(tmplDir, "users_settings.html")
 	if err != nil {
 		log.Fatal(err)
@@ -113,6 +118,7 @@ func New(tmplDir fs.FS, extraData map[string]interface{}, secret []byte) *echo.E
 	templates["clients.html"] = template.Must(template.New("clients").Funcs(funcs).Parse(tmplBaseString + tmplClientsString))
 	templates["server.html"] = template.Must(template.New("server").Funcs(funcs).Parse(tmplBaseString + tmplServerString))
 	templates["global_settings.html"] = template.Must(template.New("global_settings").Funcs(funcs).Parse(tmplBaseString + tmplGlobalSettingsString))
+	templates["client_default_settings.html"] = template.Must(template.New("client_default_settings").Funcs(funcs).Parse(tmplBaseString + tmplClientDefaultSettingsString))
 	templates["users_settings.html"] = template.Must(template.New("users_settings").Funcs(funcs).Parse(tmplBaseString + tmplUsersSettingsString))
 	templates["status.html"] = template.Must(template.New("status").Funcs(funcs).Parse(tmplBaseString + tmplStatusString))
 	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Funcs(funcs).Parse(tmplBaseString + tmplWakeOnLanHostsString))

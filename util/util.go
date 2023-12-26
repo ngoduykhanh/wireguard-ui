@@ -95,6 +95,24 @@ func ClientDefaultsFromEnv() model.ClientDefaults {
 	return clientDefaults
 }
 
+// ClientDefaultsFromDatabase to read the default values for creating a new client from the database
+func ClientDefaultsFromDatabase() model.ClientDefaults {
+	// initialize database directory
+	dir := "./db"
+	db, err := scribble.New(dir, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// read client default settings
+	clientDefaults := model.ClientDefaults{}
+	if err := db.Read("server", "client_default_settings", &clientDefaults); err != nil {
+		panic(err)
+	}
+
+	return clientDefaults
+}
+
 // ValidateCIDR to validate a network CIDR
 func ValidateCIDR(cidr string) bool {
 	_, _, err := net.ParseCIDR(cidr)

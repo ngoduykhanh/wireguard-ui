@@ -1,0 +1,161 @@
+{{define "title"}}
+Client Defaults Settings
+{{end}}
+
+{{define "top_css"}}
+{{end}}
+
+{{define "username"}}
+{{ .username }}
+{{end}}
+
+{{define "page_title"}}
+Client Defaults Settings
+{{end}}
+
+{{define "page_content"}}
+<section class="content">
+  <div class="container-fluid">
+    <!-- <h5 class="mt-4 mb-2">Global Settings</h5> -->
+    <div class="row">
+      <!-- left column -->
+      <div class="col-md-6">
+        <div class="card card-success">
+          <div class="card-header">
+            <h3 class="card-title">Client Defaults Settings</h3>
+          </div>
+          <!-- /.card-header -->
+          <!-- form start -->
+          <form role="form" id="frm_client_default_settings" name="frm_client_default_settings">
+            <div class="card-body">
+              <div class="form-group">
+                <label for="allowed_ips" class="control-label">Allowed IPs</label>
+                <input type="text" data-role="tagsinput" class="form-control" id="allowed_ips" value="">
+              </div>
+              <div class="form-group">
+                <label for="extra_allowed_ips" class="control-label">Extra Allowed IPs</label>
+                <input type="text" data-role="tagsinput" class="form-control" id="extra_allowed_ips" value="">
+              </div>
+
+
+              <div class="form-group">
+                <div class="icheck-primary d-inline">
+                  <input type="checkbox" id="use_server_dns_chkbox" {{ if .clientDefaultSettings.UseServerDNS }}checked{{ end }}>
+                  <label for="use_server_dns_chkbox">
+                    Use server DNS
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="icheck-primary d-inline">
+                  <input type="checkbox" id="enable_after_creation_chkbox" {{ if .clientDefaultSettings.EnableAfterCreation }}checked{{ end }}>
+                  <label for="enable_after_creation_chkbox">
+                    Enable after creation
+                  </label>
+                </div>
+              </div>
+            </div>
+            <!-- /.card-body -->
+
+            <div class="card-footer">
+              <button type="submit" class="btn btn-success" >Save</button>
+            </div>
+          </form>
+        </div>
+        <!-- /.card -->
+      </div>
+      <div class="col-md-6">
+        <div class="card card-success">
+          <div class="card-header">
+            <h3 class="card-title">Help</h3>
+          </div>
+          <!-- /.card-header -->
+          <div class="card-body">
+            <dl>
+              <dt>1. Allowed IPs</dt>
+              <dd>Specify a list of addresses that will get routed to the <code>server</code>. These addresses will be included in 'AllowedIPs' of client config.</dd>
+              <dt>2. Extra Allowed IPs</dt>
+              <dd>Specify a list of addresses that will get routed to the <code>client</code>. These addresses will be included in 'AllowedIPs' of WG server config</dd>
+              <dt>3. Use server DNS</dt>
+              <dd>Specify if clients use server DNS by default.</dd>
+              <dt>4. Enable after creation</dt>
+              <dd>Specify if clients become enabled after creation.</dd>
+            </dl>
+          </div>
+        </div>
+        <!-- /.card -->
+      </div>
+    </div>
+    <!-- /.row -->
+  </div>
+</section>
+
+{{end}}
+
+{{define "bottom_js"}}
+<script>
+  function submitClientDefaultSettings() {
+    const allowed_ips = $("#allowed_ips").val().split(",");
+    const extra_allowed_ips = $("#extra_allowed_ips").val().split(",");
+    const use_server_dns = $("#use_server_dns_chkbox").is(':checked');
+    const enable_after_creation = $("#enable_after_creation_chkbox").is(':checked');
+    const data = {"allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "use_server_dns": use_server_dns, "enable_after_creation": enable_after_creation};
+    $.ajax({
+      cache: false,
+      method: 'POST',
+      url: '{{.basePath}}/client-default-settings',
+      dataType: 'json',
+      contentType: "application/json",
+      data: JSON.stringify(data),
+      success: function(data) {
+        toastr.success('Update client default settings successfully');
+      },
+      error: function(jqXHR, exception) {
+        const responseJson = jQuery.parseJSON(jqXHR.responseText);
+        toastr.error(responseJson['message']);
+      }
+    });
+  }
+</script>
+<script>
+  $("#allowed_ips").tagsInput({
+    'width': '100%',
+    'height': '75%',
+    'interactive': true,
+    'defaultText': 'Add More',
+    'removeWithBackspace': true,
+    'minChars': 0,
+    'placeholderColor': '#666666'
+  });
+  $("#extra_allowed_ips").tagsInput({
+    'width': '100%',
+    'height': '75%',
+    'interactive': true,
+    'defaultText': 'Add More',
+    'removeWithBackspace': true,
+    'minChars': 0,
+    'placeholderColor': '#666666'
+  });
+
+  {{range .clientDefaultSettings.AllowedIps}}
+  $("#allowed_ips").removeTag('{{.}}');
+  $("#allowed_ips").addTag('{{.}}');
+  {{end}}
+  {{range .clientDefaultSettings.ExtraAllowedIps}}
+  $("#extra_allowed_ips").removeTag('{{.}}');
+  $("#extra_allowed_ips").addTag('{{.}}');
+  {{end}}
+
+  // Global setting form validation
+  $(document).ready(function () {
+    $.validator.setDefaults({
+      submitHandler: function () {
+        submitClientDefaultSettings();
+      }
+    });
+    $("#frm_client_default_settings").validate({
+    });
+  });
+</script>
+{{end}}

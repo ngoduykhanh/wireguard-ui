@@ -43,6 +43,7 @@ func (o *JsonDB) Init() error {
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
+	var clientDefaultSettingsPath string = path.Join(serverPath, "client_default_settings.json")
 	var hashesPath string = path.Join(serverPath, "hashes.json")
 
 	// create directories if they do not exist
@@ -132,6 +133,12 @@ func (o *JsonDB) Init() error {
 		}
 	}
 
+	// client default settings
+	if _, err := os.Stat(clientDefaultSettingsPath); os.IsNotExist(err) {
+		clientDefaultSetting := util.ClientDefaultsFromEnv()
+		o.conn.Write("server", "client_default_settings", clientDefaultSetting)
+	}
+
 	// user info
 	results, err := o.conn.ReadAll("users")
 	if err != nil || len(results) < 1 {
@@ -214,6 +221,12 @@ func (o *JsonDB) DeleteUser(username string) error {
 func (o *JsonDB) GetGlobalSettings() (model.GlobalSetting, error) {
 	settings := model.GlobalSetting{}
 	return settings, o.conn.Read("server", "global_settings", &settings)
+}
+
+// GetClientDefaultSettings func to query client default settings from the database
+func (o *JsonDB) GetClientDefaultSettings() (model.ClientDefaults, error) {
+	settings := model.ClientDefaults{}
+	return settings, o.conn.Read("server", "client_default_settings", &settings)
 }
 
 // GetServer func to query Server settings from the database
@@ -353,6 +366,11 @@ func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 		return err
 	}
 	return output
+}
+
+
+func (o *JsonDB) SaveClientDefaultSettings(clientDefaults model.ClientDefaults) error {
+	return o.conn.Write("server", "client_default_settings", clientDefaults)
 }
 
 func (o *JsonDB) GetPath() string {

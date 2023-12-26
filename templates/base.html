@@ -147,6 +147,14 @@
                         </li>
                         {{if not .loginDisabled}}
                         <li class="nav-item">
+                            <a href="{{.basePath}}/client-default-settings" class="nav-link {{if eq .baseData.Active "client-default-settings" }}active{{end}}">
+                            <i class="nav-icon fas fa-cog"></i>
+                            <p>
+                                Client Default Settings
+                            </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="{{.basePath}}/users-settings" class="nav-link {{if eq .baseData.Active "users-settings" }}active{{end}}">
                             <i class="nav-icon fas fa-cog"></i>
                             <p>
@@ -564,7 +572,7 @@
                 $("#client_public_key").val("");
                 $("#client_preshared_key").val("");
                 $("#client_allocated_ips").importTags('');
-                $("#client_extra_allowed_ips").importTags('');
+                //$("#client_extra_allowed_ips").importTags('');
                 updateIPAllocationSuggestion();
             });
         });
