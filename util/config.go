@@ -10,7 +10,7 @@ var (
 	SmtpPort       int
 	SmtpUsername   string
 	SmtpPassword   string
-	HelloHostName  string
+	SmtpHelo       string
 	SmtpNoTLSCheck bool
 	SmtpEncryption string
 	SmtpAuthType   string
