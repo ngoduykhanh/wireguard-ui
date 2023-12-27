@@ -1034,6 +1034,9 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 			searchCIDRList = append(searchCIDRList, server.Interface.Addresses...)
 		}
 
+		// Save only unique IPs
+		ipSet := make(map[string]struct{})
+
 		for _, cidr := range searchCIDRList {
 			ip, err := util.GetAvailableIP(cidr, allocatedIPs, server.Interface.Addresses)
 			if err != nil {
@@ -1042,9 +1045,9 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 			}
 			found = true
 			if strings.Contains(ip, ":") {
-				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/128", ip))
+				ipSet[fmt.Sprintf("%s/128", ip)] = struct{}{}
 			} else {
-				suggestedIPs = append(suggestedIPs, fmt.Sprintf("%s/32", ip))
+				ipSet[fmt.Sprintf("%s/32", ip)] = struct{}{}
 			}
 		}
 
@@ -1053,6 +1056,10 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 				false,
 				"Cannot suggest ip allocation: failed to get available ip. Try a different subnet or deallocate some ips.",
 			})
+		}
+
+		for ip := range ipSet {
+			suggestedIPs = append(suggestedIPs, ip)
 		}
 
 		return c.JSON(http.StatusOK, suggestedIPs)
