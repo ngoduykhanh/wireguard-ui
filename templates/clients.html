@@ -101,6 +101,12 @@ Wireguard Clients
                         <input type="text" class="form-control" id="_client_email" name="client_email">
                     </div>
                     <div class="form-group">
+                        <label for="_subnet_ranges" class="control-label">Subnet range</label>
+                        <select id="_subnet_ranges" class="select2"
+                            data-placeholder="Select a subnet range" style="width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="_client_allocated_ips" class="control-label">IP Allocation</label>
                         <input type="text" data-role="tagsinput" class="form-control" id="_client_allocated_ips">
                     </div>
@@ -253,13 +259,102 @@ Wireguard Clients
             setClientStatus(clientID, true);
             const divElement = document.getElementById("paused_" + clientID);
             divElement.style.visibility = "hidden";
+            updateApplyConfigVisibility()
         }
 
         function pauseClient(clientID) {
             setClientStatus(clientID, false);
             const divElement = document.getElementById("paused_" + clientID);
             divElement.style.visibility = "visible";
+            updateApplyConfigVisibility()
         }
+
+        // updateIPAllocationSuggestion function for automatically fill
+        // the IP Allocation input with suggested ip addresses
+        // FOR CHANGING A SUBNET OF AN EXISTING CLIENT
+        function updateIPAllocationSuggestionExisting() {
+            let subnetRange = $("#_subnet_ranges").select2('val');
+
+            if (!subnetRange || subnetRange.length === 0) {
+                subnetRange = '__default_any__'
+            }
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: `{{.basePath}}/api/suggest-client-ips?sr=${subnetRange}`,
+                dataType: 'json',
+                contentType: "application/json",
+                success: function(data) {
+                    const allocated_ips = $("#_client_allocated_ips").val().split(",");
+                    allocated_ips.forEach(function (item, index) {
+                        $('#_client_allocated_ips').removeTag(escape(item));
+                    })
+                    data.forEach(function (item, index) {
+                        $('#_client_allocated_ips').addTag(item);
+                    })
+                },
+                error: function(jqXHR, exception) {
+                    const allocated_ips = $("#_client_allocated_ips").val().split(",");
+                    allocated_ips.forEach(function (item, index) {
+                        $('#_client_allocated_ips').removeTag(escape(item));
+                    })
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
+        function updateSubnetRangesList(elementID, preselectedVal) {
+            $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
+                $(`${elementID} option`).remove();
+                $(elementID).append(
+                    $("<option></option>")
+                        .text("Any")
+                        .val("__default_any__")
+                );
+                $.each(data, function(index, item) {
+                    $(elementID).append(
+                        $("<option></option>")
+                            .text(item)
+                            .val(item)
+                    );
+                    if (item === preselectedVal) {
+                        console.log(preselectedVal);
+                        $(elementID).val(preselectedVal).trigger('change')
+                    }
+                });
+            });
+        }
+
+        function updateSearchList() {
+            $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
+                $("#status-selector option").remove();
+                $("#status-selector").append(
+                    $("<option></option>")
+                        .text("All")
+                        .val("All"),
+                    $("<option></option>")
+                        .text("Enabled")
+                        .val("Enabled"),
+                    $("<option></option>")
+                        .text("Disabled")
+                        .val("Disabled"),
+                    $("<option></option>")
+                        .text("Connected")
+                        .val("Connected"),
+                    $("<option></option>")
+                        .text("Disconnected")
+                        .val("Disconnected")
+                );
+                $.each(data, function(index, item) {
+                    $("#status-selector").append(
+                        $("<option></option>")
+                            .text(item)
+                            .val(item)
+                    );
+                });
+            });
+}
     </script>
     <script>
         // load client list
@@ -349,7 +444,18 @@ Wireguard Clients
                     });
                     break;
                 default:
-                    $('.col-lg-4').show();
+                    $('.col-lg-4').hide();
+                    const selectedSR = $("#status-selector").val()
+                    $(".fa-subnetrange").each(function () {
+                        const srs = $(this).parent().text().trim().split(',')
+                        for (const sr of srs) {
+                            if (sr === selectedSR) {
+                                $(this).closest('.col-lg-4').show();
+                                break
+                            }                            
+                        }
+                    })
+                    // $('.col-lg-4').show();
                     break;
             }
         });
@@ -400,6 +506,7 @@ Wireguard Clients
                         toastr.success('Removed client successfully');
                         const divElement = document.getElementById('client_' + client_id);
                         divElement.style.display = "none";
+                        updateApplyConfigVisibility()
                     },
                     error: function(jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -427,7 +534,6 @@ Wireguard Clients
                     'defaultText': 'Add More',
                     'removeWithBackspace': true,
                     'minChars': 0,
-                    'minInputWidth': '100%',
                     'placeholderColor': '#666666'
                 });
 
@@ -439,7 +545,6 @@ Wireguard Clients
                     'defaultText': 'Add More',
                     'removeWithBackspace': true,
                     'minChars': 0,
-                    'minInputWidth': '100%',
                     'placeholderColor': '#666666'
                 });
 
@@ -450,7 +555,6 @@ Wireguard Clients
                     'defaultText': 'Add More',
                     'removeWithBackspace' : true,
                     'minChars': 0,
-                    'minInputWidth': '100%',
                     'placeholderColor': '#666666'
                 })
 
@@ -468,6 +572,13 @@ Wireguard Clients
                         modal.find("#_client_id").val(client.id);
                         modal.find("#_client_name").val(client.name);
                         modal.find("#_client_email").val(client.email);
+
+                        let preselectedEl
+                        if (client.subnet_ranges && client.subnet_ranges.length > 0) {
+                            preselectedEl = client.subnet_ranges[0]
+                        }
+
+                        updateSubnetRangesList("#_subnet_ranges", preselectedEl);
 
                         modal.find("#_client_allocated_ips").importTags('');
                         client.allocated_ips.forEach(function (obj) {
@@ -491,6 +602,11 @@ Wireguard Clients
 
                         modal.find("#_client_public_key").val(client.public_key);
                         modal.find("#_client_preshared_key").val(client.preshared_key);
+
+                        // handle subnet range select
+                        $('#_subnet_ranges').on('select2:select', function (e) {
+                            updateIPAllocationSuggestionExisting();
+                        });
                     },
                     error: function (jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);

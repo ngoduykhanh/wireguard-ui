@@ -95,6 +95,15 @@ func ClientDefaultsFromEnv() model.ClientDefaults {
 	return clientDefaults
 }
 
+// ContainsCIDR to check if ipnet1 contains ipnet2
+// https://stackoverflow.com/a/40406619/6111641
+// https://go.dev/play/p/Q4J-JEN3sF
+func ContainsCIDR(ipnet1, ipnet2 *net.IPNet) bool {
+	ones1, _ := ipnet1.Mask.Size()
+	ones2, _ := ipnet2.Mask.Size()
+	return ones1 <= ones2 && ipnet1.Contains(ipnet2.IP)
+}
+
 // ValidateCIDR to validate a network CIDR
 func ValidateCIDR(cidr string) bool {
 	_, _, err := net.ParseCIDR(cidr)
@@ -317,15 +326,32 @@ func GetBroadcastIP(n *net.IPNet) net.IP {
 	return broadcast
 }
 
+// GetBroadcastAndNetworkAddrsLookup get the ip address that can't be used with current server interfaces
+func GetBroadcastAndNetworkAddrsLookup(interfaceAddresses []string) map[string]bool {
+	list := make(map[string]bool, 0)
+	for _, ifa := range interfaceAddresses {
+		_, net, err := net.ParseCIDR(ifa)
+		if err != nil {
+			continue
+		}
+
+		broadcastAddr := GetBroadcastIP(net).String()
+		networkAddr := net.IP.String()
+		list[broadcastAddr] = true
+		list[networkAddr] = true
+	}
+	return list
+}
+
 // GetAvailableIP get the ip address that can be allocated from an CIDR
-func GetAvailableIP(cidr string, allocatedList []string) (string, error) {
+// We need interfaceAddresses to find real broadcast and network addresses
+func GetAvailableIP(cidr string, allocatedList, interfaceAddresses []string) (string, error) {
 	ip, net, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return "", err
 	}
 
-	broadcastAddr := GetBroadcastIP(net).String()
-	networkAddr := net.IP.String()
+	unavailableIPs := GetBroadcastAndNetworkAddrsLookup(interfaceAddresses)
 
 	for ip := ip.Mask(net.Mask); net.Contains(ip); inc(ip) {
 		available := true
@@ -336,7 +362,7 @@ func GetAvailableIP(cidr string, allocatedList []string) (string, error) {
 				break
 			}
 		}
-		if available && suggestedAddr != networkAddr && suggestedAddr != broadcastAddr {
+		if available && !unavailableIPs[suggestedAddr] {
 			return suggestedAddr, nil
 		}
 	}
@@ -382,6 +408,126 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 	}
 
 	return true, nil
+}
+
+// findSubnetRangeForIP to find first SR for IP, and cache the match
+func findSubnetRangeForIP(cidr string) (uint16, error) {
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return 0, err
+	}
+
+	if srName, ok := IPToSubnetRange[ip.String()]; ok {
+		return srName, nil
+	}
+
+	for srIndex, sr := range SubnetRangesOrder {
+		for _, srCIDR := range SubnetRanges[sr] {
+			if srCIDR.Contains(ip) {
+				IPToSubnetRange[ip.String()] = uint16(srIndex)
+				return uint16(srIndex), nil
+			}
+		}
+	}
+	return 0, fmt.Errorf("Subnet range not found for this IP")
+}
+
+// FillClientSubnetRange to fill subnet ranges client belongs to, does nothing if SRs are not found
+func FillClientSubnetRange(client model.ClientData) model.ClientData {
+	cl := *client.Client
+	for _, ip := range cl.AllocatedIPs {
+		sr, err := findSubnetRangeForIP(ip)
+		if err != nil {
+			continue
+		}
+		cl.SubnetRanges = append(cl.SubnetRanges, SubnetRangesOrder[sr])
+	}
+	return model.ClientData{
+		Client: &cl,
+		QRCode: client.QRCode,
+	}
+}
+
+// ValidateAndFixSubnetRanges to check if subnet ranges are valid for the server configuration
+// Removes all non-valid CIDRs
+func ValidateAndFixSubnetRanges(db store.IStore) error {
+	if len(SubnetRangesOrder) == 0 {
+		return nil
+	}
+
+	server, err := db.GetServer()
+	if err != nil {
+		return err
+	}
+	var serverSubnets []*net.IPNet
+	for _, addr := range server.Interface.Addresses {
+		addr = strings.TrimSpace(addr)
+		_, net, err := net.ParseCIDR(addr)
+		if err != nil {
+			return err
+		}
+		serverSubnets = append(serverSubnets, net)
+	}
+
+	for _, rng := range SubnetRangesOrder {
+		cidrs := SubnetRanges[rng]
+		if len(cidrs) > 0 {
+			newCIDRs := make([]*net.IPNet, 0)
+			for _, cidr := range cidrs {
+				valid := false
+
+				for _, serverSubnet := range serverSubnets {
+					if ContainsCIDR(serverSubnet, cidr) {
+						valid = true
+						break
+					}
+				}
+
+				if valid {
+					newCIDRs = append(newCIDRs, cidr)
+				} else {
+					log.Warnf("[%v] CIDR is outside of all server subnets: %v. Removed.", rng, cidr)
+				}
+			}
+
+			if len(newCIDRs) > 0 {
+				SubnetRanges[rng] = newCIDRs
+			} else {
+				delete(SubnetRanges, rng)
+				log.Warnf("[%v] No valid CIDRs in this subnet range. Removed.", rng)
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetSubnetRangesString to get a formatted string, representing active subnet ranges
+func GetSubnetRangesString() string {
+	if len(SubnetRangesOrder) == 0 {
+		return ""
+	}
+
+	strB := strings.Builder{}
+
+	for _, rng := range SubnetRangesOrder {
+		cidrs := SubnetRanges[rng]
+		if len(cidrs) > 0 {
+			strB.WriteString(rng)
+			strB.WriteString(":[")
+			first := true
+			for _, cidr := range cidrs {
+				if !first {
+					strB.WriteString(", ")
+				}
+				strB.WriteString(cidr.String())
+				first = false
+			}
+			strB.WriteString("]  ")
+		}
+	}
+
+	return strings.TrimSpace(strB.String())
 }
 
 // WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
