@@ -63,7 +63,7 @@ docker-compose up
 | `SMTP_PASSWORD`             | The SMTP user password                                                                                                                                       | N/A                                |
 | `SMTP_AUTH_TYPE`            | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                      | `NONE`                             |
 | `SMTP_ENCRYPTION`           | the encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                           | `STARTTLS`                         |
-| `SMTP_HELO`             | Hostname to use for the helo message. smtp-relay.gmail.com needs this set to anything but `localhost`                                                       | `localhost`                        |
+| `SMTP_HELO`             | Hostname to use for the HELO message. smtp-relay.gmail.com needs this set to anything but `localhost`                                                       | `localhost`                        |
 
 ### Defaults for server configuration
 
