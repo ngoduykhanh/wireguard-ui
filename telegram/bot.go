@@ -18,13 +18,13 @@ type TgBotInitDependencies struct {
 }
 
 var (
-	TelegramToken            string
-	TelegramAllowConfRequest bool
-	TelegramFloodWait        int
-	LogLevel                 log.Lvl
+	Token            string
+	AllowConfRequest bool
+	FloodWait        int
+	LogLevel         log.Lvl
 
-	TgBot      *echotron.API
-	TgBotMutex sync.RWMutex
+	Bot      *echotron.API
+	BotMutex sync.RWMutex
 
 	floodWait = make(map[int64]int64, 0)
 )
@@ -32,16 +32,16 @@ var (
 func Start(initDeps TgBotInitDependencies) (err error) {
 	ticker := time.NewTicker(time.Minute)
 	defer func() {
-		TgBotMutex.Lock()
-		TgBot = nil
-		TgBotMutex.Unlock()
+		BotMutex.Lock()
+		Bot = nil
+		BotMutex.Unlock()
 		ticker.Stop()
 		if r := recover(); r != nil {
 			err = fmt.Errorf("[PANIC] recovered from panic: %v", r)
 		}
 	}()
 
-	token := TelegramToken
+	token := Token
 	if token == "" || len(token) < 30 {
 		return
 	}
@@ -54,9 +54,9 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 		return
 	}
 
-	TgBotMutex.Lock()
-	TgBot = &bot
-	TgBotMutex.Unlock()
+	BotMutex.Lock()
+	Bot = &bot
+	BotMutex.Unlock()
 
 	if LogLevel <= log.INFO {
 		fmt.Printf("[Telegram] Authorized as %s\n", res.Result.Username)
@@ -68,7 +68,7 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 		}
 	}()
 
-	if !TelegramAllowConfRequest {
+	if !AllowConfRequest {
 		return
 	}
 
@@ -78,7 +78,7 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 			userid := update.Message.Chat.ID
 			if _, wait := floodWait[userid]; wait {
 				bot.SendMessage(
-					fmt.Sprintf("You can only request your configs once per %d minutes", TelegramFloodWait),
+					fmt.Sprintf("You can only request your configs once per %d minutes", FloodWait),
 					userid,
 					&echotron.MessageOptions{
 						ReplyToMessageID: update.Message.ID,
@@ -106,15 +106,15 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 }
 
 func SendConfig(userid int64, clientName string, confData, qrData []byte, ignoreFloodWait bool) error {
-	TgBotMutex.RLock()
-	defer TgBotMutex.RUnlock()
+	BotMutex.RLock()
+	defer BotMutex.RUnlock()
 
-	if TgBot == nil {
+	if Bot == nil {
 		return fmt.Errorf("telegram bot is not configured or not available")
 	}
 
 	if _, wait := floodWait[userid]; wait && !ignoreFloodWait {
-		return fmt.Errorf("this client already got their config less than %d minutes ago", TelegramFloodWait)
+		return fmt.Errorf("this client already got their config less than %d minutes ago", FloodWait)
 	}
 
 	if !ignoreFloodWait {
@@ -122,14 +122,14 @@ func SendConfig(userid int64, clientName string, confData, qrData []byte, ignore
 	}
 
 	qrAttachment := echotron.NewInputFileBytes("qr.png", qrData)
-	_, err := TgBot.SendPhoto(qrAttachment, userid, &echotron.PhotoOptions{Caption: clientName})
+	_, err := Bot.SendPhoto(qrAttachment, userid, &echotron.PhotoOptions{Caption: clientName})
 	if err != nil {
 		log.Error(err)
 		return fmt.Errorf("unable to send qr picture")
 	}
 
 	confAttachment := echotron.NewInputFileBytes(clientName+".conf", confData)
-	_, err = TgBot.SendDocument(confAttachment, userid, nil)
+	_, err = Bot.SendDocument(confAttachment, userid, nil)
 	if err != nil {
 		log.Error(err)
 		return fmt.Errorf("unable to send conf file")
@@ -138,7 +138,7 @@ func SendConfig(userid int64, clientName string, confData, qrData []byte, ignore
 }
 
 func updateFloodWait() {
-	thresholdTS := time.Now().Unix() - 60*int64(TelegramFloodWait)
+	thresholdTS := time.Now().Unix() - 60*int64(FloodWait)
 	for userid, ts := range floodWait {
 		if ts < thresholdTS {
 			delete(floodWait, userid)

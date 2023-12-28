@@ -140,9 +140,9 @@ func init() {
 
 	lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO"))
 
-	telegram.TelegramToken = flagTelegramToken
-	telegram.TelegramAllowConfRequest = flagTelegramAllowConfRequest
-	telegram.TelegramFloodWait = flagTelegramFloodWait
+	telegram.Token = flagTelegramToken
+	telegram.AllowConfRequest = flagTelegramAllowConfRequest
+	telegram.FloodWait = flagTelegramFloodWait
 	telegram.LogLevel = lvl
 
 	// print only if log level is INFO or lower
