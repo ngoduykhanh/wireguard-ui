@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha512"
 	"embed"
 	"flag"
 	"fmt"
@@ -136,7 +137,7 @@ func init() {
 	util.SendgridApiKey = flagSendgridApiKey
 	util.EmailFrom = flagEmailFrom
 	util.EmailFromName = flagEmailFromName
-	util.SessionSecret = []byte(flagSessionSecret)
+	util.SessionSecret = sha512.Sum512([]byte(flagSessionSecret))
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
 	util.SubnetRanges = util.ParseSubnetRanges(flagSubnetRanges)

@@ -22,7 +22,7 @@ var (
 	SendgridApiKey    string
 	EmailFrom         string
 	EmailFromName     string
-	SessionSecret     []byte
+	SessionSecret     [64]byte
 	WgConfTemplate    string
 	BasePath          string
 	SubnetRanges      map[string]([]*net.IPNet)
