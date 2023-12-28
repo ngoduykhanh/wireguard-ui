@@ -26,16 +26,19 @@ var (
 	Bot      *echotron.API
 	BotMutex sync.RWMutex
 
-	floodWait = make(map[int64]int64, 0)
+	floodWait        = make(map[int64]int64, 0)
+	floodMessageSent = make(map[int64]struct{}, 0)
 )
 
 func Start(initDeps TgBotInitDependencies) (err error) {
 	ticker := time.NewTicker(time.Minute)
 	defer func() {
-		BotMutex.Lock()
-		Bot = nil
-		BotMutex.Unlock()
-		ticker.Stop()
+		if err != nil {
+			BotMutex.Lock()
+			Bot = nil
+			BotMutex.Unlock()
+			ticker.Stop()
+		}
 		if r := recover(); r != nil {
 			err = fmt.Errorf("[PANIC] recovered from panic: %v", r)
 		}
@@ -77,6 +80,10 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 		if update.Message != nil {
 			userid := update.Message.Chat.ID
 			if _, wait := floodWait[userid]; wait {
+				if _, notified := floodMessageSent[userid]; notified {
+					continue
+				}
+				floodMessageSent[userid] = struct{}{}
 				bot.SendMessage(
 					fmt.Sprintf("You can only request your configs once per %d minutes", FloodWait),
 					userid,
@@ -142,6 +149,7 @@ func updateFloodWait() {
 	for userid, ts := range floodWait {
 		if ts < thresholdTS {
 			delete(floodWait, userid)
+			delete(floodMessageSent, userid)
 		}
 	}
 }
