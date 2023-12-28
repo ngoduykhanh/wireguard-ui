@@ -94,10 +94,8 @@ func Login(db store.IStore) echo.HandlerFunc {
 
 		if userCorrect && passwordCorrect {
 			ageMax := 0
-			expiration := time.Now().Add(24 * time.Hour)
 			if rememberMe {
 				ageMax = 86400 * 7
-				expiration = time.Now().Add(time.Duration(ageMax) * time.Second)
 			}
 
 			cookiePath := util.BasePath
@@ -116,8 +114,11 @@ func Login(db store.IStore) echo.HandlerFunc {
 			// set session_token
 			tokenUID := xid.New().String()
 			sess.Values["username"] = dbuser.Username
+			sess.Values["user_hash"] = util.GetDBUserCRC32(dbuser)
 			sess.Values["admin"] = dbuser.Admin
 			sess.Values["session_token"] = tokenUID
+			sess.Values["max_age"] = ageMax
+			sess.Values["last_update"] = time.Now().UTC().Unix()
 			sess.Save(c.Request(), c.Response())
 
 			// set session_token in cookie
@@ -125,7 +126,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 			cookie.Name = "session_token"
 			cookie.Path = cookiePath
 			cookie.Value = tokenUID
-			cookie.Expires = expiration
+			cookie.MaxAge = ageMax
 			cookie.HttpOnly = true
 			cookie.SameSite = http.SameSiteLaxMode
 			c.SetCookie(cookie)
@@ -266,7 +267,7 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 		log.Infof("Updated user information successfully")
 
 		if previousUsername == currentUser(c) {
-			setUser(c, user.Username, user.Admin)
+			setUser(c, user.Username, user.Admin, util.GetDBUserCRC32(user))
 		}
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated user information successfully"})

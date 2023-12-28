@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"io/fs"
 	"math/rand"
@@ -826,4 +827,30 @@ func filterStringSlice(s []string, excludedStr string) []string {
 		}
 	}
 	return filtered
+}
+
+func GetDBUserCRC32(dbuser model.User) uint32 {
+	var isAdmin byte = 0
+	if dbuser.Admin {
+		isAdmin = 1
+	}
+	return crc32.ChecksumIEEE(ConcatMultipleSlices([]byte(dbuser.Username), []byte{isAdmin}, []byte(dbuser.PasswordHash), []byte(dbuser.Password)))
+}
+
+func ConcatMultipleSlices(slices ...[]byte) []byte {
+	var totalLen int
+
+	for _, s := range slices {
+		totalLen += len(s)
+	}
+
+	result := make([]byte, totalLen)
+
+	var i int
+
+	for _, s := range slices {
+		i += copy(result[i:], s)
+	}
+
+	return result
 }

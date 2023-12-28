@@ -25,6 +25,7 @@ func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
+// ValidSession middleware must be used before RefreshSession
 func RefreshSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		doRefreshSession(c)
@@ -50,17 +51,55 @@ func isValidSession(c echo.Context) bool {
 	if err != nil || sess.Values["session_token"] != cookie.Value {
 		return false
 	}
+
+	// Check time bounds
+	lastUpdate := getLastUpdate(sess)
+	maxAge := getMaxAge(sess)
+	// Temporary session is considered valid within 24h if browser is not closed before
+	// This value is not saved and is used as virtual expiration
+	if maxAge == 0 {
+		maxAge = 86400
+	}
+	expiration := lastUpdate + int64(maxAge)
+	now := time.Now().UTC().Unix()
+	if lastUpdate > now || expiration < now {
+		return false
+	}
+
+	// Check if user still exists and unchanged
+	username := fmt.Sprintf("%s", sess.Values["username"])
+	userHash := getUserHash(sess)
+	if uHash, ok := util.DBUsersToCRC32[username]; !ok || userHash != uHash {
+		return false
+	}
+
 	return true
 }
 
+// Refreshes a "remember me" session when the user visits web pages (not API)
+// Session must be valid before calling this function
+// Refresh is performet at most once per 24h
 func doRefreshSession(c echo.Context) {
 	if util.DisableLogin {
 		return
 	}
 
 	sess, _ := session.Get("session", c)
+	maxAge := getMaxAge(sess)
+	if maxAge <= 0 {
+		return
+	}
+
 	oldCookie, err := c.Cookie("session_token")
 	if err != nil || sess.Values["session_token"] != oldCookie.Value {
+		return
+	}
+
+	// Refresh no sooner than 24h
+	lastUpdate := getLastUpdate(sess)
+	expiration := lastUpdate + int64(getMaxAge(sess))
+	now := time.Now().UTC().Unix()
+	if expiration < now || now-lastUpdate < 86400 {
 		return
 	}
 
@@ -69,9 +108,10 @@ func doRefreshSession(c echo.Context) {
 		cookiePath = "/"
 	}
 
+	sess.Values["last_update"] = now
 	sess.Options = &sessions.Options{
 		Path:     cookiePath,
-		MaxAge:   sess.Options.MaxAge,
+		MaxAge:   maxAge,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
@@ -81,10 +121,59 @@ func doRefreshSession(c echo.Context) {
 	cookie.Name = "session_token"
 	cookie.Path = cookiePath
 	cookie.Value = oldCookie.Value
-	cookie.Expires = time.Now().Add(time.Duration(sess.Options.MaxAge) * time.Second)
+	cookie.MaxAge = maxAge
 	cookie.HttpOnly = true
 	cookie.SameSite = http.SameSiteLaxMode
 	c.SetCookie(cookie)
+}
+
+// Get time in seconds this session is valid without updating
+func getMaxAge(sess *sessions.Session) int {
+	if util.DisableLogin {
+		return 0
+	}
+
+	maxAge := sess.Values["max_age"]
+
+	switch typedMaxAge := maxAge.(type) {
+	case int:
+		return typedMaxAge
+	default:
+		return 0
+	}
+}
+
+// Get a timestamp in seconds of the last session update
+func getLastUpdate(sess *sessions.Session) int64 {
+	if util.DisableLogin {
+		return 0
+	}
+
+	lastUpdate := sess.Values["last_update"]
+
+	switch typedLastUpdate := lastUpdate.(type) {
+	case int64:
+		return typedLastUpdate
+	default:
+		return 0
+	}
+}
+
+// Get CRC32 of a user at the moment of log in
+// Any changes to user will result in logout of other (not updated) sessions
+func getUserHash(sess *sessions.Session) uint32 {
+	if util.DisableLogin {
+		return 0
+	}
+
+	userHash := sess.Values["user_hash"]
+
+	switch typedUserHash := userHash.(type) {
+	case uint32:
+		return typedUserHash
+	default:
+		return 0
+	}
 }
 
 // currentUser to get username of logged in user
@@ -109,9 +198,10 @@ func isAdmin(c echo.Context) bool {
 	return admin == "true"
 }
 
-func setUser(c echo.Context, username string, admin bool) {
+func setUser(c echo.Context, username string, admin bool, userCRC32 uint32) {
 	sess, _ := session.Get("session", c)
 	sess.Values["username"] = username
+	sess.Values["user_hash"] = userCRC32
 	sess.Values["admin"] = admin
 	sess.Save(c.Request(), c.Response())
 }
@@ -120,7 +210,27 @@ func setUser(c echo.Context, username string, admin bool) {
 func clearSession(c echo.Context) {
 	sess, _ := session.Get("session", c)
 	sess.Values["username"] = ""
+	sess.Values["user_hash"] = 0
 	sess.Values["admin"] = false
 	sess.Values["session_token"] = ""
+	sess.Values["max_age"] = -1
+	sess.Options.MaxAge = -1
 	sess.Save(c.Request(), c.Response())
+
+	cookiePath := util.BasePath
+	if cookiePath == "" {
+		cookiePath = "/"
+	}
+
+	cookie, err := c.Cookie("session_token")
+	if err != nil {
+		cookie = new(http.Cookie)
+	}
+
+	cookie.Name = "session_token"
+	cookie.Path = cookiePath
+	cookie.MaxAge = -1
+	cookie.HttpOnly = true
+	cookie.SameSite = http.SameSiteLaxMode
+	c.SetCookie(cookie)
 }
