@@ -93,18 +93,24 @@ func Login(db store.IStore) echo.HandlerFunc {
 		}
 
 		if userCorrect && passwordCorrect {
-			// TODO: refresh the token
 			ageMax := 0
 			expiration := time.Now().Add(24 * time.Hour)
 			if rememberMe {
-				ageMax = 86400
-				expiration.Add(144 * time.Hour)
+				ageMax = 86400 * 7
+				expiration = time.Now().Add(time.Duration(ageMax) * time.Second)
 			}
+
+			cookiePath := util.BasePath
+			if cookiePath == "" {
+				cookiePath = "/"
+			}
+
 			sess, _ := session.Get("session", c)
 			sess.Options = &sessions.Options{
-				Path:     util.BasePath,
+				Path:     cookiePath,
 				MaxAge:   ageMax,
 				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
 			}
 
 			// set session_token
@@ -117,8 +123,11 @@ func Login(db store.IStore) echo.HandlerFunc {
 			// set session_token in cookie
 			cookie := new(http.Cookie)
 			cookie.Name = "session_token"
+			cookie.Path = cookiePath
 			cookie.Value = tokenUID
 			cookie.Expires = expiration
+			cookie.HttpOnly = true
+			cookie.SameSite = http.SameSiteLaxMode
 			c.SetCookie(cookie)
 
 			return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Logged in successfully"})

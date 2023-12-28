@@ -3,7 +3,9 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/ngoduykhanh/wireguard-ui/util"
@@ -19,6 +21,13 @@ func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 				return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/login")
 			}
 		}
+		return next(c)
+	}
+}
+
+func RefreshSession(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		doRefreshSession(c)
 		return next(c)
 	}
 }
@@ -42,6 +51,40 @@ func isValidSession(c echo.Context) bool {
 		return false
 	}
 	return true
+}
+
+func doRefreshSession(c echo.Context) {
+	if util.DisableLogin {
+		return
+	}
+
+	sess, _ := session.Get("session", c)
+	oldCookie, err := c.Cookie("session_token")
+	if err != nil || sess.Values["session_token"] != oldCookie.Value {
+		return
+	}
+
+	cookiePath := util.BasePath
+	if cookiePath == "" {
+		cookiePath = "/"
+	}
+
+	sess.Options = &sessions.Options{
+		Path:     cookiePath,
+		MaxAge:   sess.Options.MaxAge,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	sess.Save(c.Request(), c.Response())
+
+	cookie := new(http.Cookie)
+	cookie.Name = "session_token"
+	cookie.Path = cookiePath
+	cookie.Value = oldCookie.Value
+	cookie.Expires = time.Now().Add(time.Duration(sess.Options.MaxAge) * time.Second)
+	cookie.HttpOnly = true
+	cookie.SameSite = http.SameSiteLaxMode
+	c.SetCookie(cookie)
 }
 
 // currentUser to get username of logged in user
