@@ -581,12 +581,7 @@ func SendTelegramClient(db store.IStore) echo.HandlerFunc {
 		var payload clientIdUseridPayload
 		c.Bind(&payload)
 
-		qrCodeSettings := model.QRCodeSettings{
-			Enabled:    true,
-			IncludeDNS: true,
-			IncludeMTU: true,
-		}
-		clientData, err := db.GetClientByID(payload.ID, qrCodeSettings)
+		clientData, err := db.GetClientByID(payload.ID, model.QRCodeSettings{Enabled: false})
 		if err != nil {
 			log.Errorf("Cannot generate client id %s config file for downloading: %v", payload.ID, err)
 			return c.JSON(http.StatusNotFound, jsonHTTPResponse{false, "Client not found"})
