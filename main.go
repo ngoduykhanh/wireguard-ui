@@ -41,7 +41,7 @@ var (
 	flagSessionSecret  string = util.RandomString(32)
 	flagWgConfTemplate string
 	flagBasePath       string
-	flagDBPath         string = "/etc/wireguard/db"
+	flagDBPath         string = "./db"
 )
 
 const (
