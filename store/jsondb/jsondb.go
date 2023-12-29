@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/sdomino/scribble"
@@ -38,12 +39,12 @@ func New(dbPath string) (*JsonDB, error) {
 func (o *JsonDB) Init() error {
 	var clientPath string = path.Join(o.dbPath, "clients")
 	var serverPath string = path.Join(o.dbPath, "server")
+	var userPath string = path.Join(o.dbPath, "users")
 	var wakeOnLanHostsPath string = path.Join(o.dbPath, "wake_on_lan_hosts")
 	var serverInterfacePath string = path.Join(serverPath, "interfaces.json")
 	var serverKeyPairPath string = path.Join(serverPath, "keypair.json")
 	var globalSettingPath string = path.Join(serverPath, "global_settings.json")
 	var hashesPath string = path.Join(serverPath, "hashes.json")
-	var userPath string = path.Join(serverPath, "users.json")
 
 	// create directories if they do not exist
 	if _, err := os.Stat(clientPath); os.IsNotExist(err) {
@@ -52,11 +53,11 @@ func (o *JsonDB) Init() error {
 	if _, err := os.Stat(serverPath); os.IsNotExist(err) {
 		os.MkdirAll(serverPath, os.ModePerm)
 	}
-	if _, err := os.Stat(wakeOnLanHostsPath); os.IsNotExist(err) {
-		os.MkdirAll(wakeOnLanHostsPath, os.ModePerm)
-	}
 	if _, err := os.Stat(userPath); os.IsNotExist(err) {
 		os.MkdirAll(userPath, os.ModePerm)
+	}
+	if _, err := os.Stat(wakeOnLanHostsPath); os.IsNotExist(err) {
+		os.MkdirAll(wakeOnLanHostsPath, os.ModePerm)
 	}
 
 	// server's interface
@@ -68,7 +69,10 @@ func (o *JsonDB) Init() error {
 		serverInterface.PostDown = util.LookupEnvOrString(util.ServerPostDownScriptEnvVar, "")
 		serverInterface.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "interfaces", serverInterface)
-		os.Chmod(serverInterfacePath, 0600)
+		err := util.ManagePerms(serverInterfacePath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// server's key pair
@@ -83,7 +87,10 @@ func (o *JsonDB) Init() error {
 		serverKeyPair.PublicKey = key.PublicKey().String()
 		serverKeyPair.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "keypair", serverKeyPair)
-		os.Chmod(serverKeyPairPath, 0600)
+		err = util.ManagePerms(serverKeyPairPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// global settings
@@ -108,7 +115,10 @@ func (o *JsonDB) Init() error {
 		globalSetting.ConfigFilePath = util.LookupEnvOrString(util.ConfigFilePathEnvVar, util.DefaultConfigFilePath)
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
-		os.Chmod(globalSettingPath, 0600)
+		err := util.ManagePerms(globalSettingPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// hashes
@@ -117,7 +127,10 @@ func (o *JsonDB) Init() error {
 		clientServerHashes.Client = "none"
 		clientServerHashes.Server = "none"
 		o.conn.Write("server", "hashes", clientServerHashes)
-		os.Chmod(hashesPath, 0600)
+		err := util.ManagePerms(hashesPath)
+		if err != nil {
+			return err
+		}
 	}
 
 	// user info
@@ -128,24 +141,42 @@ func (o *JsonDB) Init() error {
 		user.Admin = util.DefaultIsAdmin
 		user.PasswordHash = util.LookupEnvOrString(util.PasswordHashEnvVar, "")
 		if user.PasswordHash == "" {
-			plaintext := util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
-			hash, err := util.HashPassword(plaintext)
-			if err != nil {
-				return err
+			user.PasswordHash = util.LookupEnvOrFile(util.PasswordHashFileEnvVar, "")
+			if user.PasswordHash == "" {
+				plaintext := util.LookupEnvOrString(util.PasswordEnvVar, util.DefaultPassword)
+				if plaintext == util.DefaultPassword {
+					plaintext = util.LookupEnvOrFile(util.PasswordFileEnvVar, util.DefaultPassword)
+				}
+				hash, err := util.HashPassword(plaintext)
+				if err != nil {
+					return err
+				}
+				user.PasswordHash = hash
 			}
-			user.PasswordHash = hash
 		}
+
 		o.conn.Write("users", user.Username, user)
-		os.Chmod(path.Join(path.Join(o.dbPath, "users"), user.Username+".json"), 0600)
+		err = util.ManagePerms(path.Join(path.Join(o.dbPath, "users"), user.Username+".json"))
+		if err != nil {
+			return err
+		}
+	}
+
+	// init cache
+	clients, err := o.GetClients(false)
+	if err != nil {
+		return nil
+	}
+	for _, cl := range clients {
+		client := cl.Client
+		if client.Enabled && len(client.TgUserid) > 0 {
+			if userid, err := strconv.ParseInt(client.TgUserid, 10, 64); err == nil {
+				util.UpdateTgToClientID(userid, client.ID)
+			}
+		}
 	}
 
 	return nil
-}
-
-// GetUser func to query user info from the database
-func (o *JsonDB) GetUser() (model.User, error) {
-	user := model.User{}
-	return user, o.conn.Read("server", "users", &user)
 }
 
 // GetUsers func to get all users from the database
@@ -182,7 +213,10 @@ func (o *JsonDB) GetUserByName(username string) (model.User, error) {
 func (o *JsonDB) SaveUser(user model.User) error {
 	userPath := path.Join(path.Join(o.dbPath, "users"), user.Username+".json")
 	output := o.conn.Write("users", user.Username, user)
-	os.Chmod(userPath, 0600)
+	err := util.ManagePerms(userPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
@@ -295,32 +329,56 @@ func (o *JsonDB) GetClientByID(clientID string, qrCodeSettings model.QRCodeSetti
 func (o *JsonDB) SaveClient(client model.Client) error {
 	clientPath := path.Join(path.Join(o.dbPath, "clients"), client.ID+".json")
 	output := o.conn.Write("clients", client.ID, client)
-	os.Chmod(clientPath, 0600)
+	if output == nil {
+		if client.Enabled && len(client.TgUserid) > 0 {
+			if userid, err := strconv.ParseInt(client.TgUserid, 10, 64); err == nil {
+				util.UpdateTgToClientID(userid, client.ID)
+			}
+		} else {
+			util.RemoveTgToClientID(client.ID)
+		}
+	} else {
+		util.RemoveTgToClientID(client.ID)
+	}
+	err := util.ManagePerms(clientPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
 func (o *JsonDB) DeleteClient(clientID string) error {
+	util.RemoveTgToClientID(clientID)
 	return o.conn.Delete("clients", clientID)
 }
 
 func (o *JsonDB) SaveServerInterface(serverInterface model.ServerInterface) error {
 	serverInterfacePath := path.Join(path.Join(o.dbPath, "server"), "interfaces.json")
 	output := o.conn.Write("server", "interfaces", serverInterface)
-	os.Chmod(serverInterfacePath, 0600)
+	err := util.ManagePerms(serverInterfacePath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
 func (o *JsonDB) SaveServerKeyPair(serverKeyPair model.ServerKeypair) error {
 	serverKeyPairPath := path.Join(path.Join(o.dbPath, "server"), "keypair.json")
 	output := o.conn.Write("server", "keypair", serverKeyPair)
-	os.Chmod(serverKeyPairPath, 0600)
+	err := util.ManagePerms(serverKeyPairPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
 func (o *JsonDB) SaveGlobalSettings(globalSettings model.GlobalSetting) error {
 	globalSettingsPath := path.Join(path.Join(o.dbPath, "server"), "global_settings.json")
 	output := o.conn.Write("server", "global_settings", globalSettings)
-	os.Chmod(globalSettingsPath, 0600)
+	err := util.ManagePerms(globalSettingsPath)
+	if err != nil {
+		return err
+	}
 	return output
 }
 
@@ -336,6 +394,9 @@ func (o *JsonDB) GetHashes() (model.ClientServerHashes, error) {
 func (o *JsonDB) SaveHashes(hashes model.ClientServerHashes) error {
 	hashesPath := path.Join(path.Join(o.dbPath, "server"), "hashes.json")
 	output := o.conn.Write("server", "hashes", hashes)
-	os.Chmod(hashesPath, 0600)
+	err := util.ManagePerms(hashesPath)
+	if err != nil {
+		return err
+	}
 	return output
 }

@@ -80,6 +80,35 @@ Wireguard Clients
 </div>
 <!-- /.modal -->
 
+<div class="modal fade" id="modal_telegram_client">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Telegram Configuration</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="frm_telegram_client" id="frm_telegram_client">
+                <div class="modal-body">
+                    <input type="hidden" id="tg_client_id" name="tg_client_id">
+                    <div class="form-group">
+                        <label for="tg_client_userid" class="control-label">Telegram userid</label>
+                        <input type="text" class="form-control" id="tg_client_userid" name="tg_client_userid">
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Send</button>
+                </div>
+            </form>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+<!-- /.modal -->
+
 <div class="modal fade" id="modal_edit_client">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -101,6 +130,12 @@ Wireguard Clients
                         <input type="text" class="form-control" id="_client_email" name="client_email">
                     </div>
                     <div class="form-group">
+                        <label for="_subnet_ranges" class="control-label">Subnet range</label>
+                        <select id="_subnet_ranges" class="select2"
+                            data-placeholder="Select a subnet range" style="width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="_client_allocated_ips" class="control-label">IP Allocation</label>
                         <input type="text" data-role="tagsinput" class="form-control" id="_client_allocated_ips">
                     </div>
@@ -112,6 +147,10 @@ Wireguard Clients
                         <label for="_client_extra_allowed_ips" class="control-label">Extra Allowed IPs</label>
                         <input type="text" data-role="tagsinput" class="form-control"
                                id="_client_extra_allowed_ips">
+                    </div>
+                    <div class="form-group">
+                        <label for="_client_endpoint" class="control-label">Endpoint</label>
+                        <input type="text" class="form-control" id="_client_endpoint" name="client_endpoint">
                     </div>
                     <div class="form-group">
                         <div class="icheck-primary d-inline">
@@ -147,6 +186,14 @@ Wireguard Clients
                                 Preshared Key
                             </label>
                             <input type="text" class="form-control" id="_client_preshared_key" name="_client_preshared_key">
+                        </div>
+                    </details>
+                    <details style="margin-top: 0.5rem;">
+                        <summary><strong>Additional configuration</strong>
+                        </summary>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <label for="_client_telegram_userid" class="control-label">Telegram userid</label>
+                            <input type="text" class="form-control" id="_client_telegram_userid" name="_client_telegram_userid">
                         </div>
                     </details>
                 </div>
@@ -249,13 +296,102 @@ Wireguard Clients
             setClientStatus(clientID, true);
             const divElement = document.getElementById("paused_" + clientID);
             divElement.style.visibility = "hidden";
+            updateApplyConfigVisibility()
         }
 
         function pauseClient(clientID) {
             setClientStatus(clientID, false);
             const divElement = document.getElementById("paused_" + clientID);
             divElement.style.visibility = "visible";
+            updateApplyConfigVisibility()
         }
+
+        // updateIPAllocationSuggestion function for automatically fill
+        // the IP Allocation input with suggested ip addresses
+        // FOR CHANGING A SUBNET OF AN EXISTING CLIENT
+        function updateIPAllocationSuggestionExisting() {
+            let subnetRange = $("#_subnet_ranges").select2('val');
+
+            if (!subnetRange || subnetRange.length === 0) {
+                subnetRange = '__default_any__'
+            }
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: `{{.basePath}}/api/suggest-client-ips?sr=${subnetRange}`,
+                dataType: 'json',
+                contentType: "application/json",
+                success: function(data) {
+                    const allocated_ips = $("#_client_allocated_ips").val().split(",");
+                    allocated_ips.forEach(function (item, index) {
+                        $('#_client_allocated_ips').removeTag(escape(item));
+                    })
+                    data.forEach(function (item, index) {
+                        $('#_client_allocated_ips').addTag(item);
+                    })
+                },
+                error: function(jqXHR, exception) {
+                    const allocated_ips = $("#_client_allocated_ips").val().split(",");
+                    allocated_ips.forEach(function (item, index) {
+                        $('#_client_allocated_ips').removeTag(escape(item));
+                    })
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
+        function updateSubnetRangesList(elementID, preselectedVal) {
+            $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
+                $(`${elementID} option`).remove();
+                $(elementID).append(
+                    $("<option></option>")
+                        .text("Any")
+                        .val("__default_any__")
+                );
+                $.each(data, function(index, item) {
+                    $(elementID).append(
+                        $("<option></option>")
+                            .text(item)
+                            .val(item)
+                    );
+                    if (item === preselectedVal) {
+                        console.log(preselectedVal);
+                        $(elementID).val(preselectedVal).trigger('change')
+                    }
+                });
+            });
+        }
+
+        function updateSearchList() {
+            $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
+                $("#status-selector option").remove();
+                $("#status-selector").append(
+                    $("<option></option>")
+                        .text("All")
+                        .val("All"),
+                    $("<option></option>")
+                        .text("Enabled")
+                        .val("Enabled"),
+                    $("<option></option>")
+                        .text("Disabled")
+                        .val("Disabled"),
+                    $("<option></option>")
+                        .text("Connected")
+                        .val("Connected"),
+                    $("<option></option>")
+                        .text("Disconnected")
+                        .val("Disconnected")
+                );
+                $.each(data, function(index, item) {
+                    $("#status-selector").append(
+                        $("<option></option>")
+                            .text(item)
+                            .val(item)
+                    );
+                });
+            });
+}
     </script>
     <script>
         // load client list
@@ -284,6 +420,11 @@ Wireguard Clients
                 }
                 })
             $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
+            $(".fa-tguserid").each(function () {
+                if ($(this).parent().text().trim().indexOf(query.trim()) != -1) {
+                    $(this).closest('.col-lg-4').show();
+                }
+            })
         })
 
         $("#status-selector").on('change', function () {
@@ -345,7 +486,18 @@ Wireguard Clients
                     });
                     break;
                 default:
-                    $('.col-lg-4').show();
+                    $('.col-lg-4').hide();
+                    const selectedSR = $("#status-selector").val()
+                    $(".fa-subnetrange").each(function () {
+                        const srs = $(this).parent().text().trim().split(',')
+                        for (const sr of srs) {
+                            if (sr === selectedSR) {
+                                $(this).closest('.col-lg-4').show();
+                                break
+                            }                            
+                        }
+                    })
+                    // $('.col-lg-4').show();
                     break;
             }
         });
@@ -396,6 +548,7 @@ Wireguard Clients
                         toastr.success('Removed client successfully');
                         const divElement = document.getElementById('client_' + client_id);
                         divElement.style.display = "none";
+                        updateApplyConfigVisibility()
                     },
                     error: function(jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -423,6 +576,7 @@ Wireguard Clients
                     'defaultText': 'Add More',
                     'removeWithBackspace': true,
                     'minChars': 0,
+                    'minInputWidth': '100%',
                     'placeholderColor': '#666666'
                 });
 
@@ -434,6 +588,7 @@ Wireguard Clients
                     'defaultText': 'Add More',
                     'removeWithBackspace': true,
                     'minChars': 0,
+                    'minInputWidth': '100%',
                     'placeholderColor': '#666666'
                 });
 
@@ -444,6 +599,7 @@ Wireguard Clients
                     'defaultText': 'Add More',
                     'removeWithBackspace' : true,
                     'minChars': 0,
+                    'minInputWidth': '100%',
                     'placeholderColor': '#666666'
                 })
 
@@ -459,8 +615,16 @@ Wireguard Clients
 
                         modal.find(".modal-title").text("Edit Client " + client.name);
                         modal.find("#_client_id").val(client.id);
+                        modal.find("#_client_telegram_userid").val(client.telegram_userid);
                         modal.find("#_client_name").val(client.name);
                         modal.find("#_client_email").val(client.email);
+
+                        let preselectedEl
+                        if (client.subnet_ranges && client.subnet_ranges.length > 0) {
+                            preselectedEl = client.subnet_ranges[0]
+                        }
+
+                        updateSubnetRangesList("#_subnet_ranges", preselectedEl);
 
                         modal.find("#_client_allocated_ips").importTags('');
                         client.allocated_ips.forEach(function (obj) {
@@ -477,11 +641,18 @@ Wireguard Clients
                             modal.find("#_client_extra_allowed_ips").addTag(obj);
                         });
 
+                        modal.find("#_client_endpoint").val(client.endpoint);
+
                         modal.find("#_use_server_dns").prop("checked", client.use_server_dns);
                         modal.find("#_enabled").prop("checked", client.enabled);
 
                         modal.find("#_client_public_key").val(client.public_key);
                         modal.find("#_client_preshared_key").val(client.preshared_key);
+
+                        // handle subnet range select
+                        $('#_subnet_ranges').on('select2:select', function (e) {
+                            updateIPAllocationSuggestionExisting();
+                        });
                     },
                     error: function (jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -536,8 +707,29 @@ Wireguard Clients
                 success: function(resp) {
                     $("#modal_email_client").modal('hide');
                     toastr.success('Sent email to client successfully');
-                     // Refresh the home page (clients page) after sending email successfully
-                    location.reload();
+                },
+                error: function(jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
+        // submitTelegramClient function for sending a telegram message with the configuration to the client
+        function submitTelegramClient() {
+            const client_id = $("#tg_client_id").val();
+            const userid = $("#tg_client_userid").val();
+            const data = {"id": client_id, "userid": userid};
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '{{.basePath}}/send-telegram-client',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(data),
+                success: function(resp) {
+                    $("#modal_telegram_client").modal('hide');
+                    toastr.success('Sent config via telegram to client successfully');
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -553,6 +745,7 @@ Wireguard Clients
             const client_id = $("#_client_id").val();
             const name = $("#_client_name").val();
             const email = $("#_client_email").val();
+            const telegram_userid = $("#_client_telegram_userid").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
             const allowed_ips = $("#_client_allowed_ips").val().split(",");
             let use_server_dns = false;
@@ -564,6 +757,8 @@ Wireguard Clients
                 extra_allowed_ips = $("#_client_extra_allowed_ips").val().split(",");
             }
 
+            const endpoint = $("#_client_endpoint").val();
+
             if ($("#_use_server_dns").is(':checked')){
                 use_server_dns = true;
             }
@@ -574,8 +769,9 @@ Wireguard Clients
                 enabled = true;
             }
 
-            const data = {"id": client_id, "name": name, "email": email, "allocated_ips": allocated_ips,
-                "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key};
+            const data = {"id": client_id, "name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips,
+                "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint,
+                "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key};
 
             $.ajax({
                 cache: false,
@@ -604,6 +800,8 @@ Wireguard Clients
                 submitEditClient();
             } else if (formId === "frm_email_client") {
                 submitEmailClient();
+            } else if (formId === "frm_telegram_client") {
+                submitTelegramClient();
             }
         }
 
@@ -638,6 +836,30 @@ Wireguard Clients
 
             modal.find("#qr_client_id").val(client_id);
             regenerateQRCode();
+        });
+
+        $("#modal_telegram_client").on('show.bs.modal', function (event) {
+            let modal = $(this);
+            const button = $(event.relatedTarget);
+            const client_id = button.data('clientid');
+            $.ajax({
+                cache: false,
+                method: 'GET',
+                url: '{{.basePath}}/api/client/' + client_id,
+                dataType: 'json',
+                contentType: "application/json",
+                success: function (resp) {
+                    const client = resp.Client;
+
+                    modal.find(".modal-title").text("Send config to client " + client.name);
+                    modal.find("#tg_client_id").val(client.id);
+                    modal.find("#tg_client_userid").val(client.telegram_userid);
+                },
+                error: function (jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
         });
 
         $(document).ready(function () {
@@ -681,6 +903,32 @@ Wireguard Clients
                 messages: {
                     e_client_email: {
                         required: "Please enter an email"
+                    },
+                },
+                errorElement: 'span',
+                errorPlacement: function (error, element) {
+                    error.addClass('invalid-feedback');
+                    element.closest('.form-group').append(error);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+            // Telegram client form validation
+            $("#frm_telegram_client").validate({
+                rules: {
+                    tg_client_userid: {
+                        required: true,
+                        number: true,
+                    },
+                },
+                messages: {
+                    tg_client_userid: {
+                        required: "Please enter a telegram userid",
+                        number: "Please enter a valid telegram userid"
                     },
                 },
                 errorElement: 'span',
