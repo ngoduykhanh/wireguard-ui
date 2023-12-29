@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"os"
@@ -189,7 +188,7 @@ func GetInterfaceIPs() ([]model.Interface, error) {
 		return nil, err
 	}
 
-	var interfaceList = []model.Interface{}
+	var interfaceList []model.Interface
 
 	// get interface's ip addresses
 	for _, i := range ifaces {
@@ -230,9 +229,9 @@ func GetPublicIP() (model.Interface, error) {
 	consensus := externalip.NewConsensus(&cfg, nil)
 
 	// add trusted voters
-	consensus.AddVoter(externalip.NewHTTPSource("http://checkip.amazonaws.com/"), 1)
+	consensus.AddVoter(externalip.NewHTTPSource("https://checkip.amazonaws.com/"), 1)
 	consensus.AddVoter(externalip.NewHTTPSource("http://whatismyip.akamai.com"), 1)
-	consensus.AddVoter(externalip.NewHTTPSource("http://ifconfig.top"), 1)
+	consensus.AddVoter(externalip.NewHTTPSource("https://ifconfig.top"), 1)
 
 	publicInterface := model.Interface{}
 	publicInterface.Name = "Public Address"
@@ -244,7 +243,7 @@ func GetPublicIP() (model.Interface, error) {
 		publicInterface.IPAddress = ip.String()
 	}
 
-	// error handling happend above, no need to pass it through
+	// error handling happened above, no need to pass it through
 	return publicInterface, nil
 }
 
@@ -292,7 +291,7 @@ func GetAllocatedIPs(ignoreClientID string) ([]string, error) {
 	// append client's addresses to the result
 	for _, f := range records {
 		client := model.Client{}
-		if err := json.Unmarshal([]byte(f), &client); err != nil {
+		if err := json.Unmarshal(f, &client); err != nil {
 			return nil, err
 		}
 
@@ -336,15 +335,15 @@ func GetBroadcastIP(n *net.IPNet) net.IP {
 
 // GetBroadcastAndNetworkAddrsLookup get the ip address that can't be used with current server interfaces
 func GetBroadcastAndNetworkAddrsLookup(interfaceAddresses []string) map[string]bool {
-	list := make(map[string]bool, 0)
+	list := make(map[string]bool)
 	for _, ifa := range interfaceAddresses {
-		_, net, err := net.ParseCIDR(ifa)
+		_, netAddr, err := net.ParseCIDR(ifa)
 		if err != nil {
 			continue
 		}
 
-		broadcastAddr := GetBroadcastIP(net).String()
-		networkAddr := net.IP.String()
+		broadcastAddr := GetBroadcastIP(netAddr).String()
+		networkAddr := netAddr.IP.String()
 		list[broadcastAddr] = true
 		list[networkAddr] = true
 	}
@@ -354,14 +353,14 @@ func GetBroadcastAndNetworkAddrsLookup(interfaceAddresses []string) map[string]b
 // GetAvailableIP get the ip address that can be allocated from an CIDR
 // We need interfaceAddresses to find real broadcast and network addresses
 func GetAvailableIP(cidr string, allocatedList, interfaceAddresses []string) (string, error) {
-	ip, net, err := net.ParseCIDR(cidr)
+	ip, netAddr, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return "", err
 	}
 
 	unavailableIPs := GetBroadcastAndNetworkAddrsLookup(interfaceAddresses)
 
-	for ip := ip.Mask(net.Mask); net.Contains(ip); inc(ip) {
+	for ip := ip.Mask(netAddr.Mask); netAddr.Contains(ip); inc(ip) {
 		available := true
 		suggestedAddr := ip.String()
 		for _, allocatedAddr := range allocatedList {
@@ -386,7 +385,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 
 		// clientCIDR must be in CIDR format
 		if ip == nil {
-			return false, fmt.Errorf("Invalid ip allocation input %s. Must be in CIDR format", clientCIDR)
+			return false, fmt.Errorf("invalid ip allocation input %s. Must be in CIDR format", clientCIDR)
 		}
 
 		// return false immediately if the ip is already in use (in ipAllocatedList)
@@ -398,7 +397,7 @@ func ValidateIPAllocation(serverAddresses []string, ipAllocatedList []string, ip
 
 		// even if it is not in use, we still need to check if it
 		// belongs to a network of the server.
-		var isValid bool = false
+		var isValid = false
 		for _, serverCIDR := range serverAddresses {
 			_, serverNet, _ := net.ParseCIDR(serverCIDR)
 			if serverNet.Contains(ip) {
@@ -437,7 +436,7 @@ func findSubnetRangeForIP(cidr string) (uint16, error) {
 			}
 		}
 	}
-	return 0, fmt.Errorf("Subnet range not found for this IP")
+	return 0, fmt.Errorf("subnet range not found for this IP")
 }
 
 // FillClientSubnetRange to fill subnet ranges client belongs to, does nothing if SRs are not found
@@ -470,11 +469,11 @@ func ValidateAndFixSubnetRanges(db store.IStore) error {
 	var serverSubnets []*net.IPNet
 	for _, addr := range server.Interface.Addresses {
 		addr = strings.TrimSpace(addr)
-		_, net, err := net.ParseCIDR(addr)
+		_, netAddr, err := net.ParseCIDR(addr)
 		if err != nil {
 			return err
 		}
-		serverSubnets = append(serverSubnets, net)
+		serverSubnets = append(serverSubnets, netAddr)
 	}
 
 	for _, rng := range SubnetRangesOrder {
@@ -544,7 +543,7 @@ func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, client
 
 	// if set, read wg.conf template from WgConfTemplate
 	if len(WgConfTemplate) > 0 {
-		fileContentBytes, err := ioutil.ReadFile(WgConfTemplate)
+		fileContentBytes, err := os.ReadFile(WgConfTemplate)
 		if err != nil {
 			return err
 		}

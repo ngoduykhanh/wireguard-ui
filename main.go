@@ -31,23 +31,23 @@ var (
 	gitRef     = "N/A"
 	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
 	// configuration variables
-	flagDisableLogin             bool   = false
-	flagBindAddress              string = "0.0.0.0:5000"
-	flagSmtpHostname             string = "127.0.0.1"
-	flagSmtpPort                 int    = 25
+	flagDisableLogin             = false
+	flagBindAddress              = "0.0.0.0:5000"
+	flagSmtpHostname             = "127.0.0.1"
+	flagSmtpPort                 = 25
 	flagSmtpUsername             string
 	flagSmtpPassword             string
-	flagSmtpAuthType             string = "NONE"
-	flagSmtpNoTLSCheck           bool   = false
-	flagSmtpEncryption           string = "STARTTLS"
-	flagSmtpHelo                 string = "localhost"
+	flagSmtpAuthType             = "NONE"
+	flagSmtpNoTLSCheck           = false
+	flagSmtpEncryption           = "STARTTLS"
+	flagSmtpHelo                 = "localhost"
 	flagSendgridApiKey           string
 	flagEmailFrom                string
-	flagEmailFromName            string = "WireGuard UI"
+	flagEmailFromName            = "WireGuard UI"
 	flagTelegramToken            string
-	flagTelegramAllowConfRequest bool   = false
-	flagTelegramFloodWait        int    = 60
-	flagSessionSecret            string = util.RandomString(32)
+	flagTelegramAllowConfRequest = false
+	flagTelegramFloodWait        = 60
+	flagSessionSecret            = util.RandomString(32)
 	flagWgConfTemplate           string
 	flagBasePath                 string
 	flagSubnetRanges             string
@@ -94,9 +94,9 @@ func init() {
 	flag.StringVar(&flagSubnetRanges, "subnet-ranges", util.LookupEnvOrString("SUBNET_RANGES", flagSubnetRanges), "IP ranges to choose from when assigning an IP for a client.")
 
 	var (
-		smtpPasswordLookup  = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
-		sengridApiKeyLookup = util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey)
-		sessionSecretLookup = util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret)
+		smtpPasswordLookup   = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
+		sendgridApiKeyLookup = util.LookupEnvOrString("SENDGRID_API_KEY", flagSendgridApiKey)
+		sessionSecretLookup  = util.LookupEnvOrString("SESSION_SECRET", flagSessionSecret)
 	)
 
 	// check empty smtpPassword env var
@@ -106,9 +106,9 @@ func init() {
 		flag.StringVar(&flagSmtpPassword, "smtp-password", util.LookupEnvOrFile("SMTP_PASSWORD_FILE", flagSmtpPassword), "SMTP Password File")
 	}
 
-	// check empty sengridApiKey env var
-	if sengridApiKeyLookup != "" {
-		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", sengridApiKeyLookup, "Your sendgrid api key.")
+	// check empty sendgridApiKey env var
+	if sendgridApiKeyLookup != "" {
+		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", sendgridApiKeyLookup, "Your sendgrid api key.")
 	} else {
 		flag.StringVar(&flagSendgridApiKey, "sendgrid-api-key", util.LookupEnvOrFile("SENDGRID_API_KEY_FILE", flagSendgridApiKey), "File containing your sendgrid api key.")
 	}
@@ -215,12 +215,12 @@ func main() {
 		app.GET(util.BasePath+"/login", handler.LoginPage())
 		app.POST(util.BasePath+"/login", handler.Login(db), handler.ContentTypeJson)
 		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
-		app.GET(util.BasePath+"/profile", handler.LoadProfile(db), handler.ValidSession)
-		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(db), handler.ValidSession, handler.NeedsAdmin)
+		app.GET(util.BasePath+"/profile", handler.LoadProfile(), handler.ValidSession)
+		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(), handler.ValidSession, handler.NeedsAdmin)
 		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession, handler.ContentTypeJson)
 		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
-		app.GET(util.BasePath+"/getusers", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
+		app.GET(util.BasePath+"/get-users", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
 		app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
 	}
 
@@ -276,10 +276,13 @@ func main() {
 	if strings.HasPrefix(util.BindAddress, "unix://") {
 		// Listen on unix domain socket.
 		// https://github.com/labstack/echo/issues/830
-		syscall.Unlink(util.BindAddress[6:])
+		err := syscall.Unlink(util.BindAddress[6:])
+		if err != nil {
+			app.Logger.Fatalf("Cannot unlink unix socket: Error: %v", err)
+		}
 		l, err := net.Listen("unix", util.BindAddress[6:])
 		if err != nil {
-			app.Logger.Fatal(err)
+			app.Logger.Fatalf("Cannot create unix socket. Error: %v", err)
 		}
 		app.Listener = l
 		app.Logger.Fatal(app.Start(""))
@@ -292,7 +295,7 @@ func main() {
 func initServerConfig(db store.IStore, tmplDir fs.FS) {
 	settings, err := db.GetGlobalSettings()
 	if err != nil {
-		log.Fatalf("Cannot get global settings: ", err)
+		log.Fatalf("Cannot get global settings: %v", err)
 	}
 
 	if _, err := os.Stat(settings.ConfigFilePath); err == nil {
@@ -302,23 +305,23 @@ func initServerConfig(db store.IStore, tmplDir fs.FS) {
 
 	server, err := db.GetServer()
 	if err != nil {
-		log.Fatalf("Cannot get server config: ", err)
+		log.Fatalf("Cannot get server config: %v", err)
 	}
 
 	clients, err := db.GetClients(false)
 	if err != nil {
-		log.Fatalf("Cannot get client config: ", err)
+		log.Fatalf("Cannot get client config: %v", err)
 	}
 
 	users, err := db.GetUsers()
 	if err != nil {
-		log.Fatalf("Cannot get user config: ", err)
+		log.Fatalf("Cannot get user config: %v", err)
 	}
 
 	// write config file
 	err = util.WriteWireGuardServerConfig(tmplDir, server, clients, users, settings)
 	if err != nil {
-		log.Fatalf("Cannot create server config: ", err)
+		log.Fatalf("Cannot create server config: %v", err)
 	}
 }
 
