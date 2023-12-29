@@ -26,8 +26,8 @@ var (
 	Bot      *echotron.API
 	BotMutex sync.RWMutex
 
-	floodWait        = make(map[int64]int64, 0)
-	floodMessageSent = make(map[int64]struct{}, 0)
+	floodWait        = make(map[int64]int64)
+	floodMessageSent = make(map[int64]struct{})
 )
 
 func Start(initDeps TgBotInitDependencies) (err error) {
@@ -84,12 +84,15 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 					continue
 				}
 				floodMessageSent[userid] = struct{}{}
-				bot.SendMessage(
+				_, err := bot.SendMessage(
 					fmt.Sprintf("You can only request your configs once per %d minutes", FloodWait),
 					userid,
 					&echotron.MessageOptions{
 						ReplyToMessageID: update.Message.ID,
 					})
+				if err != nil {
+					log.Errorf("Failed to send telegram message. Error %v", err)
+				}
 				continue
 			}
 			floodWait[userid] = time.Now().Unix()
@@ -100,12 +103,15 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 				for _, f := range failed {
 					messageText += f + "\n"
 				}
-				bot.SendMessage(
+				_, err := bot.SendMessage(
 					messageText,
 					userid,
 					&echotron.MessageOptions{
 						ReplyToMessageID: update.Message.ID,
 					})
+				if err != nil {
+					log.Errorf("Failed to send telegram message. Error %v", err)
+				}
 			}
 		}
 	}

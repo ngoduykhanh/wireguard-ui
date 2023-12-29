@@ -23,7 +23,7 @@ func (o *JsonDB) GetWakeOnLanHosts() ([]model.WakeOnLanHost, error) {
 		host := model.WakeOnLanHost{}
 
 		// get client info
-		if err := json.Unmarshal([]byte(f), &host); err != nil {
+		if err := json.Unmarshal(f, &host); err != nil {
 			return hosts, fmt.Errorf("cannot decode client json structure: %v", err)
 		}
 
