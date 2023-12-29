@@ -103,10 +103,7 @@ func doRefreshSession(c echo.Context) {
 		return
 	}
 
-	cookiePath := util.BasePath
-	if cookiePath == "" {
-		cookiePath = "/"
-	}
+	cookiePath := util.GetCookiePath()
 
 	sess.Values["last_update"] = now
 	sess.Options = &sessions.Options{
@@ -217,10 +214,7 @@ func clearSession(c echo.Context) {
 	sess.Options.MaxAge = -1
 	sess.Save(c.Request(), c.Response())
 
-	cookiePath := util.BasePath
-	if cookiePath == "" {
-		cookiePath = "/"
-	}
+	cookiePath := util.GetCookiePath()
 
 	cookie, err := c.Cookie("session_token")
 	if err != nil {

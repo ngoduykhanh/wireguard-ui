@@ -98,10 +98,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 				ageMax = 86400 * 7
 			}
 
-			cookiePath := util.BasePath
-			if cookiePath == "" {
-				cookiePath = "/"
-			}
+			cookiePath := util.GetCookiePath()
 
 			sess, _ := session.Get("session", c)
 			sess.Options = &sessions.Options{

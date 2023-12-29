@@ -854,3 +854,11 @@ func ConcatMultipleSlices(slices ...[]byte) []byte {
 
 	return result
 }
+
+func GetCookiePath() string {
+	cookiePath := BasePath
+	if cookiePath == "" {
+		cookiePath = "/"
+	}
+	return cookiePath
+}

@@ -51,10 +51,7 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo.Echo {
 	e := echo.New()
 
-	cookiePath := util.BasePath
-	if cookiePath == "" {
-		cookiePath = "/"
-	}
+	cookiePath := util.GetCookiePath()
 
 	cookieStore := sessions.NewCookieStore(secret[:32], secret[32:])
 	cookieStore.Options.Path = cookiePath
