@@ -3,6 +3,7 @@ module github.com/ngoduykhanh/wireguard-ui
 go 1.16
 
 require (
+	github.com/NicoNex/echotron/v3 v3.27.0
 	github.com/glendc/go-external-ip v0.0.0-20170425150139-139229dcdddd
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/gorilla/sessions v1.2.0
