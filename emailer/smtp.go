@@ -3,9 +3,10 @@ package emailer
 import (
 	"crypto/tls"
 	"fmt"
-	mail "github.com/xhit/go-simple-mail/v2"
 	"strings"
 	"time"
+
+	mail "github.com/xhit/go-simple-mail/v2"
 )
 
 type SmtpMail struct {

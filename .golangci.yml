@@ -1,0 +1,26 @@
+run:
+  timeout: 5m
+  skip-dirs:
+    - .github
+    - hack
+    - vendor
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - revive
+    - goimports
+    - govet
+    - unused
+    - whitespace
+    - misspell
+  fast: false
+linters-settings:
+  gofmt:
+    simplify: false
+  revive:
+    rules:
+      - name: exported
+        disabled: true
+issues:
+  exclude-use-default: false

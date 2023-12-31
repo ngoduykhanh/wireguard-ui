@@ -73,7 +73,6 @@ var embeddedTemplates embed.FS
 var embeddedAssets embed.FS
 
 func init() {
-
 	// command-line flags and env variables
 	flag.BoolVar(&flagDisableLogin, "disable-login", util.LookupEnvOrBool("DISABLE_LOGIN", flagDisableLogin), "Disable authentication on the app. This is potentially dangerous.")
 	flag.StringVar(&flagBindAddress, "bind-address", util.LookupEnvOrString("BIND_ADDRESS", flagBindAddress), "Address:Port to which the app will be bound.")

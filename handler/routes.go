@@ -131,7 +131,6 @@ func Login(db store.IStore) echo.HandlerFunc {
 // GetUsers handler return a JSON list of all users
 func GetUsers(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		usersList, err := db.GetUsers()
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
@@ -344,7 +343,6 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 // WireGuardClients handler
 func WireGuardClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		clientDataList, err := db.GetClients(true)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
@@ -362,7 +360,6 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 // GetClients handler return a JSON list of Wireguard client data
 func GetClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		clientDataList, err := db.GetClients(true)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
@@ -381,7 +378,6 @@ func GetClients(db store.IStore) echo.HandlerFunc {
 // GetClient handler returns a JSON object of Wireguard client data
 func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		clientID := c.Param("id")
 
 		if _, err := xid.FromString(clientID); err != nil {
@@ -406,7 +402,6 @@ func GetClient(db store.IStore) echo.HandlerFunc {
 // NewClient handler
 func NewClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		var client model.Client
 		c.Bind(&client)
 
@@ -475,7 +470,6 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 					return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Duplicate Public Key"})
 				}
 			}
-
 		}
 
 		if client.PresharedKey == "" {
@@ -544,14 +538,14 @@ func EmailClient(db store.IStore, mailer emailer.Emailer, emailSubject, emailCon
 		globalSettings, _ := db.GetGlobalSettings()
 		config := util.BuildClientConfig(*clientData.Client, server, globalSettings)
 
-		cfgAtt := emailer.Attachment{"wg0.conf", []byte(config)}
+		cfgAtt := emailer.Attachment{Name: "wg0.conf", Data: []byte(config)}
 		var attachments []emailer.Attachment
 		if clientData.Client.PrivateKey != "" {
 			qrdata, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(clientData.QRCode, "data:image/png;base64,"))
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "decoding: " + err.Error()})
 			}
-			qrAtt := emailer.Attachment{"wg.png", qrdata}
+			qrAtt := emailer.Attachment{Name: "wg.png", Data: qrdata}
 			attachments = []emailer.Attachment{cfgAtt, qrAtt}
 		} else {
 			attachments = []emailer.Attachment{cfgAtt}
@@ -620,7 +614,6 @@ func SendTelegramClient(db store.IStore) echo.HandlerFunc {
 // UpdateClient handler to update client information
 func UpdateClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		var _client model.Client
 		c.Bind(&_client)
 
@@ -694,7 +687,6 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			if client.PrivateKey != "" {
 				client.PrivateKey = ""
 			}
-
 		}
 
 		// update Wireguard Client PresharedKey
@@ -733,7 +725,6 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 // SetClientStatus handler to enable / disable a client
 func SetClientStatus(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		data := make(map[string]interface{})
 		err := json.NewDecoder(c.Request().Body).Decode(&data)
 
@@ -806,7 +797,6 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 // RemoveClient handler
 func RemoveClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		client := new(model.Client)
 		c.Bind(client)
 
@@ -829,7 +819,6 @@ func RemoveClient(db store.IStore) echo.HandlerFunc {
 // WireGuardServer handler
 func WireGuardServer(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		server, err := db.GetServer()
 		if err != nil {
 			log.Error("Cannot get server config: ", err)
@@ -846,7 +835,6 @@ func WireGuardServer(db store.IStore) echo.HandlerFunc {
 // WireGuardServerInterfaces handler
 func WireGuardServerInterfaces(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		var serverInterface model.ServerInterface
 		c.Bind(&serverInterface)
 
@@ -872,7 +860,6 @@ func WireGuardServerInterfaces(db store.IStore) echo.HandlerFunc {
 // WireGuardServerKeyPair handler to generate private and public keys
 func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		// gen Wireguard key pair
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
@@ -897,7 +884,6 @@ func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 // GlobalSettings handler
 func GlobalSettings(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		globalSettings, err := db.GetGlobalSettings()
 		if err != nil {
 			log.Error("Cannot get global settings: ", err)
@@ -930,7 +916,6 @@ func Status(db store.IStore) echo.HandlerFunc {
 		Peers []PeerVM
 	}
 	return func(c echo.Context) error {
-
 		wgClient, err := wgctrl.New()
 		if err != nil {
 			return c.Render(http.StatusInternalServerError, "status.html", map[string]interface{}{
@@ -1011,7 +996,6 @@ func Status(db store.IStore) echo.HandlerFunc {
 // GlobalSettingSubmit handler to update the global settings
 func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		var globalSettings model.GlobalSetting
 		c.Bind(&globalSettings)
 
@@ -1037,7 +1021,6 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 // MachineIPAddresses handler to get local interface ip addresses
 func MachineIPAddresses() echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		// get private ip addresses
 		interfaceList, err := util.GetInterfaceIPs()
 		if err != nil {
@@ -1068,7 +1051,6 @@ func GetOrderedSubnetRanges() echo.HandlerFunc {
 // SuggestIPAllocation handler to get the list of ip address for client
 func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		server, err := db.GetServer()
 		if err != nil {
 			log.Error("Cannot fetch server config from database: ", err)
@@ -1135,7 +1117,6 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 // ApplyServerConfig handler to write config file and restart Wireguard server
 func ApplyServerConfig(db store.IStore, tmplDir fs.FS) echo.HandlerFunc {
 	return func(c echo.Context) error {
-
 		server, err := db.GetServer()
 		if err != nil {
 			log.Error("Cannot get server config: ", err)
