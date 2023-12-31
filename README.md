@@ -8,8 +8,8 @@ A web user interface to manage your WireGuard setup.
 
 - Friendly UI
 - Authentication
-- Manage extra client information (name, email, etc)
-- Retrieve client config using QR code / file / email
+- Manage extra client information (name, email, etc.)
+- Retrieve client config using QR code / file / email / Telegram
 
 ![wireguard-ui 0.3.7](https://user-images.githubusercontent.com/37958026/177041280-e3e7ca16-d4cf-4e95-9920-68af15e780dd.png)
 
@@ -195,8 +195,7 @@ Set `WGUI_MANAGE_RESTART=true` to manage Wireguard interface restarts.
 Using `WGUI_MANAGE_START=true` can also replace the function of `wg-quick@wg0` service, to start Wireguard at boot, by
 running the container with `restart: unless-stopped`. These settings can also pick up changes to Wireguard Config File
 Path, after restarting the container. Please make sure you have `--cap-add=NET_ADMIN` in your container config to make
-this
-feature work.
+this feature work.
 
 ## Build
 
@@ -214,7 +213,9 @@ or
 docker compose build --build-arg=GIT_COMMIT=$(git rev-parse --short HEAD)
 ```
 
-:information_source: A container image is avaialble on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui) which you can pull and use 
+:information_source: A container image is available on [Docker Hub](https://hub.docker.com/r/ngoduykhanh/wireguard-ui)
+which you can pull and use
+
 ```
 docker pull ngoduykhanh/wireguard-ui
 ````
@@ -228,6 +229,7 @@ Prepare the assets directory
 ```
 
 Then build your executable
+
 ```sh
 go build -o wireguard-ui
 ```
