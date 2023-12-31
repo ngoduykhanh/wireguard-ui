@@ -24,7 +24,7 @@ jobs:
           - 7
     steps:
     # get the source code
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     # set environment
     - name: Set APP_VERSION env
@@ -35,9 +35,9 @@ jobs:
       uses: managedkaos/print-env@v1.0
 
     # setup node
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v4
       with:
-        node-version: '14'
+        node-version: '20'
         registry-url: 'https://registry.npmjs.org'
 
     # prepare assets
@@ -53,7 +53,7 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
-        goversion: "https://dl.google.com/go/go1.16.1.linux-amd64.tar.gz"
+        goversion: "https://dl.google.com/go/go1.21.5.linux-amd64.tar.gz"
         pre_command: export CGO_ENABLED=0
         binary_name: "wireguard-ui"
         build_flags: -v

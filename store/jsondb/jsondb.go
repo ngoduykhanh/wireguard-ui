@@ -33,7 +33,6 @@ func New(dbPath string) (*JsonDB, error) {
 		dbPath: dbPath,
 	}
 	return &ans, nil
-
 }
 
 func (o *JsonDB) Init() error {
@@ -77,7 +76,6 @@ func (o *JsonDB) Init() error {
 
 	// server's key pair
 	if _, err := os.Stat(serverKeyPairPath); os.IsNotExist(err) {
-
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
 			return scribble.ErrMissingCollection
@@ -193,7 +191,6 @@ func (o *JsonDB) GetUsers() ([]model.User, error) {
 			return users, fmt.Errorf("cannot decode user json structure: %v", err)
 		}
 		users = append(users, user)
-
 	}
 	return users, err
 }

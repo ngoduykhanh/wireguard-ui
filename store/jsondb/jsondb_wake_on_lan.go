@@ -76,7 +76,6 @@ func (o *JsonDB) SaveWakeOnLanHost(host model.WakeOnLanHost) error {
 	}
 
 	return output
-
 }
 
 func (o *JsonDB) DeleteWakeOnHost(host model.WakeOnLanHost) error {
