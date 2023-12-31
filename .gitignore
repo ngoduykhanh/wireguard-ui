@@ -14,7 +14,8 @@ wireguard-ui
 
 # Dependency directories and files (remove the comment below to include it)
 vendor/
-assets/
+assets/*
+!assets/.gitkeep
 node_modules/
 
 # IDEs

@@ -10,7 +10,6 @@ linters:
     - gofmt
     - revive
     - goimports
-    - deadcode
     - govet
     - unused
     - whitespace
