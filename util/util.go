@@ -835,12 +835,7 @@ func GetDBUserCRC32(dbuser model.User) uint32 {
 	buf := new(bytes.Buffer)
 	enc := gob.NewEncoder(buf)
 	if err := enc.Encode(dbuser); err != nil {
-		// Should be unreachable, fallback for the case
-		var isAdmin byte = 0
-		if dbuser.Admin {
-			isAdmin = 1
-		}
-		return crc32.ChecksumIEEE(ConcatMultipleSlices([]byte(dbuser.Username), []byte{isAdmin}, []byte(dbuser.PasswordHash), []byte(dbuser.Password)))
+		panic("model.User is gob-incompatible, session verification is impossible")
 	}
 	return crc32.ChecksumIEEE(buf.Bytes())
 }
