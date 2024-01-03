@@ -115,7 +115,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 			sess.Values["admin"] = dbuser.Admin
 			sess.Values["session_token"] = tokenUID
 			sess.Values["max_age"] = ageMax
-			sess.Values["last_update"] = time.Now().UTC().Unix()
+			sess.Values["updated_at"] = time.Now().UTC().Unix()
 			sess.Save(c.Request(), c.Response())
 
 			// set session_token in cookie

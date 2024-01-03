@@ -53,16 +53,16 @@ func isValidSession(c echo.Context) bool {
 	}
 
 	// Check time bounds
-	lastUpdate := getLastUpdate(sess)
+	updatedAt := getUpdatedAt(sess)
 	maxAge := getMaxAge(sess)
 	// Temporary session is considered valid within 24h if browser is not closed before
 	// This value is not saved and is used as virtual expiration
 	if maxAge == 0 {
 		maxAge = 86400
 	}
-	expiration := lastUpdate + int64(maxAge)
+	expiration := updatedAt + int64(maxAge)
 	now := time.Now().UTC().Unix()
-	if lastUpdate > now || expiration < now {
+	if updatedAt > now || expiration < now {
 		return false
 	}
 
@@ -96,16 +96,16 @@ func doRefreshSession(c echo.Context) {
 	}
 
 	// Refresh no sooner than 24h
-	lastUpdate := getLastUpdate(sess)
-	expiration := lastUpdate + int64(getMaxAge(sess))
+	updatedAt := getUpdatedAt(sess)
+	expiration := updatedAt + int64(getMaxAge(sess))
 	now := time.Now().UTC().Unix()
-	if expiration < now || now-lastUpdate < 86400 {
+	if expiration < now || now-updatedAt < 86400 {
 		return
 	}
 
 	cookiePath := util.GetCookiePath()
 
-	sess.Values["last_update"] = now
+	sess.Values["updated_at"] = now
 	sess.Options = &sessions.Options{
 		Path:     cookiePath,
 		MaxAge:   maxAge,
@@ -141,12 +141,12 @@ func getMaxAge(sess *sessions.Session) int {
 }
 
 // Get a timestamp in seconds of the last session update
-func getLastUpdate(sess *sessions.Session) int64 {
+func getUpdatedAt(sess *sessions.Session) int64 {
 	if util.DisableLogin {
 		return 0
 	}
 
-	lastUpdate := sess.Values["last_update"]
+	lastUpdate := sess.Values["updated_at"]
 
 	switch typedLastUpdate := lastUpdate.(type) {
 	case int64:
