@@ -49,6 +49,7 @@ var (
 	flagTelegramAllowConfRequest = false
 	flagTelegramFloodWait        = 60
 	flagSessionSecret            = util.RandomString(32)
+	flagSessionMaxDuration       = 90
 	flagWgConfTemplate           string
 	flagBasePath                 string
 	flagSubnetRanges             string
@@ -93,6 +94,7 @@ func init() {
 	flag.StringVar(&flagWgConfTemplate, "wg-conf-template", util.LookupEnvOrString("WG_CONF_TEMPLATE", flagWgConfTemplate), "Path to custom wg.conf template.")
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
 	flag.StringVar(&flagSubnetRanges, "subnet-ranges", util.LookupEnvOrString("SUBNET_RANGES", flagSubnetRanges), "IP ranges to choose from when assigning an IP for a client.")
+	flag.IntVar(&flagSessionMaxDuration, "session-max-duration", util.LookupEnvOrInt("SESSION_MAX_DURATION", flagSessionMaxDuration), "Max time in days a remembered session is refreshed and valid.")
 
 	var (
 		smtpPasswordLookup   = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
@@ -138,6 +140,7 @@ func init() {
 	util.EmailFrom = flagEmailFrom
 	util.EmailFromName = flagEmailFromName
 	util.SessionSecret = sha512.Sum512([]byte(flagSessionSecret))
+	util.SessionMaxDuration = int64(flagSessionMaxDuration) * 86_400 // Store in seconds
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
 	util.SubnetRanges = util.ParseSubnetRanges(flagSubnetRanges)

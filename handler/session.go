@@ -53,6 +53,7 @@ func isValidSession(c echo.Context) bool {
 	}
 
 	// Check time bounds
+	createdAt := getCreatedAt(sess)
 	updatedAt := getUpdatedAt(sess)
 	maxAge := getMaxAge(sess)
 	// Temporary session is considered valid within 24h if browser is not closed before
@@ -62,7 +63,7 @@ func isValidSession(c echo.Context) bool {
 	}
 	expiration := updatedAt + int64(maxAge)
 	now := time.Now().UTC().Unix()
-	if updatedAt > now || expiration < now {
+	if updatedAt > now || expiration < now || createdAt+util.SessionMaxDuration < now {
 		return false
 	}
 
@@ -96,10 +97,11 @@ func doRefreshSession(c echo.Context) {
 	}
 
 	// Refresh no sooner than 24h
+	createdAt := getCreatedAt(sess)
 	updatedAt := getUpdatedAt(sess)
 	expiration := updatedAt + int64(getMaxAge(sess))
 	now := time.Now().UTC().Unix()
-	if expiration < now || now-updatedAt < 86400 {
+	if updatedAt > now || expiration < now || now-updatedAt < 86_400 || createdAt+util.SessionMaxDuration < now {
 		return
 	}
 
@@ -135,6 +137,22 @@ func getMaxAge(sess *sessions.Session) int {
 	switch typedMaxAge := maxAge.(type) {
 	case int:
 		return typedMaxAge
+	default:
+		return 0
+	}
+}
+
+// Get a timestamp in seconds of the time the session was created
+func getCreatedAt(sess *sessions.Session) int64 {
+	if util.DisableLogin {
+		return 0
+	}
+
+	createdAt := sess.Values["created_at"]
+
+	switch typedCreatedAt := createdAt.(type) {
+	case int64:
+		return typedCreatedAt
 	default:
 		return 0
 	}
