@@ -978,9 +978,12 @@ func Status(db store.IStore) echo.HandlerFunc {
 						LastHandshakeTime: devices[i].Peers[j].LastHandshakeTime,
 						LastHandshakeRel:  time.Since(devices[i].Peers[j].LastHandshakeTime),
 						AllocatedIP:       allocatedIPs,
-						Endpoint:          devices[i].Peers[j].Endpoint.String(),
 					}
 					pVm.Connected = pVm.LastHandshakeRel.Minutes() < 3.
+
+					if isAdmin(c) {
+						pVm.Endpoint = devices[i].Peers[j].Endpoint.String()
+					}
 
 					if _client, ok := m[pVm.PublicKey]; ok {
 						pVm.Name = _client.Name
