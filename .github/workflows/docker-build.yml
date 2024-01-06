@@ -33,13 +33,12 @@ jobs:
           ##
           if [[ '${{ github.ref }}' == *"refs/tags/"* ]]; then
             github_tag="${GITHUB_REF#refs/*/}"
+            app_version=${github_tag}
 
             SEMVER_REGEX="^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(\\-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
             if [[ "$github_tag" =~ $SEMVER_REGEX ]]; then
               github_tag=$(echo "${github_tag}" | sed 's/^v//')
             fi
-
-            app_version=${github_tag}
 
             container_images=$(cat <<END_HEREDOC
           ${base}:${github_tag}
