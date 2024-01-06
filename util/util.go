@@ -2,9 +2,12 @@ package util
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"io/fs"
 	"math/rand"
@@ -826,4 +829,39 @@ func filterStringSlice(s []string, excludedStr string) []string {
 		}
 	}
 	return filtered
+}
+
+func GetDBUserCRC32(dbuser model.User) uint32 {
+	buf := new(bytes.Buffer)
+	enc := gob.NewEncoder(buf)
+	if err := enc.Encode(dbuser); err != nil {
+		panic("model.User is gob-incompatible, session verification is impossible")
+	}
+	return crc32.ChecksumIEEE(buf.Bytes())
+}
+
+func ConcatMultipleSlices(slices ...[]byte) []byte {
+	var totalLen int
+
+	for _, s := range slices {
+		totalLen += len(s)
+	}
+
+	result := make([]byte, totalLen)
+
+	var i int
+
+	for _, s := range slices {
+		i += copy(result[i:], s)
+	}
+
+	return result
+}
+
+func GetCookiePath() string {
+	cookiePath := BasePath
+	if cookiePath == "" {
+		cookiePath = "/"
+	}
+	return cookiePath
 }

@@ -161,6 +161,14 @@ func (o *JsonDB) Init() error {
 	}
 
 	// init cache
+	for _, i := range results {
+		user := model.User{}
+
+		if err := json.Unmarshal([]byte(i), &user); err == nil {
+			util.DBUsersToCRC32[user.Username] = util.GetDBUserCRC32(user)
+		}
+	}
+
 	clients, err := o.GetClients(false)
 	if err != nil {
 		return nil
@@ -214,11 +222,13 @@ func (o *JsonDB) SaveUser(user model.User) error {
 	if err != nil {
 		return err
 	}
+	util.DBUsersToCRC32[user.Username] = util.GetDBUserCRC32(user)
 	return output
 }
 
 // DeleteUser func to remove user from the database
 func (o *JsonDB) DeleteUser(username string) error {
+	delete(util.DBUsersToCRC32, username)
 	return o.conn.Delete("users", username)
 }
 
