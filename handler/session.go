@@ -25,7 +25,8 @@ func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-// ValidSession middleware must be used before RefreshSession
+// RefreshSession must only be used after ValidSession middleware
+// RefreshSession checks if the session is eligible for the refresh, but doesn't check if it's fully valid
 func RefreshSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		doRefreshSession(c)
@@ -79,7 +80,7 @@ func isValidSession(c echo.Context) bool {
 
 // Refreshes a "remember me" session when the user visits web pages (not API)
 // Session must be valid before calling this function
-// Refresh is performet at most once per 24h
+// Refresh is performed at most once per 24h
 func doRefreshSession(c echo.Context) {
 	if util.DisableLogin {
 		return
