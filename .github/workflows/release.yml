@@ -9,6 +9,7 @@ jobs:
     name: Release Go Binary
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
         # build and publish in parallel: linux/386, linux/amd64, darwin/386, darwin/amd64
         goos: [linux, freebsd, darwin]
