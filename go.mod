@@ -18,7 +18,7 @@ require (
 	golang.org/x/crypto v0.17.0
 	golang.org/x/mod v0.14.0
 	//golang.zx2c4.com/wireguard v0.0.20200121 // indirect
-	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20230429144221-925a1e7659e6
+	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20210803171230-4253848d036c
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )
 
