@@ -362,36 +362,6 @@ Wireguard Clients
                 });
             });
         }
-
-        function updateSearchList() {
-            $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
-                $("#status-selector option").remove();
-                $("#status-selector").append(
-                    $("<option></option>")
-                        .text("All")
-                        .val("All"),
-                    $("<option></option>")
-                        .text("Enabled")
-                        .val("Enabled"),
-                    $("<option></option>")
-                        .text("Disabled")
-                        .val("Disabled"),
-                    $("<option></option>")
-                        .text("Connected")
-                        .val("Connected"),
-                    $("<option></option>")
-                        .text("Disconnected")
-                        .val("Disconnected")
-                );
-                $.each(data, function(index, item) {
-                    $("#status-selector").append(
-                        $("<option></option>")
-                            .text(item)
-                            .val(item)
-                    );
-                });
-            });
-}
     </script>
     <script>
         // load client list
