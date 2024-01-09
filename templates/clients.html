@@ -195,6 +195,10 @@ Wireguard Clients
                             <label for="_client_telegram_userid" class="control-label">Telegram userid</label>
                             <input type="text" class="form-control" id="_client_telegram_userid" name="_client_telegram_userid">
                         </div>
+                        <div class="form-group">
+                            <label for="_additional_notes" class="control-label">Notes</label>
+                            <textarea class="form-control" style="min-height: 6rem;" id="_additional_notes" name="_additional_notes" placeholder="Additional notes about this client"></textarea>
+                        </div>
                     </details>
                 </div>
                 <div class="modal-footer justify-content-between">
@@ -426,6 +430,11 @@ Wireguard Clients
                     $(this).closest('.col-lg-4').show();
                 }
             })
+            $(".fa-additional_notes").each(function () {
+                if ($(this).parent().text().trim().indexOf(query.trim()) != -1) {
+                    $(this).closest('.col-lg-4').show();
+                }
+            })
         })
 
         $("#status-selector").on('change', function () {
@@ -649,6 +658,8 @@ Wireguard Clients
 
                         modal.find("#_client_public_key").val(client.public_key);
                         modal.find("#_client_preshared_key").val(client.preshared_key);
+                        
+                        modal.find("#_additional_notes").val(client.additional_notes);
 
                         // handle subnet range select
                         $('#_subnet_ranges').on('select2:select', function (e) {
@@ -770,9 +781,11 @@ Wireguard Clients
                 enabled = true;
             }
 
+            const additional_notes = $("#_additional_notes").val();
+
             const data = {"id": client_id, "name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips,
                 "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint,
-                "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key};
+                "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key, "additional_notes": additional_notes};
 
             $.ajax({
                 cache: false,

@@ -38,6 +38,11 @@ function renderClientList(data) {
             subnetRangesString = obj.Client.subnet_ranges.join(',')
         }
 
+        let additionalNotesHtml = "";
+        if (obj.Client.additional_notes && obj.Client.additional_notes.length > 0) {
+            additionalNotesHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-additional_notes"></i>${obj.Client.additional_notes}</span>`
+        }
+
         // render client html content
         let html = `<div class="col-sm-6 col-md-6 col-lg-4" id="client_${obj.Client.id}">
                         <div class="info-box">
@@ -81,6 +86,7 @@ function renderClientList(data) {
                                 <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${obj.Client.public_key}</span>
                                 <span class="info-box-text" style="display: none"><i class="fas fa-subnetrange"></i>${subnetRangesString}</span>
                                 ${telegramHtml}
+                                ${additionalNotesHtml}
                                 <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
                                     ${prettyDateTime(obj.Client.created_at)}</span>

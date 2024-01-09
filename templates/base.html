@@ -288,6 +288,10 @@
                                     <label for="client_telegram_userid" class="control-label">Telegram userid</label>
                                     <input type="text" class="form-control" id="client_telegram_userid" name="client_telegram_userid">
                                 </div>
+                                <div class="form-group">
+                                    <label for="additional_notes" class="control-label">Notes</label>
+                                    <textarea class="form-control" style="min-height: 6rem;" id="additional_notes" name="additional_notes" placeholder="Additional notes about this client"></textarea>
+                                </div>
                             </details>
                         </div>
                         <div class="modal-footer justify-content-between">
@@ -480,10 +484,12 @@
             }
             const public_key = $("#client_public_key").val();
             const preshared_key = $("#client_preshared_key").val();
+            
+            const additional_notes = $("#additional_notes").val();
 
             const data = {"name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
                 "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint, "use_server_dns": use_server_dns, "enabled": enabled,
-                "public_key": public_key, "preshared_key": preshared_key};
+                "public_key": public_key, "preshared_key": preshared_key, "additional_notes": additional_notes};
 
             $.ajax({
                 cache: false,
@@ -624,6 +630,7 @@
                 $("#client_extra_allowed_ips").importTags('');
                 $("#client_endpoint").val('');
                 $("#client_telegram_userid").val('');
+                $("#additional_notes").val('');
                 updateSubnetRangesList("#subnet_ranges");
                 updateIPAllocationSuggestion(true);
             });
