@@ -429,6 +429,11 @@ Wireguard Clients
                     $(this).closest('.col-lg-4').show();
                 }
             })
+            $(".fa-additional_notes").each(function () {
+                if ($(this).parent().text().trim().indexOf(query.trim()) != -1) {
+                    $(this).closest('.col-lg-4').show();
+                }
+            })
         })
 
         $("#status-selector").on('change', function () {
