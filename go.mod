@@ -47,6 +47,6 @@ require (
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173 // indirect
+	golang.zx2c4.com/wireguard v0.0.0-20210427022245-097af6e1351b // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
