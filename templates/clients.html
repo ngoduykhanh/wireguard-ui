@@ -416,7 +416,7 @@ Wireguard Clients
         // hide all clients and display only the ones that meet the search criteria (name, email, IP)
         $('#search-input').keyup(function () {
             $("#status-selector").val("All");
-            var query = $(this).val();
+            let query = $(this).val().trim();
             $('.col-lg-4').hide();
             $(".info-box-text").each(function() {
                 if($(this).children('i.fa-user').length > 0 || $(this).children('i.fa-envelope').length > 0)
@@ -426,12 +426,13 @@ Wireguard Clients
                 })
             $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
             $(".fa-tguserid").each(function () {
-                if ($(this).parent().text().trim().indexOf(query.trim()) != -1) {
+                if ($(this).parent().text().trim().indexOf(query) != -1) {
                     $(this).closest('.col-lg-4').show();
                 }
             })
+            let upperQuery = query.toUpperCase()
             $(".fa-additional_notes").each(function () {
-                if ($(this).parent().text().trim().indexOf(query.trim()) != -1) {
+                if ($(this).parent().text().trim().indexOf(upperQuery) != -1) {
                     $(this).closest('.col-lg-4').show();
                 }
             })
