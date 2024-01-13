@@ -124,7 +124,7 @@ After=network.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/systemctl restart wg-quick@wg0.service
+ExecStart=/bin/bash /DIR-TO-RESTART-FILE/restart-wg.sh
 
 [Install]
 RequiredBy=wgui.path
