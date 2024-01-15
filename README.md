@@ -105,6 +105,7 @@ These environment variables only apply to the docker container.
 |-----------------------|---------------------------------------------------------------|---------|
 | `WGUI_MANAGE_START`   | Start/stop WireGuard when the container is started/stopped    | `false` |
 | `WGUI_MANAGE_RESTART` | Auto restart WireGuard when we Apply Config changes in the UI | `false` |
+| `WGUI_MANAGE_RELOAD`  | Auto reload WireGuard when we Apply Config changes in the UI  | `false` |
 
 ## Auto restart WireGuard daemon
 
@@ -197,6 +198,10 @@ Using `WGUI_MANAGE_START=true` can also replace the function of `wg-quick@wg0` s
 running the container with `restart: unless-stopped`. These settings can also pick up changes to Wireguard Config File
 Path, after restarting the container. Please make sure you have `--cap-add=NET_ADMIN` in your container config to make
 this feature work.
+
+Set `WGUI_MANAGE_RELOAD=true` to manage WireGuard interface reload.
+Using `WGUI_MANAGE_RELOAD=true` will use `wg syncconf wg0 /path/to/file` to update the WireGuard running-configuration
+without restart. Please make sure you have `--cap-add=NET_ADMIN` in your container config to make this feature work.
 
 ## Build
 

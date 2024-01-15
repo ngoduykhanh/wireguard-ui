@@ -18,6 +18,13 @@ case $WGUI_MANAGE_RESTART in (1|t|T|true|True|TRUE)
     done &
 esac
 
+# manage wireguard reload
+case $WGUI_MANAGE_RELOAD in (1|t|T|true|True|TRUE)
+    [[ -f $conf ]] || touch "$conf" # inotifyd needs file to exist
+    inotifyd - "$conf":w | while read -r event file; do
+        wg syncconf wg0 <(wg-quick strip wg0)
+    done &
+esac
 
 ./wg-ui &
 wait $!
