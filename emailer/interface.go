@@ -3,6 +3,7 @@ package emailer
 type Attachment struct {
 	Name string
 	Data []byte
+	MimeType string
 }
 
 type Emailer interface {

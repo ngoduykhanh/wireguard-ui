@@ -39,7 +39,7 @@ func (o *SendgridApiMail) Send(toName string, to string, subject string, content
 		var att mail.Attachment
 		encoded := base64.StdEncoding.EncodeToString(attachments[i].Data)
 		att.SetContent(encoded)
-		att.SetType("text/plain")
+		att.SetType(attachments[i].MimeType)
 		att.SetFilename(attachments[i].Name)
 		att.SetDisposition("attachment")
 		toAdd = append(toAdd, &att)
