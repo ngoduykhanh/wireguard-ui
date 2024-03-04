@@ -91,7 +91,7 @@ func (o *SmtpMail) Send(toName string, to string, subject string, content string
 		SetBody(mail.TextHTML, content)
 
 	for _, v := range attachments {
-		email.Attach(&mail.File{Name: v.Name, Data: v.Data})
+		email.Attach(&mail.File{Name: v.Name, Data: v.Data, MimeType: v.MimeType})
 	}
 
 	err = email.Send(smtpClient)
