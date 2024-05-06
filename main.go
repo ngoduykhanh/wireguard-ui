@@ -287,6 +287,10 @@ func main() {
 		if err != nil {
 			app.Logger.Fatalf("Cannot create unix socket. Error: %v", err)
 		}
+		err = os.Chmod(util.BindAddress[6:], 0666)
+		if err != nil {
+			app.Logger.Fatalf("Cannot chmod unix socket. Error: %v", err)
+		}
 		app.Listener = l
 		app.Logger.Fatal(app.Start(""))
 	} else {
