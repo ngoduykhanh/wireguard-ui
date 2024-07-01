@@ -53,6 +53,7 @@ var (
 	flagWgConfTemplate           string
 	flagBasePath                 string
 	flagSubnetRanges             string
+	flagVersion                  = false
 )
 
 const (
@@ -94,6 +95,7 @@ func init() {
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
 	flag.StringVar(&flagSubnetRanges, "subnet-ranges", util.LookupEnvOrString("SUBNET_RANGES", flagSubnetRanges), "IP ranges to choose from when assigning an IP for a client.")
 	flag.IntVar(&flagSessionMaxDuration, "session-max-duration", util.LookupEnvOrInt("SESSION_MAX_DURATION", flagSessionMaxDuration), "Max time in days a remembered session is refreshed and valid.")
+	flag.BoolVar(&flagVersion, "version", false, "Prints the app version.")
 
 	var (
 		smtpPasswordLookup   = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
@@ -152,7 +154,7 @@ func init() {
 	telegram.LogLevel = lvl
 
 	// print only if log level is INFO or lower
-	if lvl <= log.INFO {
+	if lvl <= log.INFO && !flagVersion {
 		// print app information
 		fmt.Println("Wireguard UI")
 		fmt.Println("App Version\t:", appVersion)
@@ -173,6 +175,11 @@ func init() {
 }
 
 func main() {
+	if flagVersion {
+		fmt.Println(appVersion)
+		os.Exit(0)
+	}
+
 	db, err := jsondb.New("./db")
 	if err != nil {
 		panic(err)
