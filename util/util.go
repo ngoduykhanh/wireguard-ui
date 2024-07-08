@@ -62,13 +62,29 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 
 	desiredHost := setting.EndpointAddress
 	desiredPort := server.Interface.ListenPort
-	if strings.Contains(desiredHost, ":") {
-		split := strings.Split(desiredHost, ":")
-		desiredHost = split[0]
-		if n, err := strconv.Atoi(split[1]); err == nil {
-			desiredPort = n
+	is_ipv4 := strings.Contains(desiredHost, ".")
+	if is_ipv4 {
+		if strings.Contains(desiredHost, ":") {
+			split := strings.Split(desiredHost, ":")
+			desiredHost = split[0]
+			if n, err := strconv.Atoi(split[1]); err == nil {
+				desiredPort = n
+			} else {
+				log.Error("Endpoint appears to be incorrectly formatted: ", err)
+			}
+		}
+	} else {
+		if strings.Contains(desiredHost, "]") {
+			// IPv6 with port
+			split := strings.Split(desiredHost, "]")
+			desiredHost = split[0] + "]"
+			if n, err := strconv.Atoi(split[1][1:]); err == nil {
+				desiredPort = n
+			} else {
+				log.Error("Endpoint appears to be incorrectly formatted: ", err)
+			}
 		} else {
-			log.Error("Endpoint appears to be incorrectly formatted: ", err)
+			desiredHost = "[" + desiredHost + "]"
 		}
 	}
 	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d\n", desiredHost, desiredPort)
