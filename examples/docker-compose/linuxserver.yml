@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   wireguard:
     image: linuxserver/wireguard:latest

@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   boringtun:
     image: ghcr.io/ntkme/boringtun:edge
