@@ -17,6 +17,12 @@ A web user interface to manage your WireGuard setup.
 
 > ⚠️The default username and password are `admin`. Please change it to secure your setup.
 
+### One-click Deploy
+
+You can deploy Wireguard on Elestio using one-click deployment.
+
+[![Deploy on Elestio](https://elest.io/images/logos/deploy-to-elestio-btn.png)](https://elest.io/open-source/wireguard)
+
 ### Using binary file
 
 Download the binary file from the release page and run it directly on the host machine
