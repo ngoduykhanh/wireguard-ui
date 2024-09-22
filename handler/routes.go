@@ -509,7 +509,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 				false, err.Error(),
 			})
 		}
-		log.Infof("Created wireguard client: %v", client)
+		log.Infof("Created wireguard client: %v", client.Name)
 
 		return c.JSON(http.StatusOK, client)
 	}
@@ -726,7 +726,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		if err := db.SaveClient(client); err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
 		}
-		log.Infof("Updated client information successfully => %v", client)
+		log.Infof("Updated client information successfully => %v", client.Name)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated client successfully"})
 	}
@@ -821,7 +821,7 @@ func RemoveClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot delete client from database"})
 		}
 
-		log.Infof("Removed wireguard client: %v", client)
+		log.Infof("Removed wireguard client: %v", client.ID)
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Client removed"})
 	}
 }
@@ -885,7 +885,7 @@ func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 		if err := db.SaveServerKeyPair(serverKeyPair); err != nil {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
 		}
-		log.Infof("Updated wireguard server interfaces settings: %v", serverKeyPair)
+		log.Infof("Updated wireguard server keypairs")
 
 		return c.JSON(http.StatusOK, serverKeyPair)
 	}
