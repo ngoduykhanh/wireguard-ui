@@ -33,6 +33,7 @@ var (
 	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
 	// configuration variables
 	flagDisableLogin             = false
+	flagRemoteUser               = false
 	flagBindAddress              = "0.0.0.0:5000"
 	flagSmtpHostname             = "127.0.0.1"
 	flagSmtpPort                 = 25
@@ -77,6 +78,7 @@ var embeddedAssets embed.FS
 func init() {
 	// command-line flags and env variables
 	flag.BoolVar(&flagDisableLogin, "disable-login", util.LookupEnvOrBool("DISABLE_LOGIN", flagDisableLogin), "Disable authentication on the app. This is potentially dangerous.")
+	flag.BoolVar(&flagRemoteUser, "remote_user", util.LookupEnvOrBool("REMOTE_USER", flagRemoteUser), "Use HTTP header REMOTE_USER for auth. Commonly used with SSO and a proxy funcion.")
 	flag.StringVar(&flagBindAddress, "bind-address", util.LookupEnvOrString("BIND_ADDRESS", flagBindAddress), "Address:Port to which the app will be bound.")
 	flag.StringVar(&flagSmtpHostname, "smtp-hostname", util.LookupEnvOrString("SMTP_HOSTNAME", flagSmtpHostname), "SMTP Hostname")
 	flag.IntVar(&flagSmtpPort, "smtp-port", util.LookupEnvOrInt("SMTP_PORT", flagSmtpPort), "SMTP Port")
@@ -126,6 +128,7 @@ func init() {
 
 	// update runtime config
 	util.DisableLogin = flagDisableLogin
+	util.RemoteUser = flagRemoteUser
 	util.BindAddress = flagBindAddress
 	util.SmtpHostname = flagSmtpHostname
 	util.SmtpPort = flagSmtpPort
@@ -161,6 +164,7 @@ func init() {
 		fmt.Println("Build Time\t:", buildTime)
 		fmt.Println("Git Repo\t:", "https://github.com/ngoduykhanh/wireguard-ui")
 		fmt.Println("Authentication\t:", !util.DisableLogin)
+		fmt.Println("Remote_user\t:", util.RemoteUser)
 		fmt.Println("Bind address\t:", util.BindAddress)
 		//fmt.Println("Sendgrid key\t:", util.SendgridApiKey)
 		fmt.Println("Email from\t:", util.EmailFrom)
@@ -206,9 +210,9 @@ func main() {
 	}
 
 	// register routes
-	app := router.New(tmplDir, extraData, util.SessionSecret)
+	app := router.New(tmplDir, extraData, util.SessionSecret, db)
 
-	app.GET(util.BasePath, handler.WireGuardClients(db), handler.ValidSession, handler.RefreshSession)
+	app.GET(util.BasePath, handler.WireGuardClients(db), handler.SSOauth, handler.ValidSession, handler.RefreshSession)
 
 	// Important: Make sure that all non-GET routes check the request content type using handler.ContentTypeJson to
 	// mitigate CSRF attacks. This is effective, because browsers don't allow setting the Content-Type header on

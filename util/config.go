@@ -10,6 +10,7 @@ import (
 // Runtime config
 var (
 	DisableLogin       bool
+	RemoteUser         bool
 	BindAddress        string
 	SmtpHostname       string
 	SmtpPort           int

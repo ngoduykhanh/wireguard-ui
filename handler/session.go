@@ -8,7 +8,11 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/model"
+	"github.com/ngoduykhanh/wireguard-ui/store/jsondb"
 	"github.com/ngoduykhanh/wireguard-ui/util"
+	"github.com/rs/xid"
 )
 
 func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
@@ -38,6 +42,86 @@ func NeedsAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if !isAdmin(c) {
 			return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/")
+		}
+		return next(c)
+	}
+}
+
+// SSOauth uses external authentication (usually by reverseproxy) in the form of HTTP header REMOTE_USER
+func SSOauth(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if !util.RemoteUser {
+			return next(c)
+		}
+		if !isValidSession(c) {
+			remoteUser := c.Request().Header.Get("REMOTE_USER")
+			if remoteUser == "" {
+				// TODO: Better error handling
+				log.Infof("No REMOTE_USER in reqest. Bailing out.")
+				return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/")
+			}
+			log.Debugf("No valid session for REMOTE_USER: %s", remoteUser)
+
+			db := c.Get("db").(*jsondb.JsonDB)
+			dbuser, err := db.GetUserByName(remoteUser)
+			if err != nil {
+				log.Infof("User %s not in database, creating user", remoteUser)
+				newUser := model.User{
+					Username: remoteUser,
+					Admin:    false,
+				}
+				err = db.SaveUser(newUser)
+				if err != nil {
+					// TODO: Better error handling
+					return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/")
+				}
+				// Update dbuser from database
+				dbuser, err = db.GetUserByName(remoteUser)
+				if err != nil {
+					// TODO: Better error handling
+					return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/")
+				}
+
+			} else {
+				log.Debugf("Got user from db: %s", dbuser.Username)
+			}
+
+			// Set session for REMOTE_USER
+			ageMax := 0
+
+			cookiePath := util.GetCookiePath()
+
+			sess, _ := session.Get("session", c)
+			sess.Options = &sessions.Options{
+				Path:     cookiePath,
+				MaxAge:   ageMax,
+				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
+			}
+
+			// set session_token
+			tokenUID := xid.New().String()
+			now := time.Now().UTC().Unix()
+			sess.Values["username"] = dbuser.Username
+			sess.Values["user_hash"] = util.GetDBUserCRC32(dbuser)
+			sess.Values["admin"] = dbuser.Admin
+			sess.Values["session_token"] = tokenUID
+			sess.Values["max_age"] = ageMax
+			sess.Values["created_at"] = now
+			sess.Values["updated_at"] = now
+			sess.Save(c.Request(), c.Response())
+
+			// set session_token in cookie
+			cookie := new(http.Cookie)
+			cookie.Name = "session_token"
+			cookie.Path = cookiePath
+			cookie.Value = tokenUID
+			cookie.MaxAge = ageMax
+			cookie.HttpOnly = true
+			cookie.SameSite = http.SameSiteLaxMode
+			c.SetCookie(cookie)
+
+			return c.Redirect(http.StatusTemporaryRedirect, util.BasePath)
 		}
 		return next(c)
 	}

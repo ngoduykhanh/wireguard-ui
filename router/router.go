@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/store/jsondb"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
@@ -48,7 +49,7 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 }
 
 // New function
-func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo.Echo {
+func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte, db *jsondb.JsonDB) *echo.Echo {
 	e := echo.New()
 
 	cookiePath := util.GetCookiePath()
@@ -59,6 +60,14 @@ func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo
 	cookieStore.MaxAge(86400 * 7)
 
 	e.Use(session.Middleware(cookieStore))
+
+	// Add db to context so middlewares can use it.
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set("db", db)
+			return next(c)
+		}
+	})
 
 	// read html template file to string
 	tmplBaseString, err := util.StringFromEmbedFile(tmplDir, "base.html")
