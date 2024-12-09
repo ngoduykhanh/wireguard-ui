@@ -6,7 +6,17 @@ Depending on if the Wireguard kernel module is available on your system you have
 
 You can check if the kernel modules are available via the following command:
 ```shell
-modprobe wireguard
+modinfo wireguard
+```
+
+This will return information about the wireguard kernel module if it is available. If it is available, you can check if it is loaded via the following command:
+```shell
+lsmod | grep wireguard
+```
+
+If it is available but not loaded, you can load the module via the following command:
+```shell
+sudo modprobe wireguard
 ```
 
 If the command exits successfully and doesn't print an error the kernel modules are available.
