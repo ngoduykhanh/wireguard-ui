@@ -75,7 +75,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 
 		dbuser, err := db.GetUserByName(username)
 		if err != nil {
-			log.Infof("Cannot query user %s from DB", username)
+			log.Warnf("Invalid credentials. Cannot query user %s from DB (%s)", username, c.Request().RemoteAddr)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Invalid credentials"})
 		}
 
@@ -130,9 +130,11 @@ func Login(db store.IStore) echo.HandlerFunc {
 			cookie.SameSite = http.SameSiteLaxMode
 			c.SetCookie(cookie)
 
+			log.Infof("Logged in successfully user %s (%s)", username, c.Request().RemoteAddr)
 			return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Logged in successfully"})
 		}
 
+		log.Warnf("Invalid credentials user %s (%s)", username, c.Request().RemoteAddr)
 		return c.JSON(http.StatusUnauthorized, jsonHTTPResponse{false, "Invalid credentials"})
 	}
 }
