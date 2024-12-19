@@ -1,3 +1,13 @@
+function escapeHtml(unsafe)
+{
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+ }
+
 function renderClientList(data) {
     $.each(data, function(index, obj) {
         // render telegram button
@@ -6,13 +16,13 @@ function renderClientList(data) {
             telegramButton =    `<div class="btn-group">      
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_telegram_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Telegram</button>
+                                        data-clientname="${escapeHtml(obj.Client.name)}">Telegram</button>
                                 </div>`
         }
 
         let telegramHtml = "";
         if (obj.Client.telegram_userid && obj.Client.telegram_userid.length > 0) {
-            telegramHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-tguserid"></i>${obj.Client.telegram_userid}</span>`
+            telegramHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-tguserid"></i>${escapeHtml(obj.Client.telegram_userid)}</span>`
         }
 
         // render client status css tag style
@@ -24,13 +34,13 @@ function renderClientList(data) {
         // render client allocated ip addresses
         let allocatedIpsHtml = "";
         $.each(obj.Client.allocated_ips, function(index, obj) {
-            allocatedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
+            allocatedIpsHtml += `<small class="badge badge-secondary">${escapeHtml(obj)}</small>&nbsp;`;
         })
 
         // render client allowed ip addresses
         let allowedIpsHtml = "";
         $.each(obj.Client.allowed_ips, function(index, obj) {
-            allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
+            allowedIpsHtml += `<small class="badge badge-secondary">${escapeHtml(obj)}</small>&nbsp;`;
         })
 
         let subnetRangesString = "";
@@ -40,7 +50,7 @@ function renderClientList(data) {
 
         let additionalNotesHtml = "";
         if (obj.Client.additional_notes && obj.Client.additional_notes.length > 0) {
-            additionalNotesHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-additional_notes"></i>${obj.Client.additional_notes.toUpperCase()}</span>`
+            additionalNotesHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-additional_notes"></i>${escapeHtml(obj.Client.additional_notes.toUpperCase())}</span>`
         }
 
         // render client html content
@@ -56,12 +66,12 @@ function renderClientList(data) {
                                 <div class="btn-group">      
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_qr_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}" ${obj.QRCode != "" ? '' : ' disabled'}>QR code</button>
+                                        data-clientname="${escapeHtml(obj.Client.name)}" ${obj.QRCode != "" ? '' : ' disabled'}>QR code</button>
                                 </div>
                                 <div class="btn-group">      
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_email_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Email</button>
+                                        data-clientname="${escapeHtml(obj.Client.name)}">Email</button>
                                 </div>
                                 ${telegramButton}
                                 <div class="btn-group">
@@ -72,22 +82,22 @@ function renderClientList(data) {
                                     <div class="dropdown-menu" role="menu">
                                         <a class="dropdown-item" href="#" data-toggle="modal"
                                         data-target="#modal_edit_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Edit</a>
+                                        data-clientname="${escapeHtml(obj.Client.name)}">Edit</a>
                                         <a class="dropdown-item" href="#" data-toggle="modal"
                                         data-target="#modal_pause_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Disable</a>
+                                        data-clientname="${escapeHtml(obj.Client.name)}">Disable</a>
                                         <a class="dropdown-item" href="#" data-toggle="modal"
                                         data-target="#modal_remove_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Delete</a>
+                                        data-clientname="${escapeHtml(obj.Client.name)}">Delete</a>
                                     </div>
                                 </div>
                                 <hr>
-                                <span class="info-box-text"><i class="fas fa-user"></i> ${obj.Client.name}</span>
-                                <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${obj.Client.public_key}</span>
-                                <span class="info-box-text" style="display: none"><i class="fas fa-subnetrange"></i>${subnetRangesString}</span>
+                                <span class="info-box-text"><i class="fas fa-user"></i> ${escapeHtml(obj.Client.name)}</span>
+                                <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${escapeHtml(obj.Client.public_key)}</span>
+                                <span class="info-box-text" style="display: none"><i class="fas fa-subnetrange"></i>${escapeHtml(subnetRangesString)}</span>
                                 ${telegramHtml}
                                 ${additionalNotesHtml}
-                                <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
+                                <span class="info-box-text"><i class="fas fa-envelope"></i> ${escapeHtml(obj.Client.email)}</span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
                                     ${prettyDateTime(obj.Client.created_at)}</span>
                                 <span class="info-box-text"><i class="fas fa-history"></i>
@@ -95,7 +105,7 @@ function renderClientList(data) {
                                 <span class="info-box-text"><i class="fas fa-server" style="${obj.Client.use_server_dns ? "opacity: 1.0" : "opacity: 0.5"}"></i>
                                     ${obj.Client.use_server_dns ? 'DNS enabled' : 'DNS disabled'}</span>
                                 <span class="info-box-text"><i class="fas fa-file"></i>
-                                    ${obj.Client.additional_notes}</span>
+                                    ${escapeHtml(obj.Client.additional_notes)}</span>
                                 <span class="info-box-text"><strong>IP Allocation</strong></span>`
                                 + allocatedIpsHtml
                                 + `<span class="info-box-text"><strong>Allowed IPs</strong></span>`

@@ -2,11 +2,11 @@ package router
 
 import (
 	"errors"
+	"html/template"
 	"io"
 	"io/fs"
 	"reflect"
 	"strings"
-	"text/template"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
