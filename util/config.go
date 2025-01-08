@@ -37,7 +37,7 @@ const (
 	DefaultServerAddress                   = "10.252.1.0/24"
 	DefaultServerPort                      = 51820
 	DefaultDNS                             = "1.1.1.1"
-	DefaultMTU                             = 1450
+	DefaultMTU                             = 1420
 	DefaultPersistentKeepalive             = 15
 	DefaultFirewallMark                    = "0xca6c" // i.e. 51820
 	DefaultTable                           = "auto"
