@@ -47,9 +47,9 @@ func isValidSession(c echo.Context) bool {
 	if util.DisableLogin {
 		return true
 	}
-	sess, _ := session.Get("session", c)
-	cookie, err := c.Cookie("session_token")
-	if err != nil || sess.Values["session_token"] != cookie.Value {
+	sess, _ := session.Get("wgui_session", c)
+	cookie, err := c.Cookie("wgui_session_token")
+	if err != nil || sess.Values["wgui_session_token"] != cookie.Value {
 		return false
 	}
 
@@ -86,14 +86,14 @@ func doRefreshSession(c echo.Context) {
 		return
 	}
 
-	sess, _ := session.Get("session", c)
+	sess, _ := session.Get("wgui_session", c)
 	maxAge := getMaxAge(sess)
 	if maxAge <= 0 {
 		return
 	}
 
-	oldCookie, err := c.Cookie("session_token")
-	if err != nil || sess.Values["session_token"] != oldCookie.Value {
+	oldCookie, err := c.Cookie("wgui_session_token")
+	if err != nil || sess.Values["wgui_session_token"] != oldCookie.Value {
 		return
 	}
 
@@ -118,7 +118,7 @@ func doRefreshSession(c echo.Context) {
 	sess.Save(c.Request(), c.Response())
 
 	cookie := new(http.Cookie)
-	cookie.Name = "session_token"
+	cookie.Name = "wgui_session_token"
 	cookie.Path = cookiePath
 	cookie.Value = oldCookie.Value
 	cookie.MaxAge = maxAge
@@ -198,7 +198,7 @@ func currentUser(c echo.Context) string {
 		return ""
 	}
 
-	sess, _ := session.Get("session", c)
+	sess, _ := session.Get("wgui_session", c)
 	username := fmt.Sprintf("%s", sess.Values["username"])
 	return username
 }
@@ -209,13 +209,13 @@ func isAdmin(c echo.Context) bool {
 		return true
 	}
 
-	sess, _ := session.Get("session", c)
+	sess, _ := session.Get("wgui_session", c)
 	admin := fmt.Sprintf("%t", sess.Values["admin"])
 	return admin == "true"
 }
 
 func setUser(c echo.Context, username string, admin bool, userCRC32 uint32) {
-	sess, _ := session.Get("session", c)
+	sess, _ := session.Get("wgui_session", c)
 	sess.Values["username"] = username
 	sess.Values["user_hash"] = userCRC32
 	sess.Values["admin"] = admin
@@ -224,23 +224,23 @@ func setUser(c echo.Context, username string, admin bool, userCRC32 uint32) {
 
 // clearSession to remove current session
 func clearSession(c echo.Context) {
-	sess, _ := session.Get("session", c)
+	sess, _ := session.Get("wgui_session", c)
 	sess.Values["username"] = ""
 	sess.Values["user_hash"] = 0
 	sess.Values["admin"] = false
-	sess.Values["session_token"] = ""
+	sess.Values["wgui_session_token"] = ""
 	sess.Values["max_age"] = -1
 	sess.Options.MaxAge = -1
 	sess.Save(c.Request(), c.Response())
 
 	cookiePath := util.GetCookiePath()
 
-	cookie, err := c.Cookie("session_token")
+	cookie, err := c.Cookie("wgui_session_token")
 	if err != nil {
 		cookie = new(http.Cookie)
 	}
 
-	cookie.Name = "session_token"
+	cookie.Name = "wgui_session_token"
 	cookie.Path = cookiePath
 	cookie.MaxAge = -1
 	cookie.HttpOnly = true

@@ -100,7 +100,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 
 			cookiePath := util.GetCookiePath()
 
-			sess, _ := session.Get("session", c)
+			sess, _ := session.Get("wgui_session", c)
 			sess.Options = &sessions.Options{
 				Path:     cookiePath,
 				MaxAge:   ageMax,
@@ -114,7 +114,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 			sess.Values["username"] = dbuser.Username
 			sess.Values["user_hash"] = util.GetDBUserCRC32(dbuser)
 			sess.Values["admin"] = dbuser.Admin
-			sess.Values["session_token"] = tokenUID
+			sess.Values["wgui_session_token"] = tokenUID
 			sess.Values["max_age"] = ageMax
 			sess.Values["created_at"] = now
 			sess.Values["updated_at"] = now
@@ -122,7 +122,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 
 			// set session_token in cookie
 			cookie := new(http.Cookie)
-			cookie.Name = "session_token"
+			cookie.Name = "wgui_session_token"
 			cookie.Path = cookiePath
 			cookie.Value = tokenUID
 			cookie.MaxAge = ageMax
