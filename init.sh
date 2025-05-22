@@ -18,6 +18,6 @@ case $WGUI_MANAGE_RESTART in (1|t|T|true|True|TRUE)
     done &
 esac
 
-
-./wg-ui &
+trap 'kill 0; exit 0;' SIGTERM INT EXIT
+./wg-ui "$@" &
 wait $!

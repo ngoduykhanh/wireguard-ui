@@ -1,0 +1,102 @@
+@media (prefers-color-scheme: dark) {
+  body, body.login-page, div.info-box {
+    background-color: #343a40;
+    color: #ffffff;
+  }
+  .main-header, .main-sidebar, .control-sidebar {
+    background-color: #212529;
+    color: #ffffff;
+  }
+  .content-wrapper {
+    background-color: #495057;
+  }
+  /* Add more style overrides for other AdminLTE elements as needed */
+  .card {
+    background-color: #343a40;
+    color: #ffffff;
+  }
+  .card-header {
+      background-color: #212529;
+      color: #ffffff;
+  }
+  a {
+      color: #bb86fc;
+  }
+  a:hover {
+      color: #3700b3;
+  }
+  .modal-content {
+    background-color: #212529;
+    color: #ffffff;
+  }
+  /* Example for table elements */
+  .table {
+    color: #ffffff;
+  }
+  .table thead th {
+    border-bottom-color: #6c757d;
+    color: #ffffff;
+  }
+  .table-bordered, .table-bordered td, .table-bordered th {
+    border-color: #6c757d;
+  }
+  .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  /* input boxes */
+  .modal-content > input, .modal-content > input::placeholder, div.tagsinput, .modal-content > select, input.form-control {
+    background-color: #495057;
+    color: #ffffff;
+  }
+  /* login page */
+  html body.login-page div.login-box div.card div.card-body.login-card-body {
+    background-color: #202326;
+    color: #bfbfbf;
+  }
+  html body.login-page div.login-box div.card div.card-body.login-card-body form div.row div.col-8 div.icheck-primary label {
+    color: #0069d9;
+  }
+  /* disabled forms */
+  .form-control:disabled, .form-control[readonly] {
+    background-color: #bfbfbf;
+    color: #000000;
+  }
+  /*
+  .modal-content > input#client_allowed_ips_tag {
+    color: #ffffff;
+  }*/
+  /* mobile hamburger */
+  .navbar-light .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, .75);
+  }
+  .navbar-light .navbar-nav .nav-link:focus, .navbar-light .navbar-nav .nav-link:hover {
+    color: #007bff;
+  }
+  .login-logo a, .register-logo a {
+    color: #dc3545;
+  }
+  /* subnet range dropdown */
+  .select2-results__option, .select2-search__field, .select2-container--default .select2-selection--single, .select2-container--default .select2-selection--single .select2-selection__rendered {
+    /*
+    background-color: #bfbfbf;
+    color: #000000;
+    */
+    background-color: #495057;
+    color: #ffffff;
+  }
+  /* search bar at the top of the page */
+  .navbar-light .btn-navbar, .navbar-light .form-control-navbar {
+    background-color: #bfbfbf;
+  }
+  /* active connections */
+  .table-success {
+    color: #000000;
+  }
+  /* Customize Server Interface Addresses */
+  div.tagsinput input:focus {
+      color: #ffffff !important;
+  }
+  div.tagsinput input {
+      color: #cde69c !important;
+  }
+}
