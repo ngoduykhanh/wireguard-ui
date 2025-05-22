@@ -90,7 +90,7 @@
                                     <button type="button"
                                             class="btn btn-outline-primary btn-sm btn_modify_wake_on_lan_host"
                                             data-toggle="modal" data-target="#modal_wake_on_lan_host"
-                                            data-name="{{ .Name }}" data-mac-address="{{ .MacAddress }}">Edit
+                                            data-name="{{ .Name | attrescaper }}" data-mac-address="{{ .MacAddress }}">Edit
                                     </button>
                                     <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
                                             data-target="#modal_remove_wake_on_lan_host"
@@ -98,7 +98,7 @@
                                     </button>
                                 </div>
                                 <hr>
-                                <span class="info-box-text"><i class="fas fa-address-card"></i> <span class="name">{{ .Name }}</span></span>
+                                <span class="info-box-text"><i class="fas fa-address-card"></i> <span class="name">{{ .Name | attrescaper }}</span></span>
                                 <span class="info-box-text"><i class="fas fa-ethernet"></i> <span class="mac-address">{{ .MacAddress }}</span></span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
                                     <span class="latest-used">

@@ -38,20 +38,25 @@ Wireguard Server Settings
                                     placeholder="Listen Port" value="{{ .serverInterface.ListenPort }}">
                             </div>
                             <div class="form-group">
+                                <label for="pre_up">Pre Up Script</label>
+                                <input type="text" class="form-control" id="pre_up" name="pre_up"
+                                       placeholder="Pre Up Script" value="{{ .serverInterface.PreUp | attrescaper }}">
+                            </div>
+                            <div class="form-group">
                                 <label for="post_up">Post Up Script</label>
                                 <input type="text" class="form-control" id="post_up" name="post_up"
-                                       placeholder="Post Up Script" value="{{ .serverInterface.PostUp }}">
+                                       placeholder="Post Up Script" value="{{ .serverInterface.PostUp | attrescaper }}">
                             </div>
                             <div class="form-group">
                                 <label for="pre_down">Pre Down Script</label>
                                 <input type="text" class="form-control" id="pre_down" name="pre_down"
-                                       placeholder="Pre Down Script" value="{{ .serverInterface.PreDown }}">
+                                       placeholder="Pre Down Script" value="{{ .serverInterface.PreDown | attrescaper }}">
                             </div>
 
                             <div class="form-group">
                                 <label for="post_down">Post Down Script</label>
                                 <input type="text" class="form-control" id="post_down" name="post_down"
-                                       placeholder="Post Down Script" value="{{ .serverInterface.PostDown }}">
+                                       placeholder="Post Down Script" value="{{ .serverInterface.PostDown | attrescaper }}">
                             </div>
                         </div>
                         <!-- /.card-body -->
@@ -135,10 +140,11 @@ Wireguard Server Settings
         function submitServerInterfaceSetting() {
             const addresses = $("#addresses").val().split(",");
             const listen_port = $("#listen_port").val();
+            const pre_up = $("#pre_up").val();
             const post_up = $("#post_up").val();
             const pre_down = $("#pre_down").val();
             const post_down = $("#post_down").val();
-            const data = {"addresses": addresses, "listen_port": listen_port, "post_up": post_up, "pre_down": pre_down, "post_down": post_down};
+            const data = {"addresses": addresses, "listen_port": listen_port, "pre_up": pre_up, "post_up": post_up, "pre_down": pre_down, "post_down": post_down};
 
             $.ajax({
                 cache: false,

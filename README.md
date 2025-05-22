@@ -83,7 +83,9 @@ These environment variables are used to control the default server settings used
 |-----------------------------------|-----------------------------------------------------------------------------------------------|-----------------|
 | `WGUI_SERVER_INTERFACE_ADDRESSES` | The default interface addresses (comma-separated-list) for the WireGuard server configuration | `10.252.1.0/24` |
 | `WGUI_SERVER_LISTEN_PORT`         | The default server listen port                                                                | `51820`         |
+| `WGUI_SERVER_PRE_UP_SCRIPT`       | The default server pre-up script                                                              | N/A             |
 | `WGUI_SERVER_POST_UP_SCRIPT`      | The default server post-up script                                                             | N/A             |
+| `WGUI_SERVER_PRE_DOWN_SCRIPT`     | The default server pre-down script                                                            | N/A             |
 | `WGUI_SERVER_POST_DOWN_SCRIPT`    | The default server post-down script                                                           | N/A             |
 
 ### Defaults for new clients
