@@ -481,6 +481,10 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			}
 		}
 
+		if client.FriendlyName == "" {
+			client.FriendlyName = client.Name + "-" + client.ID
+		}
+
 		if client.PresharedKey == "" {
 			presharedKey, err := wgtypes.GenerateKey()
 			if err != nil {
@@ -709,6 +713,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 
 		// map new data
 		client.Name = _client.Name
+		client.FriendlyName = _client.FriendlyName
 		client.Email = _client.Email
 		client.TgUserid = _client.TgUserid
 		client.Enabled = _client.Enabled
@@ -919,6 +924,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		Connected         bool
 		AllocatedIP       string
 		Endpoint          string
+		FriendlyName      string
 	}
 
 	type DeviceVM struct {
@@ -989,6 +995,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 					if _client, ok := m[pVm.PublicKey]; ok {
 						pVm.Name = _client.Name
 						pVm.Email = _client.Email
+						pVm.FriendlyName = _client.FriendlyName
 					}
 					devVm.Peers = append(devVm.Peers, pVm)
 				}

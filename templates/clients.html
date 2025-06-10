@@ -126,6 +126,10 @@ Wireguard Clients
                         <input type="text" class="form-control" id="_client_name" name="_client_name">
                     </div>
                     <div class="form-group">
+                        <label for="_client_friendly_name" class="control-label">Friendly Name</label>
+                        <input type="text" class="form-control" id="_client_friendly_name" name="_client_friendly_name">
+                    </div>
+                    <div class="form-group">
                         <label for="_client_email" class="control-label">Email</label>
                         <input type="text" class="form-control" id="_client_email" name="client_email">
                     </div>
@@ -505,7 +509,7 @@ Wireguard Clients
                             if (sr === selectedSR) {
                                 $(this).closest('.col-lg-4').show();
                                 break
-                            }                            
+                            }
                         }
                     })
                     // $('.col-lg-4').show();
@@ -628,6 +632,7 @@ Wireguard Clients
                         modal.find("#_client_id").val(client.id);
                         modal.find("#_client_telegram_userid").val(client.telegram_userid);
                         modal.find("#_client_name").val(client.name);
+                        modal.find("#_client_friendly_name").val(client.name);
                         modal.find("#_client_email").val(client.email);
 
                         let preselectedEl
@@ -659,7 +664,7 @@ Wireguard Clients
 
                         modal.find("#_client_public_key").val(client.public_key);
                         modal.find("#_client_preshared_key").val(client.preshared_key);
-                        
+
                         modal.find("#_additional_notes").val(client.additional_notes);
 
                         // handle subnet range select
@@ -757,6 +762,7 @@ Wireguard Clients
         function submitEditClient() {
             const client_id = $("#_client_id").val();
             const name = $("#_client_name").val();
+            const friendly_name = $("#_client_friendly_name").val();
             const email = $("#_client_email").val();
             const telegram_userid = $("#_client_telegram_userid").val();
             const allocated_ips = $("#_client_allocated_ips").val().split(",");
@@ -784,7 +790,7 @@ Wireguard Clients
 
             const additional_notes = $("#_additional_notes").val();
 
-            const data = {"id": client_id, "name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips,
+            const data = {"id": client_id, "name": name, "friendly_name": friendly_name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips,
                 "allowed_ips": allowed_ips, "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint,
                 "use_server_dns": use_server_dns, "enabled": enabled, "public_key": public_key, "preshared_key": preshared_key, "additional_notes": additional_notes};
 
@@ -958,7 +964,7 @@ Wireguard Clients
                     $(element).removeClass('is-invalid');
                 }
             });
-            // 
+            //
         });
     </script>
 {{end}}

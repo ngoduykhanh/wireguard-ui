@@ -208,6 +208,10 @@
                                 <input type="text" class="form-control" id="client_name" name="client_name">
                             </div>
                             <div class="form-group">
+                                <label for="client_friendly_name" class="control-label">Friendly Name</label>
+                                <input type="text" class="form-control" id="client_friendly_name" name="client_friendly_name">
+                            </div>
+                            <div class="form-group">
                                 <label for="client_email" class="control-label">Email</label>
                                 <input type="text" class="form-control" id="client_email" name="client_email">
                             </div>
@@ -437,7 +441,7 @@
                     }
                 });
         }
-        
+
         // populateClient function for render new client info
         // on the client page.
         function populateClient(client_id) {
@@ -460,6 +464,7 @@
         // submitNewClient function for new client form submission
         function submitNewClient() {
             const name = $("#client_name").val();
+            const friendly_name = $("#client_friendly_name").val();
             const email = $("#client_email").val();
             const telegram_userid = $("#client_telegram_userid").val();
             const allocated_ips = $("#client_allocated_ips").val().split(",");
@@ -484,10 +489,10 @@
             }
             const public_key = $("#client_public_key").val();
             const preshared_key = $("#client_preshared_key").val();
-            
+
             const additional_notes = $("#additional_notes").val();
 
-            const data = {"name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
+            const data = {"name": name, "friendly_name": friendly_name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
                 "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint, "use_server_dns": use_server_dns, "enabled": enabled,
                 "public_key": public_key, "preshared_key": preshared_key, "additional_notes": additional_notes};
 
@@ -623,6 +628,7 @@
         $(document).ready(function () {
             $("#modal_new_client").on('shown.bs.modal', function (e) {
                 $("#client_name").val("");
+                $("#client_friendly_name").val("");
                 $("#client_email").val("");
                 $("#client_public_key").val("");
                 $("#client_preshared_key").val("");

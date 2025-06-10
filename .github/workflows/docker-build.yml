@@ -1,6 +1,7 @@
 name: Build container images
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - "master"
@@ -26,7 +27,7 @@ jobs:
       - name: Prepare image tags
         id: image-tags
         run: |
-          base=ngoduykhanh/wireguard-ui
+          base=kadet77rus/wireguard-ui
           app_version=dev
 
           ## Set git tag as image tag
@@ -44,7 +45,7 @@ jobs:
           ${base}:${github_tag}
           END_HEREDOC
           )
-          
+
           ## Set 'latest' image tag if 'main' or 'master'
           ## branch is pushed
           ##
@@ -58,13 +59,13 @@ jobs:
           ## Print tags for debugging purpose
           ##
           echo "[INFO] container_images: ${container_images}"
-          
+
           ## Set container_images output
           ##
           echo "container_images<<EOF" >> $GITHUB_OUTPUT
           echo "$container_images" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          
+
           ## Set APP_VERSION env
           #
           echo "APP_VERSION=${app_version}" >> $GITHUB_ENV
