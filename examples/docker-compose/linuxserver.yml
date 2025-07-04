@@ -31,7 +31,7 @@ services:
       - WGUI_USERNAME=admin
       - WGUI_PASSWORD=admin
       - WG_CONF_TEMPLATE
-      - WGUI_MANAGE_START=true
+      - WGUI_MANAGE_START=false
       - WGUI_MANAGE_RESTART=true
     logging:
       driver: json-file
