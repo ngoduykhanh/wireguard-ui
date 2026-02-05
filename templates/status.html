@@ -27,6 +27,139 @@ Connected Peers
 
     return parseFloat(temporal.toFixed(2)) + units[pow]+"B"
   }
+
+  // Table sorting functionality
+  let currentSortColumn = null;
+  let currentSortDirection = null;
+  const originalRowOrders = new Map(); // Store original order per table
+
+  function ipToNumber(ip) {
+    // Extract IP from formats like "10.9.0.132/32" or "99.92.101.230:56078"
+    const match = (ip || '').trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/);
+    if (!match) return null; // Empty/invalid IPs will be sorted to bottom
+    // Use multiplication instead of bit shifting to avoid signed 32-bit integer issues
+    return (parseInt(match[1]) * 16777216) + (parseInt(match[2]) * 65536) + (parseInt(match[3]) * 256) + parseInt(match[4]);
+  }
+
+  function getSortValue(cell, sortType) {
+    switch (sortType) {
+      case 'number':
+        return parseInt(cell.getAttribute('data-value') || cell.textContent || '0', 10);
+      case 'bytes':
+        return parseInt(cell.getAttribute('data-value') || '0', 10);
+      case 'boolean':
+        return cell.getAttribute('data-value') === '1' ? 1 : 0;
+      case 'date':
+        return new Date(cell.getAttribute('data-value') || 0).getTime();
+      case 'ip':
+        return ipToNumber(cell.textContent || '');
+      case 'text':
+      default:
+        return (cell.textContent || '').toLowerCase().trim();
+    }
+  }
+
+  function sortTableByColumn(table, columnIndex, direction, sortType) {
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    rows.sort((a, b) => {
+      const aValue = getSortValue(a.cells[columnIndex], sortType);
+      const bValue = getSortValue(b.cells[columnIndex], sortType);
+
+      // Push null/empty values to bottom regardless of sort direction
+      if (aValue === null && bValue === null) return 0;
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
+
+      let comparison = 0;
+      if (sortType === 'text') {
+        comparison = aValue.localeCompare(bValue);
+      } else {
+        comparison = aValue - bValue;
+      }
+
+      return direction === 'asc' ? comparison : -comparison;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+  }
+
+  function resetTableSort(table) {
+    const tbody = table.querySelector('tbody');
+    const originalOrder = originalRowOrders.get(table);
+    if (originalOrder) {
+      originalOrder.forEach(row => tbody.appendChild(row));
+    }
+    currentSortColumn = null;
+    currentSortDirection = null;
+
+    // Clear all sort indicators
+    table.querySelectorAll('th[data-sort-column]').forEach(header => {
+      header.innerHTML = header.getAttribute('data-original-text');
+    });
+  }
+
+  function handleSortClick(event) {
+    const th = event.currentTarget;
+    const table = th.closest('table');
+    const columnIndex = parseInt(th.getAttribute('data-sort-column'), 10);
+    const sortType = th.getAttribute('data-sort-type') || 'text';
+
+    // Determine new sort direction
+    if (currentSortColumn === columnIndex) {
+      // Cycle: desc -> asc -> reset
+      if (currentSortDirection === 'desc') {
+        currentSortDirection = 'asc';
+      } else {
+        // Reset to original order
+        resetTableSort(table);
+        return;
+      }
+    } else {
+      currentSortColumn = columnIndex;
+      currentSortDirection = 'desc';
+    }
+
+    // Update all sortable headers in this table
+    table.querySelectorAll('th[data-sort-column]').forEach(header => {
+      const idx = parseInt(header.getAttribute('data-sort-column'), 10);
+      const text = header.getAttribute('data-original-text');
+      if (idx === columnIndex) {
+        header.innerHTML = text + ' ' + (currentSortDirection === 'asc' ? '↑' : '↓');
+      } else {
+        header.innerHTML = text;
+      }
+    });
+
+    sortTableByColumn(table, columnIndex, currentSortDirection, sortType);
+  }
+
+  function handleResetClick(event) {
+    const button = event.currentTarget;
+    const table = button.closest('.table-container').querySelector('table');
+    resetTableSort(table);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Store original row order for each table
+    document.querySelectorAll('table.table').forEach(table => {
+      const tbody = table.querySelector('tbody');
+      originalRowOrders.set(table, Array.from(tbody.querySelectorAll('tr')));
+    });
+
+    // Setup sortable headers
+    document.querySelectorAll('th[data-sort-column]').forEach(th => {
+      th.style.cursor = 'pointer';
+      th.setAttribute('data-original-text', th.textContent);
+      th.addEventListener('click', handleSortClick);
+    });
+
+    // Setup reset buttons
+    document.querySelectorAll('.reset-sort-btn').forEach(btn => {
+      btn.addEventListener('click', handleResetClick);
+    });
+  });
 </script>
 <section class="content">
     <div class="container-fluid">
@@ -34,39 +167,45 @@ Connected Peers
         <div class="alert alert-warning" role="alert">{{.error}}</div>
         {{ end}}
         {{ range $dev := .devices }}
-            <table class="table table-sm">
-                <caption>List of connected peers for device with name {{ $dev.Name }} </caption>
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Email</th>
-                  <th scope="col">Allocated IPs</th>
-                  <th scope="col">Endpoint</th>
-                  <th scope="col">Public Key</th>
-                  <th scope="col">Received</th>
-                  <th scope="col">Transmitted</th>
-                  <th scope="col">Connected (Approximation)</th>
-                  <th scope="col">Last Handshake</th>
-                </tr>
-              </thead>
-              <tbody>
-              {{ range $idx, $peer := $dev.Peers }}
-              <tr {{ if $peer.Connected }} class="table-success" {{ end }}>
-                <th scope="row">{{ $idx }}</th>
-                <td>{{ $peer.Name }}</td>
-                <td>{{ $peer.Email }}</td>
-                <td>{{ $peer.AllocatedIP }}</td>
-                <td>{{ $peer.Endpoint }}</td>
-                <td>{{ $peer.PublicKey }}</td>
-                <td title="{{ $peer.ReceivedBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.ReceivedBytes }}))</script></td>
-                <td title="{{ $peer.TransmitBytes }} Bytes"><script>document.write(bytesToHumanReadable({{ $peer.TransmitBytes }}))</script></td>
-                <td>{{ if $peer.Connected }}✓{{end}}</td>
-                <td>{{ $peer.LastHandshakeTime.Format "2006-01-02 15:04:05 MST" }}</td>
-               </tr>
-              {{ end }}
-              </tbody>
-            </table>
+            <div class="table-container">
+              <div class="mb-2">
+                <button type="button" class="btn btn-sm btn-secondary reset-sort-btn">Reset Sort</button>
+                <small class="text-muted ml-2">Click column headers to sort. Click sorted column again to reverse, then again to reset.</small>
+              </div>
+              <table class="table table-sm">
+                  <caption>List of connected peers for device with name {{ $dev.Name }} </caption>
+                <thead>
+                  <tr>
+                    <th scope="col" data-sort-column="0" data-sort-type="number">#</th>
+                    <th scope="col" data-sort-column="1" data-sort-type="text">Name</th>
+                    <th scope="col" data-sort-column="2" data-sort-type="text">Email</th>
+                    <th scope="col" data-sort-column="3" data-sort-type="ip">Allocated IPs</th>
+                    <th scope="col" data-sort-column="4" data-sort-type="ip">Endpoint</th>
+                    <th scope="col" data-sort-column="5" data-sort-type="text">Public Key</th>
+                    <th scope="col" data-sort-column="6" data-sort-type="bytes">Received</th>
+                    <th scope="col" data-sort-column="7" data-sort-type="bytes">Transmitted</th>
+                    <th scope="col" data-sort-column="8" data-sort-type="boolean">Connected</th>
+                    <th scope="col" data-sort-column="9" data-sort-type="date">Last Handshake</th>
+                  </tr>
+                </thead>
+                <tbody>
+                {{ range $idx, $peer := $dev.Peers }}
+                <tr {{ if $peer.Connected }} class="table-success" {{ end }}>
+                  <th scope="row" data-value="{{ $idx }}">{{ $idx }}</th>
+                  <td>{{ $peer.Name }}</td>
+                  <td>{{ $peer.Email }}</td>
+                  <td>{{ $peer.AllocatedIP }}</td>
+                  <td>{{ $peer.Endpoint }}</td>
+                  <td>{{ $peer.PublicKey }}</td>
+                  <td title="{{ $peer.ReceivedBytes }} Bytes" data-value="{{ $peer.ReceivedBytes }}"><script>document.write(bytesToHumanReadable({{ $peer.ReceivedBytes }}))</script></td>
+                  <td title="{{ $peer.TransmitBytes }} Bytes" data-value="{{ $peer.TransmitBytes }}"><script>document.write(bytesToHumanReadable({{ $peer.TransmitBytes }}))</script></td>
+                  <td data-value="{{ if $peer.Connected }}1{{ else }}0{{ end }}">{{ if $peer.Connected }}✓{{end}}</td>
+                  <td data-value="{{ $peer.LastHandshakeTime.Format "2006-01-02T15:04:05Z07:00" }}">{{ $peer.LastHandshakeTime.Format "2006-01-02 15:04:05 MST" }}</td>
+                 </tr>
+                {{ end }}
+                </tbody>
+              </table>
+            </div>
         {{ end }}
     </div>
 </section>
