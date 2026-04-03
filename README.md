@@ -71,6 +71,40 @@ docker-compose up
 | `SMTP_AUTH_TYPE`              | The SMTP authentication type. Possible values: `PLAIN`, `LOGIN`, `NONE`                                                                                                                                                                                                             | `NONE`                             |
 | `SMTP_ENCRYPTION`             | The encryption method. Possible values: `NONE`, `SSL`, `SSLTLS`, `TLS`, `STARTTLS`                                                                                                                                                                                                  | `STARTTLS`                         |
 | `SMTP_HELO`                   | Hostname to use for the HELO message. smtp-relay.gmail.com needs this set to anything but `localhost`                                                                                                                                                                               | `localhost`                        |
+
+### GitHub OAuth
+
+Set `WGUI_AUTH_METHOD=github` to enable GitHub OAuth authentication. When enabled, the local password-based login form is replaced with a GitHub OAuth flow.
+
+| Variable                          | Description                                                                                                                                                                                                                                                                         | Default                            |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|
+| `WGUI_AUTH_METHOD`                | Authentication method. Possible values: `local`, `github`                                                                                                                                                                                                                          | `local`                            |
+| `WGUI_GITHUB_CLIENT_ID`           | GitHub OAuth application client ID                                                                                                                                                                                                                                                   | N/A (required for github mode)     |
+| `WGUI_GITHUB_CLIENT_SECRET`       | GitHub OAuth application client secret                                                                                                                                                                                                                                               | N/A (required for github mode)     |
+| `WGUI_GITHUB_CLIENT_SECRET_FILE`  | Optional filepath for the GitHub OAuth client secret. Leave `WGUI_GITHUB_CLIENT_SECRET` blank to take effect                                                                                                                                                                          | N/A                                |
+| `WGUI_GITHUB_REDIRECT_URL`        | GitHub OAuth callback URL (must match the callback URL configured in your GitHub App)                                                                                                                                                                                                  | N/A (required for github mode)     |
+| `WGUI_GITHUB_ALLOWED_USERS`       | Comma-separated list of GitHub usernames allowed to login                                                                                                                                                                                                                           | N/A (required for github mode)    |
+| `WGUI_GITHUB_ALLOWED_ORGS`        | Comma-separated list of GitHub organizations whose members are allowed to login                                                                                                                                                                                                      | N/A                                |
+| `WGUI_GITHUB_ADMIN_USERS`         | Comma-separated list of GitHub usernames that should be granted admin privileges                                                                                                                                                                                                    | N/A (required for github mode)     |
+
+#### GitHub App Setup
+
+1. Create a GitHub App at [GitHub Developer Settings](https://github.com/settings/developers)
+   - Set the callback URL to: `https://your-domain.com/auth/github/callback` (or `/your-base-path/auth/github/callback` if using a subpath)
+   - Enable "Request user authorization (OAuth) during installation"
+   - Set the following permissions:
+     - Account: Read-only (for user email and username)
+2. Note the Client ID and Client Secret from the app
+3. Configure the environment variables
+
+#### Mode Switching
+
+- Switching from `local` to `github` mode: Existing sessions remain valid until they expire. Users will see the GitHub login button on next login.
+- Switching from `github` to `local` mode: Existing sessions remain valid until they expire. Users who log in again will use the password form.
+- First startup after upgrading to a build that includes GitHub OAuth support: Existing sessions from the previous version are invalidated once and users must re-authenticate.
+
+> **Note:** After upgrading wireguard-ui with GitHub OAuth support, sessions from the previous version will be invalidated. Users will need to re-authenticate.
+
 ### Defaults for server configuration
 
 These environment variables are used to control the default server settings used when initializing the database.

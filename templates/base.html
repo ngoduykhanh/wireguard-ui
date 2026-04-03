@@ -148,6 +148,7 @@
                             </a>
                         </li>
                         {{if not .loginDisabled}}
+                        {{if and (not (eq .authMethod "github")) .baseData.Admin}}
                         <li class="nav-item">
                             <a href="{{.basePath}}/users-settings" class="nav-link {{if eq .baseData.Active "users-settings" }}active{{end}}">
                             <i class="nav-icon fas fa-cog"></i>
@@ -157,6 +158,7 @@
 
                             </a>
                         </li>
+                        {{end}}
                         {{end}}
                         {{end}}
 

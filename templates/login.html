@@ -31,6 +31,15 @@
         <div class="card">
             <div class="card-body login-card-body">
                 <p class="login-box-msg">登录以开始使用</p>
+                {{if eq .authMethod "github"}}
+                <div class="text-center">
+                    <p class="mb-4">使用 GitHub 账户登录</p>
+                    <a href="{{.basePath}}/auth/github/start" id="btn_github_login" class="btn btn-github btn-block btn-lg">
+                        <i class="fab fa-github mr-2"></i> 使用 GitHub 登录
+                    </a>
+                    <p id="message" class="mt-3"></p>
+                </div>
+                {{else}}
                 <form action="" method="post">
                     <div class="input-group mb-3">
                         <input id="username" type="text" class="form-control" placeholder="用户名">
@@ -67,6 +76,7 @@
                 <div class="text-center mb-3">
                     <p id="message"></p>
                 </div>
+                {{end}}
             </div>
             <!-- /.login-card-body -->
         </div>
@@ -87,10 +97,26 @@
         if (nextURL && /(?:^\/[a-zA-Z_])|(?:^\/$)/.test(nextURL.trim())) {
             window.location.href = nextURL;
         } else {
-            window.location.href = '/{{.basePath}}';
-        } 
+            window.location.href = '{{.basePath}}/';
+        }
     }
 </script>
+{{if eq .authMethod "github"}}
+<script>
+    $(document).ready(function () {
+        $("#btn_github_login").click(function (e) {
+            e.preventDefault();
+            const urlParams = new URLSearchParams(window.location.search);
+            const nextURL = urlParams.get('next');
+            let redirectUrl = '{{.basePath}}/auth/github/start';
+            if (nextURL) {
+                redirectUrl += '?next=' + encodeURIComponent(nextURL);
+            }
+            window.location.href = redirectUrl;
+        });
+    });
+</script>
+{{else}}
 <script>
     $(document).ready(function () {
         $('form').on('submit', function(e) {
@@ -127,4 +153,5 @@
         });
     });
 </script>
+{{end}}
 </html>

@@ -20,17 +20,43 @@
         <div class="row">
             <!-- left column -->
             <div class="col-md-6">
+                {{if eq .authMethod "github"}}
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">身份信息</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="control-label">用户名</label>
+                            <input type="text" class="form-control" value="" id="username" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">显示名称</label>
+                            <input type="text" class="form-control" value="" id="display_name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">认证来源</label>
+                            <input type="text" class="form-control" value="GitHub" id="auth_source" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="control-label">角色</label>
+                            <input type="text" class="form-control" value="" id="role" readonly>
+                        </div>
+                    </div>
+                </div>
+                {{else}}
                 <div class="card card-success">
                     <div class="card-header">
                         <h3 class="card-title">更新用户信息</h3>
-}                    </div>
+                    </div>
                     <!-- /.card-header -->
                     <!-- form start -->
                     <form role="form" id="frm_profile" name="frm_profile">
                         <div class="card-body">
                             <div class="form-group">
                                 <label for="username" class="control-label">用户名</label>
-}                                <input type="text" class="form-control" name="username" id="username"
+                                <input type="text" class="form-control" name="username" id="username"
                                        value="">
                             </div>
                             <div class="form-group">
@@ -46,6 +72,7 @@
                     </form>
                 </div>
                 <!-- /.card -->
+                {{end}}
             </div>
         </div>
         <!-- /.row -->
@@ -71,6 +98,10 @@
                 $("#username").val(user.username);
                 previous_username = user.username;
                 admin = user.admin;
+                {{if eq .authMethod "github"}}
+                $("#display_name").val(user.display_name || user.username);
+                $("#role").val(user.admin ? '管理员' : '普通用户');
+                {{end}}
             },
             error: function (jqXHR, exception) {
                 const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -78,8 +109,10 @@
             }
         });
     });
+</script>
 
-
+{{if not (eq .authMethod "github")}}
+<script>
     function updateUserInfo() {
         const username = $("#username").val();
         const password = $("#password").val();
@@ -93,7 +126,7 @@
             data: JSON.stringify(data),
             success: function (data) {
                 toastr.success("已成功更新用户信息");
-}                location.reload();
+                location.reload();
             },
             error: function (jqXHR, exception) {
                 const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -117,7 +150,7 @@
             messages: {
                 username: {
                     required: "请输入用户名",
-}                }
+                }
             },
             errorElement: 'span',
             errorPlacement: function (error, element) {
@@ -133,4 +166,5 @@
         });
     });
 </script>
+{{end}}
 {{ end }}
