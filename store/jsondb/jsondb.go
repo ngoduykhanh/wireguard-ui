@@ -16,6 +16,10 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
+var deleteUserFile = func(conn *scribble.Driver, username string) error {
+	return conn.Delete("users", username)
+}
+
 type JsonDB struct {
 	conn   *scribble.Driver
 	dbPath string
@@ -216,7 +220,78 @@ func (o *JsonDB) SaveUser(user model.User) error {
 // DeleteUser func to remove user from the database
 func (o *JsonDB) DeleteUser(username string) error {
 	delete(util.DBUsersToCRC32, username)
-	return o.conn.Delete("users", username)
+	return deleteUserFile(o.conn, username)
+}
+
+// GetUserByAuthIdentity func to get a user by auth source and subject
+func (o *JsonDB) GetUserByAuthIdentity(authSource, authSubject string) (model.User, error) {
+	if authSubject == "" {
+		return model.User{}, fmt.Errorf("auth subject cannot be empty for auth source %q", authSource)
+	}
+
+	users, err := o.GetUsers()
+	if err != nil {
+		return model.User{}, err
+	}
+
+	for _, user := range users {
+		if user.AuthSource == authSource && user.AuthSubject == authSubject {
+			return user, nil
+		}
+	}
+
+	return model.User{}, fmt.Errorf("user not found for auth source %q and subject %q", authSource, authSubject)
+}
+
+// ReplaceUser safely replaces or renames a user record.
+// If oldUsername == user.Username, it performs an update.
+// If they differ, it writes the new record first, then deletes the old one.
+// If the old record deletion fails after the new record was written, the new
+// record remains and an error indicating manual cleanup is returned.
+func (o *JsonDB) ReplaceUser(oldUsername string, user model.User) error {
+	userPath := path.Join(path.Join(o.dbPath, "users"), user.Username+".json")
+	oldUserPath := path.Join(path.Join(o.dbPath, "users"), oldUsername+".json")
+
+	isRename := oldUsername != user.Username
+
+	if isRename {
+		_, err := os.Stat(oldUserPath)
+		if err != nil {
+			return fmt.Errorf("old user record does not exist: %w", err)
+		}
+
+		_, err = os.Stat(userPath)
+		if err == nil {
+			return fmt.Errorf("cannot rename to %q: a record with that name already exists", user.Username)
+		}
+	}
+
+	if err := o.conn.Write("users", user.Username, user); err != nil {
+		return fmt.Errorf("failed to write new user record: %w", err)
+	}
+
+	if err := util.ManagePerms(userPath); err != nil {
+		os.Remove(userPath)
+		return fmt.Errorf("failed to set permissions on new user record: %w", err)
+	}
+
+	util.DBUsersToCRC32[user.Username] = util.GetDBUserCRC32(user)
+
+	if isRename {
+		delete(util.DBUsersToCRC32, oldUsername)
+
+		if err := deleteUserFile(o.conn, oldUsername); err != nil {
+			rollbackErr := deleteUserFile(o.conn, user.Username)
+			if rollbackErr != nil {
+				return fmt.Errorf("failed to delete old user record %q (new record %q written): %v; rollback failed: %v; manual cleanup required: remove %s and ensure %s exists", oldUsername, user.Username, err, rollbackErr, userPath, oldUserPath)
+			}
+			delete(util.DBUsersToCRC32, user.Username)
+			os.RemoveAll(userPath)
+			return fmt.Errorf("failed to delete old user record %q (new record %q was written and rolled back): %v", oldUsername, user.Username, err)
+		}
+	}
+
+	return nil
 }
 
 // GetGlobalSettings func to query global settings from the database

@@ -2,8 +2,7 @@ package util
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/gob"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -727,13 +726,28 @@ func ManagePerms(path string) error {
 	return err
 }
 
+// GetDBUserCRC32 builds a stable session hash from security-relevant user fields.
+// DisplayName is intentionally excluded so profile presentation changes do not invalidate sessions.
 func GetDBUserCRC32(dbuser model.User) uint32 {
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	if err := enc.Encode(dbuser); err != nil {
-		panic("model.User is gob-incompatible, session verification is impossible")
+	h := crc32.NewIEEE()
+	writeHashField(h, dbuser.Username)
+	if dbuser.Admin {
+		writeHashField(h, "1")
+	} else {
+		writeHashField(h, "0")
 	}
-	return crc32.ChecksumIEEE(buf.Bytes())
+	writeHashField(h, dbuser.Password)
+	writeHashField(h, dbuser.PasswordHash)
+	writeHashField(h, dbuser.AuthSource)
+	writeHashField(h, dbuser.AuthSubject)
+	return h.Sum32()
+}
+
+func writeHashField(h io.Writer, value string) {
+	var length [4]byte
+	binary.BigEndian.PutUint32(length[:], uint32(len(value)))
+	_, _ = h.Write(length[:])
+	_, _ = h.Write([]byte(value))
 }
 
 func ConcatMultipleSlices(slices ...[]byte) []byte {

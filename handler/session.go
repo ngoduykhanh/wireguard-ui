@@ -8,6 +8,9 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/xid"
+
+	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
@@ -246,4 +249,48 @@ func clearSession(c echo.Context) {
 	cookie.HttpOnly = true
 	cookie.SameSite = http.SameSiteLaxMode
 	c.SetCookie(cookie)
+}
+
+func establishAuthenticatedSession(c echo.Context, user model.User, rememberMe bool) error {
+	sess, err := session.Get("session", c)
+	if err != nil {
+		return err
+	}
+
+	ageMax := 0
+	if rememberMe {
+		ageMax = 86400 * 7
+	}
+
+	cookiePath := util.GetCookiePath()
+
+	sess.Options = &sessions.Options{
+		Path:     cookiePath,
+		MaxAge:   ageMax,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	tokenUID := xid.New().String()
+	now := time.Now().UTC().Unix()
+
+	sess.Values["username"] = user.Username
+	sess.Values["user_hash"] = util.GetDBUserCRC32(user)
+	sess.Values["admin"] = user.Admin
+	sess.Values["session_token"] = tokenUID
+	sess.Values["max_age"] = ageMax
+	sess.Values["created_at"] = now
+	sess.Values["updated_at"] = now
+	sess.Save(c.Request(), c.Response())
+
+	cookie := new(http.Cookie)
+	cookie.Name = "session_token"
+	cookie.Path = cookiePath
+	cookie.Value = tokenUID
+	cookie.MaxAge = ageMax
+	cookie.HttpOnly = true
+	cookie.SameSite = http.SameSiteLaxMode
+	c.SetCookie(cookie)
+
+	return nil
 }

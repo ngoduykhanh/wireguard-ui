@@ -9,25 +9,27 @@ import (
 
 // Runtime config
 var (
-	DisableLogin       bool
-	BindAddress        string
-	SmtpHostname       string
-	SmtpPort           int
-	SmtpUsername       string
-	SmtpPassword       string
-	SmtpNoTLSCheck     bool
-	SmtpEncryption     string
-	SmtpAuthType       string
-	SmtpHelo           string
-	SendgridApiKey     string
-	EmailFrom          string
-	EmailFromName      string
-	SessionSecret      [64]byte
-	SessionMaxDuration int64
-	WgConfTemplate     string
-	BasePath           string
-	SubnetRanges       map[string]([]*net.IPNet)
-	SubnetRangesOrder  []string
+	DisableLogin        bool
+	BindAddress         string
+	SmtpHostname        string
+	SmtpPort            int
+	SmtpUsername        string
+	SmtpPassword        string
+	SmtpNoTLSCheck      bool
+	SmtpEncryption      string
+	SmtpAuthType        string
+	SmtpHelo            string
+	SendgridApiKey      string
+	EmailFrom           string
+	EmailFromName       string
+	SessionSecret       [64]byte
+	SessionMaxDuration  int64
+	WgConfTemplate      string
+	BasePath            string
+	SubnetRanges        map[string]([]*net.IPNet)
+	SubnetRangesOrder   []string
+	CurrentAuthMethod   AuthMethod
+	CurrentGitHubConfig GitHubAuthConfig
 )
 
 const (

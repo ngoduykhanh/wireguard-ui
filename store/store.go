@@ -8,7 +8,9 @@ type IStore interface {
 	Init() error
 	GetUsers() ([]model.User, error)
 	GetUserByName(username string) (model.User, error)
+	GetUserByAuthIdentity(authSource, authSubject string) (model.User, error)
 	SaveUser(user model.User) error
+	ReplaceUser(oldUsername string, user model.User) error
 	DeleteUser(username string) error
 	GetGlobalSettings() (model.GlobalSetting, error)
 	GetServer() (model.Server, error)

@@ -1,6 +1,4 @@
 package util
 
-import "sync"
-
 var IPToSubnetRange = map[string]uint16{}
 var DBUsersToCRC32 = map[string]uint32{}
