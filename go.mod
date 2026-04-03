@@ -1,10 +1,9 @@
 module github.com/ngoduykhanh/wireguard-ui
 
-go 1.21
+go 1.25.0
 
 require (
 	github.com/glendc/go-external-ip v0.1.0
-
 	github.com/gorilla/sessions v1.2.2
 	github.com/labstack/echo-contrib v0.15.0
 	github.com/labstack/echo/v4 v4.11.4
@@ -21,6 +20,8 @@ require (
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20210803171230-4253848d036c
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )
+
+require golang.org/x/oauth2 v0.36.0
 
 require (
 	github.com/go-playground/locales v0.14.1 // indirect

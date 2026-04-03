@@ -29,7 +29,7 @@ var (
 	appVersion = "development"
 	gitCommit  = "N/A"
 	gitRef     = "N/A"
-	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
+	buildTime  = time.Now().UTC().Format("01-02-2006 15:04:05")
 	// configuration variables
 	flagDisableLogin       = false
 	flagBindAddress        = "0.0.0.0:5000"
@@ -137,6 +137,17 @@ func init() {
 	util.BasePath = util.ParseBasePath(flagBasePath)
 	util.SubnetRanges = util.ParseSubnetRanges(flagSubnetRanges)
 
+	util.CurrentAuthMethod = util.ParseAuthMethod()
+	if util.CurrentAuthMethod == util.AuthMethodGitHub {
+		util.CurrentGitHubConfig = util.ParseGitHubAuthConfig()
+		if err := util.ValidateGitHubAuthConfig(util.CurrentGitHubConfig); err != nil {
+			log.Fatalf("GitHub OAuth configuration is invalid: %v", err)
+		}
+		if err := handler.ApplyGitHubAuthConfig(util.CurrentGitHubConfig); err != nil {
+			log.Fatalf("Failed to apply GitHub OAuth configuration: %v", err)
+		}
+	}
+
 	lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO"))
 
 	// print only if log level is INFO or lower
@@ -174,6 +185,7 @@ func main() {
 	extraData["gitCommit"] = gitCommit
 	extraData["basePath"] = util.BasePath
 	extraData["loginDisabled"] = flagDisableLogin
+	extraData["authMethod"] = util.CurrentAuthMethod
 
 	// strip the "templates/" prefix from the embedded directory so files can be read by their direct name (e.g.
 	// "base.html" instead of "templates/base.html")
@@ -204,15 +216,24 @@ func main() {
 
 	if !util.DisableLogin {
 		app.GET(util.BasePath+"/login", handler.LoginPage())
-		app.POST(util.BasePath+"/login", handler.Login(db), handler.ContentTypeJson)
-		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
-		app.GET(util.BasePath+"/profile", handler.LoadProfile(), handler.ValidSession, handler.RefreshSession)
-		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(), handler.ValidSession, handler.RefreshSession, handler.NeedsAdmin)
-		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession, handler.ContentTypeJson)
-		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
-		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
-		app.GET(util.BasePath+"/get-users", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
-		app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
+
+		if util.CurrentAuthMethod == util.AuthMethodGitHub {
+			app.GET(util.BasePath+"/auth/github/start", handler.GitHubStart())
+			app.GET(util.BasePath+"/auth/github/callback", handler.GitHubCallback(db))
+			app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
+			app.GET(util.BasePath+"/profile", handler.LoadProfile(), handler.ValidSession, handler.RefreshSession)
+			app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
+		} else {
+			app.POST(util.BasePath+"/login", handler.Login(db), handler.ContentTypeJson)
+			app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
+			app.GET(util.BasePath+"/profile", handler.LoadProfile(), handler.ValidSession, handler.RefreshSession)
+			app.GET(util.BasePath+"/users-settings", handler.UsersSettings(), handler.ValidSession, handler.RefreshSession, handler.NeedsAdmin)
+			app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession, handler.ContentTypeJson)
+			app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+			app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+			app.GET(util.BasePath+"/get-users", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
+			app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
+		}
 	}
 
 	var sendmail emailer.Emailer
