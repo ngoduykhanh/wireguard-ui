@@ -15,6 +15,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/geoip"
 	"github.com/ngoduykhanh/wireguard-ui/store"
 	"github.com/ngoduykhanh/wireguard-ui/telegram"
 
@@ -56,6 +57,7 @@ var (
 	flagBrandText                = "WireGuard UI"
 	flagAccentColor              = "#343a40"
 	flagPageTitlePrefix          string
+	flagGeoLite2DBPath           = "./db/GeoLite2-City.mmdb"
 )
 
 const (
@@ -101,6 +103,7 @@ func init() {
 	flag.StringVar(&flagBrandText, "brand-text", util.LookupEnvOrString("WGUI_BRAND_TEXT", flagBrandText), "The UI brand text or name")
 	flag.StringVar(&flagAccentColor, "accent-color", util.LookupEnvOrString("WGUI_ACCENT_COLOR", flagAccentColor), "The UI accent color")
 	flag.StringVar(&flagPageTitlePrefix, "page-title-prefix", util.LookupEnvOrString("WGUI_PAGE_TITLE_PREFIX", flagPageTitlePrefix), "The prefix of the page title")
+	flag.StringVar(&flagGeoLite2DBPath, "geolite-db-path", util.LookupEnvOrString(util.GeoLite2DBPathEnvVar, flagGeoLite2DBPath), "Path to the local GeoLite2-City database file")
 
 	var (
 		smtpPasswordLookup   = util.LookupEnvOrString("SMTP_PASSWORD", flagSmtpPassword)
@@ -153,6 +156,7 @@ func init() {
 	util.BrandText = flagBrandText
 	util.AccentColor = flagAccentColor
 	util.PageTitlePrefix = flagPageTitlePrefix
+	util.GeoLite2DBPath = flagGeoLite2DBPath
 
 	lvl, _ := util.ParseLogLevel(util.LookupEnvOrString(util.LogLevel, "INFO"))
 
@@ -206,6 +210,9 @@ func main() {
 
 	// create the wireguard config on start, if it doesn't exist
 	initServerConfig(db, tmplDir)
+
+	// load the GeoLite2 database and auto-update it if stale
+	initGeoLite2(db)
 
 	// Check if subnet ranges are valid for the server configuration
 	// Remove any non-valid CIDRs
@@ -265,6 +272,7 @@ func main() {
 	app.POST(util.BasePath+"/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/global-settings", handler.GlobalSettings(db), handler.ValidSession, handler.RefreshSession, handler.NeedsAdmin)
 	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/api/geolite/update", handler.GeoLiteUpdate(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/status", handler.Status(db), handler.ValidSession, handler.RefreshSession)
 	app.GET(util.BasePath+"/api/clients", handler.GetClients(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/client/:id", handler.GetClient(db), handler.ValidSession)
@@ -341,6 +349,38 @@ func initServerConfig(db store.IStore, tmplDir fs.FS) {
 	if err != nil {
 		log.Fatalf("Cannot create server config: %v", err)
 	}
+}
+
+// initGeoLite2 loads the local GeoLite2 database and, if a MaxMind license key
+// is configured and the database is missing or older than 7 days, updates it in
+// the background so it does not delay startup.
+func initGeoLite2(db store.IStore) {
+	geoip.SetDBPath(util.GeoLite2DBPath)
+
+	if err := geoip.Load(); err != nil {
+		log.Infof("GeoLite2 database not loaded yet: %v", err)
+	}
+
+	settings, err := db.GetGlobalSettings()
+	if err != nil {
+		log.Warnf("Cannot get global settings for GeoLite2: %v", err)
+		return
+	}
+	if strings.TrimSpace(settings.MaxmindLicenseKey) == "" {
+		return
+	}
+	if !geoip.NeedsUpdate(7 * 24 * time.Hour) {
+		return
+	}
+
+	go func() {
+		log.Info("GeoLite2 database is missing or older than 7 days, updating...")
+		if err := geoip.Update(settings.MaxmindLicenseKey); err != nil {
+			log.Warnf("GeoLite2 auto-update failed: %v", err)
+			return
+		}
+		log.Info("GeoLite2 database updated successfully")
+	}()
 }
 
 func initTelegram(initDeps telegram.TgBotInitDependencies) {

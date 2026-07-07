@@ -25,6 +25,7 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
+	"github.com/ngoduykhanh/wireguard-ui/geoip"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/store"
 	"github.com/ngoduykhanh/wireguard-ui/telegram"
@@ -909,9 +910,16 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 			log.Error("Cannot get global settings: ", err)
 		}
 
+		geoLiteLastUpdated := ""
+		if t, ok := geoip.LastUpdated(); ok {
+			geoLiteLastUpdated = t.UTC().Format("2006-01-02 15:04:05 MST")
+		}
+
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
-			"globalSettings": globalSettings,
+			"baseData":           model.BaseData{Active: "global-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
+			"globalSettings":     globalSettings,
+			"geoLiteAvailable":   geoip.Available(),
+			"geoLiteLastUpdated": geoLiteLastUpdated,
 		})
 	}
 }
@@ -939,6 +947,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		Connected         bool
 		AllocatedIP       string
 		Endpoint          string
+		Location          string
 	}
 
 	type DeviceVM struct {
@@ -1007,6 +1016,11 @@ func Status(db store.IStore) echo.HandlerFunc {
 
 						if isAdmin(c) {
 							pVm.Endpoint = devices[i].Peers[j].Endpoint.String()
+							if endpoint := devices[i].Peers[j].Endpoint; endpoint != nil && endpoint.IP != nil && geoip.Available() {
+								if loc, err := geoip.Lookup(endpoint.IP.String()); err == nil {
+									pVm.Location = loc.Display()
+								}
+							}
 						}
 
 						if _client, ok := m[pVm.PublicKey]; ok {
@@ -1052,6 +1066,28 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 		log.Infof("Updated global settings: %v", globalSettings)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated global settings successfully"})
+	}
+}
+
+// GeoLiteUpdate handler downloads/updates the GeoLite2 database using the
+// MaxMind license key configured in the global settings.
+func GeoLiteUpdate(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		globalSettings, err := db.GetGlobalSettings()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
+		}
+
+		if err := geoip.Update(globalSettings.MaxmindLicenseKey); err != nil {
+			log.Error("Cannot update GeoLite2 database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+
+		msg := "GeoLite2 database updated successfully"
+		if t, ok := geoip.LastUpdated(); ok {
+			msg = fmt.Sprintf("GeoLite2 database updated successfully (%s)", t.UTC().Format("2006-01-02 15:04:05 MST"))
+		}
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, msg})
 	}
 }
 
