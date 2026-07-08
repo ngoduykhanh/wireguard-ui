@@ -76,9 +76,18 @@ func Login(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		username := data["username"].(string)
-		password := data["password"].(string)
-		rememberMe := data["rememberMe"].(bool)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		rememberMe, ok := data["rememberMe"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
@@ -220,10 +229,22 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		username := data["username"].(string)
-		password := data["password"].(string)
-		previousUsername := data["previous_username"].(string)
-		admin := data["admin"].(bool)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		previousUsername, ok := data["previous_username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		admin, ok := data["admin"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if !isAdmin(c) && (previousUsername != currentUser(c)) {
 			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
@@ -294,9 +315,18 @@ func CreateUser(db store.IStore) echo.HandlerFunc {
 		}
 
 		var user model.User
-		username := data["username"].(string)
-		password := data["password"].(string)
-		admin := data["admin"].(bool)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		admin, ok := data["admin"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if username == "" || !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
@@ -338,7 +368,10 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		username := data["username"].(string)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
@@ -753,8 +786,14 @@ func SetClientStatus(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		clientID := data["id"].(string)
-		status := data["status"].(bool)
+		clientID, ok := data["id"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		status, ok := data["status"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if _, err := xid.FromString(clientID); err != nil {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
