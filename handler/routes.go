@@ -1117,6 +1117,12 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Invalid DNS server address"})
 		}
 
+		// validate the config file permissions (octal, e.g. 0600)
+		if _, err := util.ParseConfigFileMode(globalSettings.ConfigFileMode); err != nil {
+			log.Warnf("Invalid config file mode input from user: %v", globalSettings.ConfigFileMode)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Config file permissions must be octal, e.g. 0600"})
+		}
+
 		globalSettings.UpdatedAt = time.Now().UTC()
 
 		// write config to the database

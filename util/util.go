@@ -541,6 +541,26 @@ func GetSubnetRangesString() string {
 	return strings.TrimSpace(strB.String())
 }
 
+// configFileFallbackMode is applied to the generated WireGuard config file when
+// no valid mode is configured. The file holds private keys, so it defaults to
+// owner read/write only.
+const configFileFallbackMode os.FileMode = 0600
+
+// ParseConfigFileMode parses an octal file-mode string (e.g. "0600"). An empty
+// string yields the default 0600. A value that is not valid octal is an error.
+// Only the permission bits are kept.
+func ParseConfigFileMode(mode string) (os.FileMode, error) {
+	mode = strings.TrimSpace(mode)
+	if mode == "" {
+		return configFileFallbackMode, nil
+	}
+	parsed, err := strconv.ParseUint(mode, 8, 32)
+	if err != nil {
+		return 0, fmt.Errorf("invalid file mode %q: must be octal, e.g. 0600", mode)
+	}
+	return os.FileMode(parsed) & os.ModePerm, nil
+}
+
 // WriteWireGuardServerConfig to write WireGuard server config. e.g. wg0.conf
 func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
@@ -576,12 +596,6 @@ func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, client
 		return err
 	}
 
-	// write config file to disk
-	f, err := os.Create(globalSettings.ConfigFilePath)
-	if err != nil {
-		return err
-	}
-
 	config := map[string]interface{}{
 		"serverConfig":   serverConfig,
 		"clientDataList": escapedClientDataList,
@@ -589,13 +603,34 @@ func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, client
 		"usersList":      usersList,
 	}
 
-	err = t.Execute(f, config)
+	// The config file contains private keys, so restrict its permissions.
+	// Default to 0600 when unset or invalid.
+	mode, err := ParseConfigFileMode(globalSettings.ConfigFileMode)
+	if err != nil {
+		log.Warnf("%v; falling back to 0600 for %s", err, globalSettings.ConfigFilePath)
+		mode = configFileFallbackMode
+	}
+
+	// Write in place (rather than via a temp file + rename) so that a plain
+	// IN_CLOSE_WRITE is emitted on the config path. The container entrypoint's
+	// inotify watch (WGUI_MANAGE_RESTART) relies on this to restart WireGuard.
+	f, err := os.OpenFile(globalSettings.ConfigFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 	if err != nil {
 		return err
 	}
-	f.Close()
+	// Enforce the exact permissions regardless of the process umask or of a
+	// pre-existing file's mode (OpenFile does not change an existing file).
+	if err := os.Chmod(globalSettings.ConfigFilePath, mode); err != nil {
+		f.Close()
+		return err
+	}
 
-	return nil
+	if err := t.Execute(f, config); err != nil {
+		f.Close()
+		return err
+	}
+
+	return f.Close()
 }
 
 // SendRequestedConfigsToTelegram to send client all their configs. Returns failed configs list.

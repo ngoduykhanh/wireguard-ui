@@ -74,6 +74,12 @@ Global Settings
                                     value="{{ .globalSettings.ConfigFilePath }}">
                             </div>
                             <div class="form-group">
+                                <label for="config_file_mode">Config File Permissions</label>
+                                <input type="text" class="form-control" id="config_file_mode"
+                                    name="config_file_mode" placeholder="E.g. 0600"
+                                    value="{{ if .globalSettings.ConfigFileMode }}{{ .globalSettings.ConfigFileMode }}{{ else }}0600{{ end }}">
+                            </div>
+                            <div class="form-group">
                                 <label for="maxmind_license_key">MaxMind License Key</label>
                                 <input type="text" class="form-control" id="maxmind_license_key"
                                     name="maxmind_license_key" placeholder="GeoLite2 license key"
@@ -131,7 +137,10 @@ Global Settings
                             <dt>7. WireGuard Config File Path</dt>
                             <dd>The path of your WireGuard server config file. Please make sure the parent directory
                                 exists and is writable.</dd>
-                            <dt>8. MaxMind License Key</dt>
+                            <dt>8. Config File Permissions</dt>
+                            <dd>Octal file mode applied to the generated config file, which contains private keys.
+                                Default value: <code>0600</code> (owner read/write only). Leave blank to use the default.</dd>
+                            <dt>9. MaxMind License Key</dt>
                             <dd>Your MaxMind license key, used to download the GeoLite2-City database. Create a free
                                 account at <code>maxmind.com</code> to generate one. Click
                                 <strong>Install / Update</strong> to download it locally; it also auto-updates on startup
@@ -185,6 +194,7 @@ Global Settings
                 "firewall_mark": $("#firewall_mark").val(),
                 "table": $("#table").val(),
                 "config_file_path": $("#config_file_path").val(),
+                "config_file_mode": $("#config_file_mode").val(),
                 "maxmind_license_key": $("#maxmind_license_key").val()
             };
         }

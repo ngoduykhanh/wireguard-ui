@@ -46,6 +46,7 @@ const (
 	DefaultFirewallMark                    = "0xca6c" // i.e. 51820
 	DefaultTable                           = "auto"
 	DefaultConfigFilePath                  = "/etc/wireguard/wg0.conf"
+	DefaultConfigFileMode                  = "0600"
 	DefaultGeoLite2DBPath                  = "./db/GeoLite2-City.mmdb"
 	UsernameEnvVar                         = "WGUI_USERNAME"
 	PasswordEnvVar                         = "WGUI_PASSWORD"
@@ -60,6 +61,7 @@ const (
 	FirewallMarkEnvVar                     = "WGUI_FIREWALL_MARK"
 	TableEnvVar                            = "WGUI_TABLE"
 	ConfigFilePathEnvVar                   = "WGUI_CONFIG_FILE_PATH"
+	ConfigFileModeEnvVar                   = "WGUI_CONFIG_FILE_MODE"
 	LogLevel                               = "WGUI_LOG_LEVEL"
 	ServerAddressesEnvVar                  = "WGUI_SERVER_INTERFACE_ADDRESSES"
 	ServerListenPortEnvVar                 = "WGUI_SERVER_LISTEN_PORT"
