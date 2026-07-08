@@ -971,6 +971,10 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 			log.Error("Cannot get global settings: ", err)
 		}
 
+		// Show the effective MaxMind key so a key set only via the environment is
+		// visible in the form (and persisted to the DB on the next save).
+		globalSettings.MaxmindLicenseKey = util.GetMaxmindLicenseKey(globalSettings)
+
 		geoLiteLastUpdated := ""
 		if t, ok := geoip.LastUpdated(); ok {
 			geoLiteLastUpdated = t.UTC().Format("2006-01-02 15:04:05 MST")
@@ -1147,7 +1151,7 @@ func GeoLiteUpdate(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
 		}
 
-		if err := geoip.Update(globalSettings.MaxmindLicenseKey); err != nil {
+		if err := geoip.Update(util.GetMaxmindLicenseKey(globalSettings)); err != nil {
 			log.Error("Cannot update GeoLite2 database: ", err)
 			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
 		}

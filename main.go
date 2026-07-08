@@ -369,7 +369,8 @@ func initGeoLite2(db store.IStore) {
 		log.Warnf("Cannot get global settings for GeoLite2: %v", err)
 		return
 	}
-	if strings.TrimSpace(settings.MaxmindLicenseKey) == "" {
+	licenseKey := util.GetMaxmindLicenseKey(settings)
+	if licenseKey == "" {
 		return
 	}
 	if !geoip.NeedsUpdate(7 * 24 * time.Hour) {
@@ -378,7 +379,7 @@ func initGeoLite2(db store.IStore) {
 
 	go func() {
 		log.Info("GeoLite2 database is missing or older than 7 days, updating...")
-		if err := geoip.Update(settings.MaxmindLicenseKey); err != nil {
+		if err := geoip.Update(licenseKey); err != nil {
 			log.Warnf("GeoLite2 auto-update failed: %v", err)
 			return
 		}

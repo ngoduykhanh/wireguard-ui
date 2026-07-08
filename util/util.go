@@ -95,6 +95,18 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	return strConfig
 }
 
+// GetMaxmindLicenseKey resolves the effective MaxMind license key, preferring
+// the value stored in the global settings and falling back to the
+// WGUI_MAXMIND_LICENSE_KEY environment variable. This lets a key configured
+// purely via the environment work even when it was never persisted to the DB
+// (e.g. the settings file predates the key being set).
+func GetMaxmindLicenseKey(settings model.GlobalSetting) string {
+	if k := strings.TrimSpace(settings.MaxmindLicenseKey); k != "" {
+		return k
+	}
+	return strings.TrimSpace(LookupEnvOrString(MaxmindLicenseKeyEnvVar, ""))
+}
+
 // ClientDefaultsFromEnv to read the default values for creating a new client from the environment or use sane defaults
 func ClientDefaultsFromEnv() model.ClientDefaults {
 	clientDefaults := model.ClientDefaults{}
