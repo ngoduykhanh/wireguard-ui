@@ -475,6 +475,10 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 
 		// validate the input Allocation IPs
 		allocatedIPs, err := util.GetAllocatedIPs("")
+		if err != nil {
+			log.Error("Cannot get allocated IP addresses: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get allocated IP addresses"})
+		}
 		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
@@ -697,6 +701,10 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		client := *clientData.Client
 		// validate the input Allocation IPs
 		allocatedIPs, err := util.GetAllocatedIPs(client.ID)
+		if err != nil {
+			log.Error("Cannot get allocated IP addresses: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get allocated IP addresses"})
+		}
 		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, _client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
