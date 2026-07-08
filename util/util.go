@@ -3,6 +3,7 @@ package util
 import (
 	"bufio"
 	"bytes"
+	crand "crypto/rand"
 	"encoding/gob"
 	"encoding/json"
 	"errors"
@@ -10,7 +11,7 @@ import (
 	"hash/crc32"
 	"io"
 	"io/fs"
-	"math/rand"
+	mrand "math/rand"
 	"net"
 	"os"
 	"path"
@@ -763,12 +764,22 @@ func UpdateHashes(db store.IStore) error {
 	return db.SaveHashes(clientServerHashes)
 }
 
+// RandomString returns a random alphanumeric string of the given length.
+// It uses a cryptographically secure source (crypto/rand) since it backs the
+// default session secret; it only falls back to a time-seeded generator if the
+// system CSPRNG is unavailable.
 func RandomString(length int) string {
-	var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, length)
+	if _, err := crand.Read(b); err != nil {
+		seededRand := mrand.New(mrand.NewSource(time.Now().UnixNano()))
+		for i := range b {
+			b[i] = charset[seededRand.Intn(len(charset))]
+		}
+		return string(b)
+	}
 	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
+		b[i] = charset[int(b[i])%len(charset)]
 	}
 	return string(b)
 }
