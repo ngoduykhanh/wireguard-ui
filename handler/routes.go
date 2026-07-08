@@ -34,6 +34,10 @@ import (
 
 var usernameRegexp = regexp.MustCompile("^\\w[\\w\\-.]*$")
 
+// unsafeFilenameChars matches any character that should not appear in a
+// downloaded config filename (prevents header/filename injection via client name).
+var unsafeFilenameChars = regexp.MustCompile(`[^a-zA-Z0-9_.-]+`)
+
 // Health check handler
 func Health() echo.HandlerFunc {
 	return func(c echo.Context) error {
@@ -856,8 +860,15 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 		// create io reader from string
 		reader := strings.NewReader(config)
 
+		// sanitize the client name before using it as a filename to avoid
+		// response header/filename injection
+		filename := unsafeFilenameChars.ReplaceAllString(clientData.Client.Name, "_")
+		if strings.Trim(filename, ".") == "" {
+			filename = clientData.Client.ID
+		}
+
 		// set response header for downloading
-		c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%s.conf", clientData.Client.Name))
+		c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename+".conf"))
 		return c.Stream(http.StatusOK, "text/conf", reader)
 	}
 }
