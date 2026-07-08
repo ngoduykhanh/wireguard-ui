@@ -1,8 +1,12 @@
-![](https://github.com/idressos/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
-
 # wireguard-ui
 
 A web user interface to manage your WireGuard setup.
+
+> **Note:** This is an independently maintained fork of
+> [ngoduykhanh/wireguard-ui](https://github.com/ngoduykhanh/wireguard-ui), whose
+> upstream is no longer actively maintained. It adds fixes and features on top of
+> upstream — including GeoLite2 peer geolocation, Wake-on-LAN, Telegram config
+> delivery, configurable config-file permissions, and various security hardening.
 
 ## Features
 
@@ -242,9 +246,3 @@ go build -o wireguard-ui
 ## License
 
 MIT. See [LICENSE](https://github.com/idressos/wireguard-ui/blob/master/LICENSE).
-
-## Support
-
-If you like the project and want to support it, you can *buy me a coffee* ☕
-
-<a href="https://www.buymeacoffee.com/khanhngo" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
