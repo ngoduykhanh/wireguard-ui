@@ -113,6 +113,7 @@ func doRefreshSession(c echo.Context) {
 		Path:     cookiePath,
 		MaxAge:   maxAge,
 		HttpOnly: true,
+		Secure:   util.SecureCookie,
 		SameSite: http.SameSiteLaxMode,
 	}
 	sess.Save(c.Request(), c.Response())
@@ -123,6 +124,7 @@ func doRefreshSession(c echo.Context) {
 	cookie.Value = oldCookie.Value
 	cookie.MaxAge = maxAge
 	cookie.HttpOnly = true
+	cookie.Secure = util.SecureCookie
 	cookie.SameSite = http.SameSiteLaxMode
 	c.SetCookie(cookie)
 }
@@ -244,6 +246,7 @@ func clearSession(c echo.Context) {
 	cookie.Path = cookiePath
 	cookie.MaxAge = -1
 	cookie.HttpOnly = true
+	cookie.Secure = util.SecureCookie
 	cookie.SameSite = http.SameSiteLaxMode
 	c.SetCookie(cookie)
 }

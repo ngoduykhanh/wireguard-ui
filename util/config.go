@@ -24,6 +24,7 @@ var (
 	EmailFromName      string
 	SessionSecret      [64]byte
 	SessionMaxDuration int64
+	SecureCookie       bool
 	WgConfTemplate     string
 	BasePath           string
 	SubnetRanges       map[string]([]*net.IPNet)
@@ -77,6 +78,7 @@ const (
 	LogoFilePathEnvVar                     = "WGUI_LOGO_FILE_PATH"
 	MaxmindLicenseKeyEnvVar                = "WGUI_MAXMIND_LICENSE_KEY"
 	GeoLite2DBPathEnvVar                   = "WGUI_GEOLITE_DB_PATH"
+	SecureCookieEnvVar                     = "WGUI_SESSION_SECURE_COOKIE"
 )
 
 func ParseBasePath(basePath string) string {

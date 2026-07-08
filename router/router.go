@@ -60,6 +60,7 @@ func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo
 	cookieStore := sessions.NewCookieStore(secret[:32], secret[32:])
 	cookieStore.Options.Path = cookiePath
 	cookieStore.Options.HttpOnly = true
+	cookieStore.Options.Secure = util.SecureCookie
 	cookieStore.MaxAge(86400 * 7)
 
 	e.Use(session.Middleware(cookieStore))

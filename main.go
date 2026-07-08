@@ -51,6 +51,7 @@ var (
 	flagTelegramFloodWait        = 60
 	flagSessionSecret            = util.RandomString(32)
 	flagSessionMaxDuration       = 90
+	flagSecureCookie             = false
 	flagWgConfTemplate           string
 	flagBasePath                 string
 	flagSubnetRanges             string
@@ -100,6 +101,7 @@ func init() {
 	flag.StringVar(&flagBasePath, "base-path", util.LookupEnvOrString("BASE_PATH", flagBasePath), "The base path of the URL")
 	flag.StringVar(&flagSubnetRanges, "subnet-ranges", util.LookupEnvOrString("SUBNET_RANGES", flagSubnetRanges), "IP ranges to choose from when assigning an IP for a client.")
 	flag.IntVar(&flagSessionMaxDuration, "session-max-duration", util.LookupEnvOrInt("SESSION_MAX_DURATION", flagSessionMaxDuration), "Max time in days a remembered session is refreshed and valid.")
+	flag.BoolVar(&flagSecureCookie, "secure-cookie", util.LookupEnvOrBool(util.SecureCookieEnvVar, flagSecureCookie), "Set the Secure flag on session cookies. Enable when serving over HTTPS (e.g. behind a TLS reverse proxy).")
 	flag.StringVar(&flagBrandText, "brand-text", util.LookupEnvOrString("WGUI_BRAND_TEXT", flagBrandText), "The UI brand text or name")
 	flag.StringVar(&flagAccentColor, "accent-color", util.LookupEnvOrString("WGUI_ACCENT_COLOR", flagAccentColor), "The UI accent color")
 	flag.StringVar(&flagPageTitlePrefix, "page-title-prefix", util.LookupEnvOrString("WGUI_PAGE_TITLE_PREFIX", flagPageTitlePrefix), "The prefix of the page title")
@@ -150,6 +152,7 @@ func init() {
 	util.EmailFromName = flagEmailFromName
 	util.SessionSecret = sha512.Sum512([]byte(flagSessionSecret))
 	util.SessionMaxDuration = int64(flagSessionMaxDuration) * 86_400 // Store in seconds
+	util.SecureCookie = flagSecureCookie
 	util.WgConfTemplate = flagWgConfTemplate
 	util.BasePath = util.ParseBasePath(flagBasePath)
 	util.SubnetRanges = util.ParseSubnetRanges(flagSubnetRanges)

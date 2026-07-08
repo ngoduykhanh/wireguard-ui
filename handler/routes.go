@@ -130,6 +130,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 				Path:     cookiePath,
 				MaxAge:   ageMax,
 				HttpOnly: true,
+				Secure:   util.SecureCookie,
 				SameSite: http.SameSiteLaxMode,
 			}
 
@@ -152,6 +153,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 			cookie.Value = tokenUID
 			cookie.MaxAge = ageMax
 			cookie.HttpOnly = true
+			cookie.Secure = util.SecureCookie
 			cookie.SameSite = http.SameSiteLaxMode
 			c.SetCookie(cookie)
 
