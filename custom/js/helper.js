@@ -1,18 +1,35 @@
+// escapeHtml escapes characters that are significant in HTML so that
+// user-controlled values (client names, emails, notes, ...) cannot be used to
+// inject markup or scripts when interpolated into the DOM.
+function escapeHtml(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function renderClientList(data) {
     $.each(data, function(index, obj) {
+        const clientName = escapeHtml(obj.Client.name);
+
         // render telegram button
         let telegramButton = ''
         if (obj.Client.telegram_userid) {
-            telegramButton =    `<div class="btn-group">      
+            telegramButton =    `<div class="btn-group">
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_telegram_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Telegram</button>
+                                        data-clientname="${clientName}">Telegram</button>
                                 </div>`
         }
 
         let telegramHtml = "";
         if (obj.Client.telegram_userid && obj.Client.telegram_userid.length > 0) {
-            telegramHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-tguserid"></i>${obj.Client.telegram_userid}</span>`
+            telegramHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-tguserid"></i>${escapeHtml(obj.Client.telegram_userid)}</span>`
         }
 
         // render client status css tag style
@@ -24,23 +41,23 @@ function renderClientList(data) {
         // render client allocated ip addresses
         let allocatedIpsHtml = "";
         $.each(obj.Client.allocated_ips, function(index, obj) {
-            allocatedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
+            allocatedIpsHtml += `<small class="badge badge-secondary">${escapeHtml(obj)}</small>&nbsp;`;
         })
 
         // render client allowed ip addresses
         let allowedIpsHtml = "";
         $.each(obj.Client.allowed_ips, function(index, obj) {
-            allowedIpsHtml += `<small class="badge badge-secondary">${obj}</small>&nbsp;`;
+            allowedIpsHtml += `<small class="badge badge-secondary">${escapeHtml(obj)}</small>&nbsp;`;
         })
 
         let subnetRangesString = "";
         if (obj.Client.subnet_ranges && obj.Client.subnet_ranges.length > 0) {
-            subnetRangesString = obj.Client.subnet_ranges.join(',')
+            subnetRangesString = escapeHtml(obj.Client.subnet_ranges.join(','))
         }
 
         let additionalNotesHtml = "";
         if (obj.Client.additional_notes && obj.Client.additional_notes.length > 0) {
-            additionalNotesHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-additional_notes"></i>${obj.Client.additional_notes.toUpperCase()}</span>`
+            additionalNotesHtml = `<span class="info-box-text" style="display: none"><i class="fas fa-additional_notes"></i>${escapeHtml(obj.Client.additional_notes.toUpperCase())}</span>`
         }
 
         // render client html content
@@ -53,41 +70,41 @@ function renderClientList(data) {
                                 <div class="btn-group">
                                     <a href="download?clientid=${obj.Client.id}" class="btn btn-outline-primary btn-sm">Download</a>
                                 </div>
-                                <div class="btn-group">      
+                                <div class="btn-group">
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_qr_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}" ${obj.QRCode != "" ? '' : ' disabled'}>QR code</button>
+                                        data-clientname="${clientName}" ${obj.QRCode != "" ? '' : ' disabled'}>QR code</button>
                                 </div>
-                                <div class="btn-group">      
+                                <div class="btn-group">
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
                                         data-target="#modal_email_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Email</button>
+                                        data-clientname="${clientName}">Email</button>
                                 </div>
                                 ${telegramButton}
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-outline-danger btn-sm">More</button>
-                                    <button type="button" class="btn btn-outline-danger btn-sm dropdown-toggle dropdown-icon" 
+                                    <button type="button" class="btn btn-outline-danger btn-sm dropdown-toggle dropdown-icon"
                                         data-toggle="dropdown">
                                     </button>
                                     <div class="dropdown-menu" role="menu">
                                         <a class="dropdown-item" href="#" data-toggle="modal"
                                         data-target="#modal_edit_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Edit</a>
+                                        data-clientname="${clientName}">Edit</a>
                                         <a class="dropdown-item" href="#" data-toggle="modal"
                                         data-target="#modal_pause_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Disable</a>
+                                        data-clientname="${clientName}">Disable</a>
                                         <a class="dropdown-item" href="#" data-toggle="modal"
                                         data-target="#modal_remove_client" data-clientid="${obj.Client.id}"
-                                        data-clientname="${obj.Client.name}">Delete</a>
+                                        data-clientname="${clientName}">Delete</a>
                                     </div>
                                 </div>
                                 <hr>
-                                <span class="info-box-text"><i class="fas fa-user"></i> ${obj.Client.name}</span>
-                                <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${obj.Client.public_key}</span>
+                                <span class="info-box-text"><i class="fas fa-user"></i> ${clientName}</span>
+                                <span class="info-box-text" style="display: none"><i class="fas fa-key"></i> ${escapeHtml(obj.Client.public_key)}</span>
                                 <span class="info-box-text" style="display: none"><i class="fas fa-subnetrange"></i>${subnetRangesString}</span>
                                 ${telegramHtml}
                                 ${additionalNotesHtml}
-                                <span class="info-box-text"><i class="fas fa-envelope"></i> ${obj.Client.email}</span>
+                                <span class="info-box-text"><i class="fas fa-envelope"></i> ${escapeHtml(obj.Client.email)}</span>
                                 <span class="info-box-text"><i class="fas fa-clock"></i>
                                     ${prettyDateTime(obj.Client.created_at)}</span>
                                 <span class="info-box-text"><i class="fas fa-history"></i>
@@ -95,7 +112,7 @@ function renderClientList(data) {
                                 <span class="info-box-text"><i class="fas fa-server" style="${obj.Client.use_server_dns ? "opacity: 1.0" : "opacity: 0.5"}"></i>
                                     ${obj.Client.use_server_dns ? 'DNS enabled' : 'DNS disabled'}</span>
                                 <span class="info-box-text"><i class="fas fa-file"></i>
-                                    ${obj.Client.additional_notes}</span>
+                                    ${escapeHtml(obj.Client.additional_notes)}</span>
                                 <span class="info-box-text"><strong>IP Allocation</strong></span>`
                                 + allocatedIpsHtml
                                 + `<span class="info-box-text"><strong>Allowed IPs</strong></span>`
@@ -112,20 +129,21 @@ function renderClientList(data) {
 function renderUserList(data) {
     $.each(data, function(index, obj) {
         let clientStatusHtml = '>'
+        const username = escapeHtml(obj.username);
 
         // render user html content
-        let html = `<div class="col-sm-6 col-md-6 col-lg-4" id="user_${obj.username}">
+        let html = `<div class="col-sm-6 col-md-6 col-lg-4" id="user_${username}">
                         <div class="info-box">
                             <div class="info-box-content">
                                 <div class="btn-group">
-                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#modal_edit_user" data-username="${obj.username}">Edit</button>
+                                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#modal_edit_user" data-username="${username}">Edit</button>
                                 </div>
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
-                                        data-target="#modal_remove_user" data-username="${obj.username}">Delete</button>
+                                        data-target="#modal_remove_user" data-username="${username}">Delete</button>
                                 </div>
                                 <hr>
-                                <span class="info-box-text"><i class="fas fa-user"></i> ${obj.username}</span>
+                                <span class="info-box-text"><i class="fas fa-user"></i> ${username}</span>
                                 <span class="info-box-text"><i class="fas fa-terminal"></i> ${obj.admin? 'Administrator':'Manager'}</span>
                                 </div>
                         </div>

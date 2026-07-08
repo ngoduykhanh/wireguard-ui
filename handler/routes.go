@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io/fs"
 	"net/http"
 	"os"
@@ -1082,8 +1083,10 @@ func Status(db store.IStore) echo.HandlerFunc {
 						}
 
 						if _client, ok := m[pVm.PublicKey]; ok {
-							pVm.Name = _client.Name
-							pVm.Email = _client.Email
+							// escape user-controlled fields: the status page is rendered
+							// with text/template, which does not auto-escape HTML
+							pVm.Name = html.EscapeString(_client.Name)
+							pVm.Email = html.EscapeString(_client.Email)
 						}
 						devVm.Peers = append(devVm.Peers, pVm)
 					}
