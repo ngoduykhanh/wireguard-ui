@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>{{template "title" .}}</title>
+    <title>{{.pageTitlePrefix}}{{template "title" .}}</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Favicon -->
@@ -86,10 +86,10 @@
         <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
-        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+        <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: {{.accentColor}};">
             <!-- Brand Logo -->
             <a href="{{.basePath}}" class="brand-link">
-                <span class="brand-text">&nbsp; WIREGUARD UI</span>
+                <span class="brand-text">&nbsp; {{.brandText}}</span>
             </a>
 
             <!-- Sidebar -->
@@ -122,7 +122,7 @@
                             <a href="{{.basePath}}/" class="nav-link {{if eq .baseData.Active ""}}active{{end}}">
                                 <i class="nav-icon fas fa-user-secret"></i>
                                 <p>
-                                    Wireguard Clients
+                                    Clients
                                 </p>
                             </a>
                         </li>
@@ -132,7 +132,7 @@
                             <a href="{{.basePath}}/wg-server" class="nav-link {{if eq .baseData.Active "wg-server" }}active{{end}}">
                                 <i class="nav-icon fas fa-server"></i>
                                 <p>
-                                    Wireguard Server
+                                    WireGuard Server
                                 </p>
                             </a>
                         </li>
@@ -176,6 +176,8 @@
                                 </p>
                             </a>
                         </li>
+
+                        {{if .baseData.Admin}}
                         <li class="nav-header">ABOUT</li>
                         <li class="nav-item">
                             <a href="{{.basePath}}/about" class="nav-link {{if eq .baseData.Active "about" }}active{{end}}">
@@ -185,6 +187,7 @@
                             </p>
                             </a>
                         </li>
+                        {{end}}
                     </ul>
                 </nav>
                 <!-- /.sidebar-menu -->
@@ -196,7 +199,7 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title">New Wireguard Client</h4>
+                        <h4 class="modal-title">New WireGuard Client</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -352,7 +355,7 @@
             <div class="float-right d-none d-sm-block">
                 <b>Version</b> {{ .appVersion }}
             </div>
-            <strong>Copyright &copy; <script>document.write(new Date().getFullYear())</script> <a href="https://github.com/ngoduykhanh/wireguard-ui">Wireguard UI</a>.</strong> All rights
+            <strong>Copyright &copy; <script>document.write(new Date().getFullYear())</script> <a href="https://github.com/idressos/wireguard-ui">WireGuard UI</a>.</strong> All rights
             reserved.
         </footer>
         -->

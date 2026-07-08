@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -24,6 +26,7 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
+	"github.com/ngoduykhanh/wireguard-ui/geoip"
 	"github.com/ngoduykhanh/wireguard-ui/model"
 	"github.com/ngoduykhanh/wireguard-ui/store"
 	"github.com/ngoduykhanh/wireguard-ui/telegram"
@@ -31,6 +34,10 @@ import (
 )
 
 var usernameRegexp = regexp.MustCompile("^\\w[\\w\\-.]*$")
+
+// unsafeFilenameChars matches any character that should not appear in a
+// downloaded config filename (prevents header/filename injection via client name).
+var unsafeFilenameChars = regexp.MustCompile(`[^a-zA-Z0-9_.-]+`)
 
 // Health check handler
 func Health() echo.HandlerFunc {
@@ -45,6 +52,15 @@ func Favicon() echo.HandlerFunc {
 			return c.File(favicon)
 		}
 		return c.Redirect(http.StatusFound, util.BasePath+"/static/custom/img/favicon.ico")
+	}
+}
+
+func Logo() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if logo, ok := os.LookupEnv(util.LogoFilePathEnvVar); ok {
+			return c.File(logo)
+		}
+		return c.Redirect(http.StatusFound, util.BasePath+"/static/custom/img/logo.png")
 	}
 }
 
@@ -65,9 +81,18 @@ func Login(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		username := data["username"].(string)
-		password := data["password"].(string)
-		rememberMe := data["rememberMe"].(bool)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		rememberMe, ok := data["rememberMe"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
@@ -105,6 +130,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 				Path:     cookiePath,
 				MaxAge:   ageMax,
 				HttpOnly: true,
+				Secure:   util.SecureCookie,
 				SameSite: http.SameSiteLaxMode,
 			}
 
@@ -127,6 +153,7 @@ func Login(db store.IStore) echo.HandlerFunc {
 			cookie.Value = tokenUID
 			cookie.MaxAge = ageMax
 			cookie.HttpOnly = true
+			cookie.Secure = util.SecureCookie
 			cookie.SameSite = http.SameSiteLaxMode
 			c.SetCookie(cookie)
 
@@ -209,10 +236,22 @@ func UpdateUser(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		username := data["username"].(string)
-		password := data["password"].(string)
-		previousUsername := data["previous_username"].(string)
-		admin := data["admin"].(bool)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		previousUsername, ok := data["previous_username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		admin, ok := data["admin"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if !isAdmin(c) && (previousUsername != currentUser(c)) {
 			return c.JSON(http.StatusForbidden, jsonHTTPResponse{false, "Manager cannot access other user data"})
@@ -283,9 +322,18 @@ func CreateUser(db store.IStore) echo.HandlerFunc {
 		}
 
 		var user model.User
-		username := data["username"].(string)
-		password := data["password"].(string)
-		admin := data["admin"].(bool)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		password, ok := data["password"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		admin, ok := data["admin"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if username == "" || !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
@@ -327,7 +375,10 @@ func RemoveUser(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		username := data["username"].(string)
+		username, ok := data["username"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if !usernameRegexp.MatchString(username) {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid username"})
@@ -366,7 +417,7 @@ func WireGuardClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClients handler return a JSON list of Wireguard client data
+// GetClients handler return a JSON list of WireGuard client data
 func GetClients(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clientDataList, err := db.GetClients(true)
@@ -384,7 +435,7 @@ func GetClients(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// GetClient handler returns a JSON object of Wireguard client data
+// GetClient handler returns a JSON object of WireGuard client data
 func GetClient(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		clientID := c.Param("id")
@@ -431,6 +482,10 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 
 		// validate the input Allocation IPs
 		allocatedIPs, err := util.GetAllocatedIPs("")
+		if err != nil {
+			log.Error("Cannot get allocated IP addresses: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get allocated IP addresses"})
+		}
 		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
@@ -452,12 +507,12 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 		guid := xid.New()
 		client.ID = guid.String()
 
-		// gen Wireguard key pair
+		// gen WireGuard key pair
 		if client.PublicKey == "" {
 			key, err := wgtypes.GeneratePrivateKey()
 			if err != nil {
 				log.Error("Cannot generate wireguard key pair: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 			}
 			client.PrivateKey = key.String()
 			client.PublicKey = key.PublicKey().String()
@@ -465,7 +520,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			_, err := wgtypes.ParseKey(client.PublicKey)
 			if err != nil {
 				log.Error("Cannot verify wireguard public key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard public key"})
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify WireGuard public key"})
 			}
 			// check for duplicates
 			clients, err := db.GetClients(false)
@@ -486,7 +541,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			if err != nil {
 				log.Error("Cannot generated preshared key: ", err)
 				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{
-					false, "Cannot generate Wireguard preshared key",
+					false, "Cannot generate WireGuard preshared key",
 				})
 			}
 			client.PresharedKey = presharedKey.String()
@@ -497,7 +552,7 @@ func NewClient(db store.IStore) echo.HandlerFunc {
 			_, err := wgtypes.ParseKey(client.PresharedKey)
 			if err != nil {
 				log.Error("Cannot verify wireguard preshared key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify Wireguard preshared key"})
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify WireGuard preshared key"})
 			}
 		}
 		client.CreatedAt = time.Now().UTC()
@@ -653,6 +708,10 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 		client := *clientData.Client
 		// validate the input Allocation IPs
 		allocatedIPs, err := util.GetAllocatedIPs(client.ID)
+		if err != nil {
+			log.Error("Cannot get allocated IP addresses: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get allocated IP addresses"})
+		}
 		check, err := util.ValidateIPAllocation(server.Interface.Addresses, allocatedIPs, _client.AllocatedIPs)
 		if !check {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, fmt.Sprintf("%s", err)})
@@ -669,12 +728,12 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Extra Allowed IPs must be in CIDR format"})
 		}
 
-		// update Wireguard Client PublicKey
+		// update WireGuard Client PublicKey
 		if client.PublicKey != _client.PublicKey && _client.PublicKey != "" {
 			_, err := wgtypes.ParseKey(_client.PublicKey)
 			if err != nil {
-				log.Error("Cannot verify provided Wireguard public key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard public key"})
+				log.Error("Cannot verify provided WireGuard public key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided WireGuard public key"})
 			}
 			// check for duplicates
 			clients, err := db.GetClients(false)
@@ -689,7 +748,7 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 				}
 			}
 
-			// When replacing any PublicKey, discard any locally stored Wireguard Client PrivateKey
+			// When replacing any PublicKey, discard any locally stored WireGuard Client PrivateKey
 			// Client PubKey no longer corresponds to locally stored PrivKey.
 			// QR code (needs PrivateKey) for this client is no longer possible now.
 
@@ -698,12 +757,12 @@ func UpdateClient(db store.IStore) echo.HandlerFunc {
 			}
 		}
 
-		// update Wireguard Client PresharedKey
+		// update WireGuard Client PresharedKey
 		if client.PresharedKey != _client.PresharedKey && _client.PresharedKey != "" {
 			_, err := wgtypes.ParseKey(_client.PresharedKey)
 			if err != nil {
-				log.Error("Cannot verify provided Wireguard preshared key: ", err)
-				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided Wireguard preshared key"})
+				log.Error("Cannot verify provided WireGuard preshared key: ", err)
+				return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot verify provided WireGuard preshared key"})
 			}
 		}
 
@@ -742,8 +801,14 @@ func SetClientStatus(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
 		}
 
-		clientID := data["id"].(string)
-		status := data["status"].(bool)
+		clientID, ok := data["id"].(string)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
+		status, ok := data["status"].(bool)
+		if !ok {
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Bad post data"})
+		}
 
 		if _, err := xid.FromString(clientID); err != nil {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Please provide a valid client ID"})
@@ -798,8 +863,15 @@ func DownloadClient(db store.IStore) echo.HandlerFunc {
 		// create io reader from string
 		reader := strings.NewReader(config)
 
+		// sanitize the client name before using it as a filename to avoid
+		// response header/filename injection
+		filename := unsafeFilenameChars.ReplaceAllString(clientData.Client.Name, "_")
+		if strings.Trim(filename, ".") == "" {
+			filename = clientData.Client.ID
+		}
+
 		// set response header for downloading
-		c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%s.conf", clientData.Client.Name))
+		c.Response().Header().Set(echo.HeaderContentDisposition, fmt.Sprintf("attachment; filename=%q", filename+".conf"))
 		return c.Stream(http.StatusOK, "text/conf", reader)
 	}
 }
@@ -870,11 +942,11 @@ func WireGuardServerInterfaces(db store.IStore) echo.HandlerFunc {
 // WireGuardServerKeyPair handler to generate private and public keys
 func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// gen Wireguard key pair
+		// gen WireGuard key pair
 		key, err := wgtypes.GeneratePrivateKey()
 		if err != nil {
 			log.Error("Cannot generate wireguard key pair: ", err)
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 		}
 
 		var serverKeyPair model.ServerKeypair
@@ -883,7 +955,7 @@ func WireGuardServerKeyPair(db store.IStore) echo.HandlerFunc {
 		serverKeyPair.UpdatedAt = time.Now().UTC()
 
 		if err := db.SaveServerKeyPair(serverKeyPair); err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 		}
 		log.Infof("Updated wireguard server interfaces settings: %v", serverKeyPair)
 
@@ -899,11 +971,32 @@ func GlobalSettings(db store.IStore) echo.HandlerFunc {
 			log.Error("Cannot get global settings: ", err)
 		}
 
+		// Show the effective MaxMind key so a key set only via the environment is
+		// visible in the form (and persisted to the DB on the next save).
+		globalSettings.MaxmindLicenseKey = util.GetMaxmindLicenseKey(globalSettings)
+
+		geoLiteLastUpdated := ""
+		if t, ok := geoip.LastUpdated(); ok {
+			geoLiteLastUpdated = t.UTC().Format("2006-01-02 15:04:05 MST")
+		}
+
 		return c.Render(http.StatusOK, "global_settings.html", map[string]interface{}{
-			"baseData":       model.BaseData{Active: "global-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
-			"globalSettings": globalSettings,
+			"baseData":           model.BaseData{Active: "global-settings", CurrentUser: currentUser(c), Admin: isAdmin(c)},
+			"globalSettings":     globalSettings,
+			"geoLiteAvailable":   geoip.Available(),
+			"geoLiteLastUpdated": geoLiteLastUpdated,
 		})
 	}
+}
+
+func extractDeviceNameFromConfigPath(db store.IStore) string {
+	settings, err := db.GetGlobalSettings()
+	if err != nil {
+		log.Error("Cannot get global settings: ", err)
+	}
+
+	base := filepath.Base(settings.ConfigFilePath)
+	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
 // Status handler
@@ -919,6 +1012,7 @@ func Status(db store.IStore) echo.HandlerFunc {
 		Connected         bool
 		AllocatedIP       string
 		Endpoint          string
+		Location          string
 	}
 
 	type DeviceVM struct {
@@ -934,6 +1028,8 @@ func Status(db store.IStore) echo.HandlerFunc {
 				"devices":  nil,
 			})
 		}
+
+		deviceName := extractDeviceNameFromConfigPath(db)
 
 		devices, err := wgClient.Devices()
 		if err != nil {
@@ -963,38 +1059,47 @@ func Status(db store.IStore) echo.HandlerFunc {
 
 			conv := map[bool]int{true: 1, false: 0}
 			for i := range devices {
-				devVm := DeviceVM{Name: devices[i].Name}
-				for j := range devices[i].Peers {
-					var allocatedIPs string
-					for _, ip := range devices[i].Peers[j].AllowedIPs {
-						if len(allocatedIPs) > 0 {
-							allocatedIPs += "</br>"
+				if devices[i].Name == deviceName {
+					devVm := DeviceVM{Name: devices[i].Name}
+					for j := range devices[i].Peers {
+						var allocatedIPs string
+						for _, ip := range devices[i].Peers[j].AllowedIPs {
+							if len(allocatedIPs) > 0 {
+								allocatedIPs += "</br>"
+							}
+							allocatedIPs += ip.String()
 						}
-						allocatedIPs += ip.String()
-					}
-					pVm := PeerVM{
-						PublicKey:         devices[i].Peers[j].PublicKey.String(),
-						ReceivedBytes:     devices[i].Peers[j].ReceiveBytes,
-						TransmitBytes:     devices[i].Peers[j].TransmitBytes,
-						LastHandshakeTime: devices[i].Peers[j].LastHandshakeTime,
-						LastHandshakeRel:  time.Since(devices[i].Peers[j].LastHandshakeTime),
-						AllocatedIP:       allocatedIPs,
-					}
-					pVm.Connected = pVm.LastHandshakeRel.Minutes() < 3.
+						pVm := PeerVM{
+							PublicKey:         devices[i].Peers[j].PublicKey.String(),
+							ReceivedBytes:     devices[i].Peers[j].ReceiveBytes,
+							TransmitBytes:     devices[i].Peers[j].TransmitBytes,
+							LastHandshakeTime: devices[i].Peers[j].LastHandshakeTime,
+							LastHandshakeRel:  time.Since(devices[i].Peers[j].LastHandshakeTime),
+							AllocatedIP:       allocatedIPs,
+						}
+						pVm.Connected = pVm.LastHandshakeRel.Minutes() < 3.
 
-					if isAdmin(c) {
-						pVm.Endpoint = devices[i].Peers[j].Endpoint.String()
-					}
+						if isAdmin(c) {
+							pVm.Endpoint = devices[i].Peers[j].Endpoint.String()
+							if endpoint := devices[i].Peers[j].Endpoint; endpoint != nil && endpoint.IP != nil && geoip.Available() {
+								if loc, err := geoip.Lookup(endpoint.IP.String()); err == nil {
+									pVm.Location = loc.Display()
+								}
+							}
+						}
 
-					if _client, ok := m[pVm.PublicKey]; ok {
-						pVm.Name = _client.Name
-						pVm.Email = _client.Email
+						if _client, ok := m[pVm.PublicKey]; ok {
+							// escape user-controlled fields: the status page is rendered
+							// with text/template, which does not auto-escape HTML
+							pVm.Name = html.EscapeString(_client.Name)
+							pVm.Email = html.EscapeString(_client.Email)
+						}
+						devVm.Peers = append(devVm.Peers, pVm)
 					}
-					devVm.Peers = append(devVm.Peers, pVm)
+					sort.SliceStable(devVm.Peers, func(i, j int) bool { return devVm.Peers[i].Name < devVm.Peers[j].Name })
+					sort.SliceStable(devVm.Peers, func(i, j int) bool { return conv[devVm.Peers[i].Connected] > conv[devVm.Peers[j].Connected] })
+					devicesVm = append(devicesVm, devVm)
 				}
-				sort.SliceStable(devVm.Peers, func(i, j int) bool { return devVm.Peers[i].Name < devVm.Peers[j].Name })
-				sort.SliceStable(devVm.Peers, func(i, j int) bool { return conv[devVm.Peers[i].Connected] > conv[devVm.Peers[j].Connected] })
-				devicesVm = append(devicesVm, devVm)
 			}
 		}
 
@@ -1018,16 +1123,44 @@ func GlobalSettingSubmit(db store.IStore) echo.HandlerFunc {
 			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Invalid DNS server address"})
 		}
 
+		// validate the config file permissions (octal, e.g. 0600)
+		if _, err := util.ParseConfigFileMode(globalSettings.ConfigFileMode); err != nil {
+			log.Warnf("Invalid config file mode input from user: %v", globalSettings.ConfigFileMode)
+			return c.JSON(http.StatusBadRequest, jsonHTTPResponse{false, "Config file permissions must be octal, e.g. 0600"})
+		}
+
 		globalSettings.UpdatedAt = time.Now().UTC()
 
 		// write config to the database
 		if err := db.SaveGlobalSettings(globalSettings); err != nil {
-			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate Wireguard key pair"})
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot generate WireGuard key pair"})
 		}
 
 		log.Infof("Updated global settings: %v", globalSettings)
 
 		return c.JSON(http.StatusOK, jsonHTTPResponse{true, "Updated global settings successfully"})
+	}
+}
+
+// GeoLiteUpdate handler downloads/updates the GeoLite2 database using the
+// MaxMind license key configured in the global settings.
+func GeoLiteUpdate(db store.IStore) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		globalSettings, err := db.GetGlobalSettings()
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, "Cannot get global settings"})
+		}
+
+		if err := geoip.Update(util.GetMaxmindLicenseKey(globalSettings)); err != nil {
+			log.Error("Cannot update GeoLite2 database: ", err)
+			return c.JSON(http.StatusInternalServerError, jsonHTTPResponse{false, err.Error()})
+		}
+
+		msg := "GeoLite2 database updated successfully"
+		if t, ok := geoip.LastUpdated(); ok {
+			msg = fmt.Sprintf("GeoLite2 database updated successfully (%s)", t.UTC().Format("2006-01-02 15:04:05 MST"))
+		}
+		return c.JSON(http.StatusOK, jsonHTTPResponse{true, msg})
 	}
 }
 
@@ -1127,7 +1260,7 @@ func SuggestIPAllocation(db store.IStore) echo.HandlerFunc {
 	}
 }
 
-// ApplyServerConfig handler to write config file and restart Wireguard server
+// ApplyServerConfig handler to write config file and restart WireGuard server
 func ApplyServerConfig(db store.IStore, tmplDir fs.FS) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		server, err := db.GetServer()

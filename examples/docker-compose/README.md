@@ -2,7 +2,7 @@
 
 ### Kernel Module
 
-Depending on if the Wireguard kernel module is available on your system you have more or less choices which example to use.
+Depending on if the WireGuard kernel module is available on your system you have more or less choices which example to use.
 
 You can check if the kernel modules are available via the following command:
 ```shell
@@ -21,10 +21,10 @@ For security reasons it's highly recommended to change them before the first sta
 ## Examples
 - **[system](system.yml)**
 
-  If you have Wireguard already installed on your system and only want to run the UI in docker this might fit the most.
+  If you have WireGuard already installed on your system and only want to run the UI in docker this might fit the most.
 - **[linuxserver](linuxserver.yml)**
 
-  If you have the Wireguard kernel modules installed (included in the mainline kernel since version 5.6) but want it running inside of docker, this might fit the most.
+  If you have the WireGuard kernel modules installed (included in the mainline kernel since version 5.6) but want it running inside of docker, this might fit the most.
 - **[boringtun](boringtun.yml)**
 
-  If Wireguard kernel modules are not available, you can switch to an userspace implementation like [boringtun](https://github.com/cloudflare/boringtun).
+  If WireGuard kernel modules are not available, you can switch to an userspace implementation like [boringtun](https://github.com/cloudflare/boringtun).

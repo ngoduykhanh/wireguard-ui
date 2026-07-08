@@ -22,7 +22,7 @@ Global Settings
             <div class="col-md-6">
                 <div class="card card-success">
                     <div class="card-header">
-                        <h3 class="card-title">Wireguard Global Settings</h3>
+                        <h3 class="card-title">WireGuard Global Settings</h3>
                     </div>
                     <!-- /.card-header -->
                     <!-- form start -->
@@ -68,10 +68,34 @@ Global Settings
                                     value="{{ .globalSettings.Table }}">
                             </div>
                             <div class="form-group">
-                                <label for="config_file_path">Wireguard Config File Path</label>
+                                <label for="config_file_path">WireGuard Config File Path</label>
                                 <input type="text" class="form-control" id="config_file_path"
                                     name="config_file_path" placeholder="E.g. /etc/wireguard/wg0.conf"
                                     value="{{ .globalSettings.ConfigFilePath }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="config_file_mode">Config File Permissions</label>
+                                <input type="text" class="form-control" id="config_file_mode"
+                                    name="config_file_mode" placeholder="E.g. 0600"
+                                    value="{{ if .globalSettings.ConfigFileMode }}{{ .globalSettings.ConfigFileMode }}{{ else }}0600{{ end }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="maxmind_license_key">MaxMind License Key</label>
+                                <input type="text" class="form-control" id="maxmind_license_key"
+                                    name="maxmind_license_key" placeholder="GeoLite2 license key"
+                                    value="{{ .globalSettings.MaxmindLicenseKey }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="geolite_status">GeoLite2 Database</label>
+                                <div class="input-group input-group">
+                                    <input type="text" class="form-control" id="geolite_status" readonly
+                                        value="{{ if .geoLiteAvailable }}Installed{{ if .geoLiteLastUpdated }} — updated {{ .geoLiteLastUpdated }}{{ end }}{{ else }}Not installed{{ end }}">
+                                    <span class="input-group-append">
+                                        <button type="button" class="btn btn-primary btn-flat" id="btn_update_geolite"
+                                            onclick="updateGeoLite2()"><i class="nav-icon fas fa-download"></i>
+                                            Install / Update</button>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <!-- /.card-body -->
@@ -92,7 +116,7 @@ Global Settings
                     <div class="card-body">
                         <dl>
                             <dt>1. Endpoint Address</dt>
-                            <dd>The public IP address of your Wireguard server that the client will connect to. Click on
+                            <dd>The public IP address of your WireGuard server that the client will connect to. Click on
                                 <strong>Suggest</strong> button to auto detect the public IP address of your server.</dd>
                             <dt>2. DNS Servers</dt>
                             <dd>The DNS servers will be set to client config.</dd>
@@ -110,9 +134,18 @@ Global Settings
                             <dd>Add a matching <code>fwmark</code> on all packets going out of a WireGuard non-default-route tunnel. Default value: <code>0xca6c</code></dd>
                             <dt>6. Table</dt>
                             <dd>Value for the <code>Table</code> setting in the wg conf file. Default value: <code>auto</code></dd>                            
-                            <dt>7. Wireguard Config File Path</dt>
-                            <dd>The path of your Wireguard server config file. Please make sure the parent directory
+                            <dt>7. WireGuard Config File Path</dt>
+                            <dd>The path of your WireGuard server config file. Please make sure the parent directory
                                 exists and is writable.</dd>
+                            <dt>8. Config File Permissions</dt>
+                            <dd>Octal file mode applied to the generated config file, which contains private keys.
+                                Default value: <code>0600</code> (owner read/write only). Leave blank to use the default.</dd>
+                            <dt>9. MaxMind License Key</dt>
+                            <dd>Your MaxMind license key, used to download the GeoLite2-City database. Create a free
+                                account at <code>maxmind.com</code> to generate one. Click
+                                <strong>Install / Update</strong> to download it locally; it also auto-updates on startup
+                                when older than 7 days. Once installed, a <strong>Location</strong> column
+                                (flag, city, country) is shown next to each peer's endpoint on the Status page.</dd>
                         </dl>
                     </div>
                 </div>
@@ -152,28 +185,73 @@ Global Settings
 
 {{define "bottom_js"}}
     <script>
-        function submitGlobalSettings() {
-            const endpoint_address = $("#endpoint_address").val();
-            const dns_servers = $("#dns_servers").val().split(",");
-            const mtu = $("#mtu").val();
-            const persistent_keepalive = $("#persistent_keepalive").val();
-            const firewall_mark = $("#firewall_mark").val();
-            const table = $("#table").val();
-            const config_file_path = $("#config_file_path").val();
-            const data = {"endpoint_address": endpoint_address, "dns_servers": dns_servers, "mtu": mtu, "persistent_keepalive": persistent_keepalive, "firewall_mark": firewall_mark, "table": table, "config_file_path": config_file_path};
+        function collectGlobalSettings() {
+            return {
+                "endpoint_address": $("#endpoint_address").val(),
+                "dns_servers": $("#dns_servers").val().split(","),
+                "mtu": $("#mtu").val(),
+                "persistent_keepalive": $("#persistent_keepalive").val(),
+                "firewall_mark": $("#firewall_mark").val(),
+                "table": $("#table").val(),
+                "config_file_path": $("#config_file_path").val(),
+                "config_file_mode": $("#config_file_mode").val(),
+                "maxmind_license_key": $("#maxmind_license_key").val()
+            };
+        }
 
+        function submitGlobalSettings() {
             $.ajax({
                 cache: false,
                 method: 'POST',
                 url: '{{.basePath}}/global-settings',
                 dataType: 'json',
                 contentType: "application/json",
-                data: JSON.stringify(data),
+                data: JSON.stringify(collectGlobalSettings()),
                 success: function(data) {
                     $("#modal_new_client").modal('hide');
                     toastr.success('Update global settings successfully');
                 },
                 error: function(jqXHR, exception) {
+                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson['message']);
+                }
+            });
+        }
+
+        // Save settings (to persist the license key), then download/update the
+        // GeoLite2 database.
+        function updateGeoLite2() {
+            const btn = $("#btn_update_geolite");
+            btn.prop("disabled", true);
+            $.ajax({
+                cache: false,
+                method: 'POST',
+                url: '{{.basePath}}/global-settings',
+                dataType: 'json',
+                contentType: "application/json",
+                data: JSON.stringify(collectGlobalSettings()),
+                success: function() {
+                    toastr.info('Downloading GeoLite2 database, please wait...');
+                    $.ajax({
+                        cache: false,
+                        method: 'POST',
+                        url: '{{.basePath}}/api/geolite/update',
+                        dataType: 'json',
+                        contentType: "application/json",
+                        data: JSON.stringify({}),
+                        success: function(res) {
+                            toastr.success(res['message']);
+                            setTimeout(function () { location.reload(); }, 1500);
+                        },
+                        error: function(jqXHR) {
+                            btn.prop("disabled", false);
+                            const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                            toastr.error(responseJson['message']);
+                        }
+                    });
+                },
+                error: function(jqXHR) {
+                    btn.prop("disabled", false);
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
                     toastr.error(responseJson['message']);
                 }
@@ -195,7 +273,7 @@ Global Settings
         }
     </script>
     <script>
-        // Wireguard Interface DNS server tag input
+        // WireGuard Interface DNS server tag input
         $("#dns_servers").tagsInput({
             'width': '100%',
             'height': '75%',

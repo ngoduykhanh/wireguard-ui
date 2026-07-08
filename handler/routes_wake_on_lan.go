@@ -124,6 +124,9 @@ func WakeOnHost(db store.IStore) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		macAddress := c.Param("mac_address")
 		host, err := db.GetWakeOnLanHost(macAddress)
+		if err != nil {
+			return createError(c, err, fmt.Sprintf("Wake On Host Not Found: %s", macAddress))
+		}
 
 		now := time.Now().UTC()
 		host.LatestUsed = &now

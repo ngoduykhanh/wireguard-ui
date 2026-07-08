@@ -111,6 +111,8 @@ func (o *JsonDB) Init() error {
 		globalSetting.FirewallMark = util.LookupEnvOrString(util.FirewallMarkEnvVar, util.DefaultFirewallMark)
 		globalSetting.Table = util.LookupEnvOrString(util.TableEnvVar, util.DefaultTable)
 		globalSetting.ConfigFilePath = util.LookupEnvOrString(util.ConfigFilePathEnvVar, util.DefaultConfigFilePath)
+		globalSetting.ConfigFileMode = util.LookupEnvOrString(util.ConfigFileModeEnvVar, util.DefaultConfigFileMode)
+		globalSetting.MaxmindLicenseKey = util.LookupEnvOrString(util.MaxmindLicenseKeyEnvVar, "")
 		globalSetting.UpdatedAt = time.Now().UTC()
 		o.conn.Write("server", "global_settings", globalSetting)
 		err := util.ManagePerms(globalSettingPath)

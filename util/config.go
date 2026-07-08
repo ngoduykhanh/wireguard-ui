@@ -24,10 +24,15 @@ var (
 	EmailFromName      string
 	SessionSecret      [64]byte
 	SessionMaxDuration int64
+	SecureCookie       bool
 	WgConfTemplate     string
 	BasePath           string
 	SubnetRanges       map[string]([]*net.IPNet)
 	SubnetRangesOrder  []string
+	BrandText          string
+	AccentColor        string
+	PageTitlePrefix    string
+	GeoLite2DBPath     string
 )
 
 const (
@@ -42,6 +47,8 @@ const (
 	DefaultFirewallMark                    = "0xca6c" // i.e. 51820
 	DefaultTable                           = "auto"
 	DefaultConfigFilePath                  = "/etc/wireguard/wg0.conf"
+	DefaultConfigFileMode                  = "0600"
+	DefaultGeoLite2DBPath                  = "./db/GeoLite2-City.mmdb"
 	UsernameEnvVar                         = "WGUI_USERNAME"
 	PasswordEnvVar                         = "WGUI_PASSWORD"
 	PasswordFileEnvVar                     = "WGUI_PASSWORD_FILE"
@@ -55,6 +62,7 @@ const (
 	FirewallMarkEnvVar                     = "WGUI_FIREWALL_MARK"
 	TableEnvVar                            = "WGUI_TABLE"
 	ConfigFilePathEnvVar                   = "WGUI_CONFIG_FILE_PATH"
+	ConfigFileModeEnvVar                   = "WGUI_CONFIG_FILE_MODE"
 	LogLevel                               = "WGUI_LOG_LEVEL"
 	ServerAddressesEnvVar                  = "WGUI_SERVER_INTERFACE_ADDRESSES"
 	ServerListenPortEnvVar                 = "WGUI_SERVER_LISTEN_PORT"
@@ -64,6 +72,13 @@ const (
 	DefaultClientExtraAllowedIpsEnvVar     = "WGUI_DEFAULT_CLIENT_EXTRA_ALLOWED_IPS"
 	DefaultClientUseServerDNSEnvVar        = "WGUI_DEFAULT_CLIENT_USE_SERVER_DNS"
 	DefaultClientEnableAfterCreationEnvVar = "WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION"
+	BrandTextEnvVar                        = "WGUI_BRAND_TEXT"
+	AccentColorEnvVar                      = "WGUI_ACCENT_COLOR"
+	PageTitlePrefixEnvVar                  = "WGUI_PAGE_TITLE_PREFIX"
+	LogoFilePathEnvVar                     = "WGUI_LOGO_FILE_PATH"
+	MaxmindLicenseKeyEnvVar                = "WGUI_MAXMIND_LICENSE_KEY"
+	GeoLite2DBPathEnvVar                   = "WGUI_GEOLITE_DB_PATH"
+	SecureCookieEnvVar                     = "WGUI_SESSION_SECURE_COOKIE"
 )
 
 func ParseBasePath(basePath string) string {

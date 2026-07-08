@@ -13,5 +13,7 @@ type GlobalSetting struct {
 	FirewallMark        string    `json:"firewall_mark"`
 	Table               string    `json:"table"`
 	ConfigFilePath      string    `json:"config_file_path"`
+	ConfigFileMode      string    `json:"config_file_mode"`
+	MaxmindLicenseKey   string    `json:"maxmind_license_key"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }

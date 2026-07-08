@@ -3,6 +3,7 @@ package util
 import (
 	"bufio"
 	"bytes"
+	crand "crypto/rand"
 	"encoding/gob"
 	"encoding/json"
 	"errors"
@@ -10,7 +11,7 @@ import (
 	"hash/crc32"
 	"io"
 	"io/fs"
-	"math/rand"
+	mrand "math/rand"
 	"net"
 	"os"
 	"path"
@@ -92,6 +93,18 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 		peerPersistentKeepalive
 
 	return strConfig
+}
+
+// GetMaxmindLicenseKey resolves the effective MaxMind license key, preferring
+// the value stored in the global settings and falling back to the
+// WGUI_MAXMIND_LICENSE_KEY environment variable. This lets a key configured
+// purely via the environment work even when it was never persisted to the DB
+// (e.g. the settings file predates the key being set).
+func GetMaxmindLicenseKey(settings model.GlobalSetting) string {
+	if k := strings.TrimSpace(settings.MaxmindLicenseKey); k != "" {
+		return k
+	}
+	return strings.TrimSpace(LookupEnvOrString(MaxmindLicenseKeyEnvVar, ""))
 }
 
 // ClientDefaultsFromEnv to read the default values for creating a new client from the environment or use sane defaults
@@ -540,7 +553,27 @@ func GetSubnetRangesString() string {
 	return strings.TrimSpace(strB.String())
 }
 
-// WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
+// configFileFallbackMode is applied to the generated WireGuard config file when
+// no valid mode is configured. The file holds private keys, so it defaults to
+// owner read/write only.
+const configFileFallbackMode os.FileMode = 0600
+
+// ParseConfigFileMode parses an octal file-mode string (e.g. "0600"). An empty
+// string yields the default 0600. A value that is not valid octal is an error.
+// Only the permission bits are kept.
+func ParseConfigFileMode(mode string) (os.FileMode, error) {
+	mode = strings.TrimSpace(mode)
+	if mode == "" {
+		return configFileFallbackMode, nil
+	}
+	parsed, err := strconv.ParseUint(mode, 8, 32)
+	if err != nil {
+		return 0, fmt.Errorf("invalid file mode %q: must be octal, e.g. 0600", mode)
+	}
+	return os.FileMode(parsed) & os.ModePerm, nil
+}
+
+// WriteWireGuardServerConfig to write WireGuard server config. e.g. wg0.conf
 func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
 	var tmplWireguardConf string
 
@@ -575,12 +608,6 @@ func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, client
 		return err
 	}
 
-	// write config file to disk
-	f, err := os.Create(globalSettings.ConfigFilePath)
-	if err != nil {
-		return err
-	}
-
 	config := map[string]interface{}{
 		"serverConfig":   serverConfig,
 		"clientDataList": escapedClientDataList,
@@ -588,13 +615,34 @@ func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, client
 		"usersList":      usersList,
 	}
 
-	err = t.Execute(f, config)
+	// The config file contains private keys, so restrict its permissions.
+	// Default to 0600 when unset or invalid.
+	mode, err := ParseConfigFileMode(globalSettings.ConfigFileMode)
+	if err != nil {
+		log.Warnf("%v; falling back to 0600 for %s", err, globalSettings.ConfigFilePath)
+		mode = configFileFallbackMode
+	}
+
+	// Write in place (rather than via a temp file + rename) so that a plain
+	// IN_CLOSE_WRITE is emitted on the config path. The container entrypoint's
+	// inotify watch (WGUI_MANAGE_RESTART) relies on this to restart WireGuard.
+	f, err := os.OpenFile(globalSettings.ConfigFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 	if err != nil {
 		return err
 	}
-	f.Close()
+	// Enforce the exact permissions regardless of the process umask or of a
+	// pre-existing file's mode (OpenFile does not change an existing file).
+	if err := os.Chmod(globalSettings.ConfigFilePath, mode); err != nil {
+		f.Close()
+		return err
+	}
 
-	return nil
+	if err := t.Execute(f, config); err != nil {
+		f.Close()
+		return err
+	}
+
+	return f.Close()
 }
 
 // SendRequestedConfigsToTelegram to send client all their configs. Returns failed configs list.
@@ -763,12 +811,22 @@ func UpdateHashes(db store.IStore) error {
 	return db.SaveHashes(clientServerHashes)
 }
 
+// RandomString returns a random alphanumeric string of the given length.
+// It uses a cryptographically secure source (crypto/rand) since it backs the
+// default session secret; it only falls back to a time-seeded generator if the
+// system CSPRNG is unavailable.
 func RandomString(length int) string {
-	var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	b := make([]byte, length)
+	if _, err := crand.Read(b); err != nil {
+		seededRand := mrand.New(mrand.NewSource(time.Now().UnixNano()))
+		for i := range b {
+			b[i] = charset[seededRand.Intn(len(charset))]
+		}
+		return string(b)
+	}
 	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
+		b[i] = charset[int(b[i])%len(charset)]
 	}
 	return string(b)
 }

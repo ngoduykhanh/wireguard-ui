@@ -28,6 +28,7 @@ var (
 
 	floodWait        = make(map[int64]int64)
 	floodMessageSent = make(map[int64]struct{})
+	floodMutex       sync.Mutex
 )
 
 func Start(initDeps TgBotInitDependencies) (err error) {
@@ -79,11 +80,25 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 	for update := range updatesChan {
 		if update.Message != nil {
 			userid := update.Message.Chat.ID
-			if _, wait := floodWait[userid]; wait {
+
+			floodMutex.Lock()
+			_, wait := floodWait[userid]
+			alreadyNotified := false
+			if wait {
 				if _, notified := floodMessageSent[userid]; notified {
+					alreadyNotified = true
+				} else {
+					floodMessageSent[userid] = struct{}{}
+				}
+			} else {
+				floodWait[userid] = time.Now().Unix()
+			}
+			floodMutex.Unlock()
+
+			if wait {
+				if alreadyNotified {
 					continue
 				}
-				floodMessageSent[userid] = struct{}{}
 				_, err := bot.SendMessage(
 					fmt.Sprintf("You can only request your configs once per %d minutes", FloodWait),
 					userid,
@@ -95,7 +110,6 @@ func Start(initDeps TgBotInitDependencies) (err error) {
 				}
 				continue
 			}
-			floodWait[userid] = time.Now().Unix()
 
 			failed := initDeps.SendRequestedConfigsToTelegram(initDeps.DB, userid)
 			if len(failed) > 0 {
@@ -126,12 +140,14 @@ func SendConfig(userid int64, clientName string, confData, qrData []byte, ignore
 		return fmt.Errorf("telegram bot is not configured or not available")
 	}
 
-	if _, wait := floodWait[userid]; wait && !ignoreFloodWait {
-		return fmt.Errorf("this client already got their config less than %d minutes ago", FloodWait)
-	}
-
 	if !ignoreFloodWait {
+		floodMutex.Lock()
+		if _, wait := floodWait[userid]; wait {
+			floodMutex.Unlock()
+			return fmt.Errorf("this client already got their config less than %d minutes ago", FloodWait)
+		}
 		floodWait[userid] = time.Now().Unix()
+		floodMutex.Unlock()
 	}
 
 	qrAttachment := echotron.NewInputFileBytes("qr.png", qrData)
@@ -152,10 +168,12 @@ func SendConfig(userid int64, clientName string, confData, qrData []byte, ignore
 
 func updateFloodWait() {
 	thresholdTS := time.Now().Unix() - 60*int64(FloodWait)
+	floodMutex.Lock()
 	for userid, ts := range floodWait {
 		if ts < thresholdTS {
 			delete(floodWait, userid)
 			delete(floodMessageSent, userid)
 		}
 	}
+	floodMutex.Unlock()
 }

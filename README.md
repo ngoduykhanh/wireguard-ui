@@ -1,8 +1,12 @@
-![](https://github.com/ngoduykhanh/wireguard-ui/workflows/wireguard-ui%20build%20release/badge.svg)
-
 # wireguard-ui
 
 A web user interface to manage your WireGuard setup.
+
+> **Note:** This is an independently maintained fork of
+> [ngoduykhanh/wireguard-ui](https://github.com/ngoduykhanh/wireguard-ui), whose
+> upstream is no longer actively maintained. It adds fixes and features on top of
+> upstream — including GeoLite2 peer geolocation, Wake-on-LAN, Telegram config
+> delivery, configurable config-file permissions, and various security hardening.
 
 ## Features
 
@@ -58,7 +62,11 @@ docker-compose up
 | `WGUI_TABLE`                  | The default WireGuard table value settings                                                                                                                                                                                                                                          | `auto`                             |
 | `WGUI_CONFIG_FILE_PATH`       | The default WireGuard config file path used in global settings                                                                                                                                                                                                                      | `/etc/wireguard/wg0.conf`          |
 | `WGUI_LOG_LEVEL`              | The default log level. Possible values: `DEBUG`, `INFO`, `WARN`, `ERROR`, `OFF`                                                                                                                                                                                                     | `INFO`                             |
-| `WG_CONF_TEMPLATE`            | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/ngoduykhanh/wireguard-ui/blob/master/templates/wg.conf)                                                                                                                        | N/A                                |
+| `WGUI_BRAND_TEXT`             | The brand text of the web application                                                                                                                                                                                                                                               | `WireGuard UI`                     |
+| `WGUI_ACCENT_COLOR`           | The color of the interface sidebar                                                                                                                                                                                                                                                  | `#343a40`                          |
+| `WGUI_LOGO_FILE_PATH`         | The file path of the website logo                                                                                                                                                                                                                                                   | Embedded WireGuard logo            |
+| `WGUI_PAGE_TITLE_PREFIX`      | The HTML title prefix for all pages                                                                                                                                                                                                                                                 | N/A                                |
+| `WG_CONF_TEMPLATE`            | The custom `wg.conf` config file template. Please refer to our [default template](https://github.com/idressos/wireguard-ui/blob/master/templates/wg.conf)                                                                                                                        | N/A                                |
 | `EMAIL_FROM_ADDRESS`          | The sender email address                                                                                                                                                                                                                                                            | N/A                                |
 | `EMAIL_FROM_NAME`             | The sender name                                                                                                                                                                                                                                                                     | `WireGuard UI`                     |
 | `SENDGRID_API_KEY`            | The SendGrid api key                                                                                                                                                                                                                                                                | N/A                                |
@@ -192,9 +200,9 @@ rc-update add wgui default
 
 ### Using Docker
 
-Set `WGUI_MANAGE_RESTART=true` to manage Wireguard interface restarts.
-Using `WGUI_MANAGE_START=true` can also replace the function of `wg-quick@wg0` service, to start Wireguard at boot, by
-running the container with `restart: unless-stopped`. These settings can also pick up changes to Wireguard Config File
+Set `WGUI_MANAGE_RESTART=true` to manage WireGuard interface restarts.
+Using `WGUI_MANAGE_START=true` can also replace the function of `wg-quick@wg0` service, to start WireGuard at boot, by
+running the container with `restart: unless-stopped`. These settings can also pick up changes to WireGuard Config File
 Path, after restarting the container. Please make sure you have `--cap-add=NET_ADMIN` in your container config to make
 this feature work.
 
@@ -237,10 +245,4 @@ go build -o wireguard-ui
 
 ## License
 
-MIT. See [LICENSE](https://github.com/ngoduykhanh/wireguard-ui/blob/master/LICENSE).
-
-## Support
-
-If you like the project and want to support it, you can *buy me a coffee* ☕
-
-<a href="https://www.buymeacoffee.com/khanhngo" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+MIT. See [LICENSE](https://github.com/idressos/wireguard-ui/blob/master/LICENSE).
