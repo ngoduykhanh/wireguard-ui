@@ -51,6 +51,10 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo.Echo {
 	e := echo.New()
 
+	// Recover from panics in any middleware or handler so a single bad request
+	// cannot take down the connection with an unhandled stack trace.
+	e.Use(middleware.Recover())
+
 	cookiePath := util.GetCookiePath()
 
 	cookieStore := sessions.NewCookieStore(secret[:32], secret[32:])
