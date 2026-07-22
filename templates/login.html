@@ -1,130 +1,495 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="{{if eq .UILang "en"}}en{{else}}es{{end}}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>WireGuard UI</title>
-    <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Favicon -->
+    <title>{{tr .UILang "login.title_page"}}</title>
     <link rel="icon" href="{{.basePath}}/favicon">
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{width:100%;min-height:100%;background:#0d0d0d;font-family:'Noto Sans',sans-serif;color:#F0F0F0}
+    :root{
+      --bg:#0d0d0d;--sur:#181818;--card:#1e1e1e;--ele:#252525;--hov:#2c2c2c;
+      --acc:#EF5350;--acc2:#C62828;--adim:rgba(239,83,80,.14);
+      --grn:#66BB6A;--gdim:rgba(102,187,106,.14);
+      --red:#EF5350;--rdim:rgba(239,83,80,.12);
+      --t1:#F0F0F0;--t2:#9E9E9E;--t3:#5C5C5C;
+      --bdr:rgba(255,255,255,.06);--bdr2:rgba(255,255,255,.1);--bdr3:rgba(255,255,255,.16);
+      --rsm:10px;--rmd:16px;--rlg:22px;--rxl:28px;
+      --ff:'Noto Sans',sans-serif;
+    }
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="{{.basePath}}/static/plugins/fontawesome-free/css/all.min.css">
-    <!-- Ionicons -->
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <!-- icheck bootstrap -->
-    <link rel="stylesheet" href="{{.basePath}}/static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
-    <!-- Theme style -->
-    <link rel="stylesheet" href="{{.basePath}}/static/dist/css/adminlte.min.css">
-    <!-- Google Font: Source Sans Pro -->
-    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    .bg-wrap{
+      width:100%;min-height:100vh;
+      display:flex;align-items:center;justify-content:center;
+      position:relative;overflow-x:hidden;padding:24px 16px;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%,rgba(239,83,80,.08) 0%,transparent 70%),
+        radial-gradient(ellipse 50% 40% at 100% 100%,rgba(198,40,40,.06) 0%,transparent 60%),
+        #0d0d0d;
+    }
+    .bg-grid{
+      position:absolute;inset:0;
+      background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);
+      background-size:28px 28px;
+      pointer-events:none;
+    }
+    .top-accent{
+      position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,transparent 0%,var(--acc) 40%,var(--acc2) 60%,transparent 100%);
+      opacity:.7;
+    }
+    .deco{position:absolute;border-radius:50%;pointer-events:none}
+    .deco1{width:300px;height:300px;top:-100px;right:-80px;background:radial-gradient(circle,rgba(239,83,80,.05) 0%,transparent 70%)}
+    .deco2{width:200px;height:200px;bottom:-60px;left:-60px;background:radial-gradient(circle,rgba(198,40,40,.06) 0%,transparent 70%)}
+
+    .card{
+      width:100%;max-width:400px;
+      background:var(--card);
+      border:1px solid var(--bdr2);
+      border-radius:var(--rxl);
+      padding:36px 36px 32px;
+      position:relative;
+      box-shadow:0 0 0 1px rgba(239,83,80,.04),0 24px 60px rgba(0,0,0,.6),0 8px 24px rgba(0,0,0,.4);
+      animation:fadeUp .4s cubic-bezier(.22,.68,0,1.2) both;
+    }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .card::before{
+      content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;
+      background:linear-gradient(90deg,transparent,var(--acc),transparent);
+      border-radius:50%;opacity:.5;
+    }
+
+    .card-header{display:flex;flex-direction:column;align-items:center;margin-bottom:28px}
+    .logo-wrap{
+      width:70px;height:70px;border-radius:21px;
+      background:linear-gradient(135deg,var(--acc) 0%,var(--acc2) 100%);
+      display:flex;align-items:center;justify-content:center;
+      margin-bottom:16px;
+      box-shadow:0 8px 24px rgba(239,83,80,.25);
+      position:relative;
+    }
+    .logo-wrap::after{content:'';position:absolute;inset:-4px;border-radius:26px;border:1px solid rgba(239,83,80,.15)}
+    .logo-wrap img{width:48px;height:48px;object-fit:contain}
+    .app-name{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--t1);margin-bottom:3px}
+    .app-sub{font-size:11px;color:var(--t3);font-weight:400;letter-spacing:.3px}
+
+    .status-row{
+      display:flex;align-items:center;justify-content:center;gap:6px;
+      background:var(--gdim);border:1px solid rgba(102,187,106,.15);
+      border-radius:20px;padding:5px 14px;margin-bottom:24px;
+      font-size:10px;font-weight:600;color:var(--grn);
+    }
+    .status-row.status-inactive{
+      background:var(--adm2);border:1px solid rgba(239,108,0,.22);
+      color:var(--amb);
+    }
+    .status-row.status-inactive .s-dot{background:var(--amb);box-shadow:0 0 5px rgba(239,108,0,.45);animation:pulse-warn 2s infinite}
+    .status-row.status-unknown{
+      background:rgba(255,255,255,.04);border:1px solid var(--bdr2);
+      color:var(--t2);
+    }
+    .status-row.status-unknown .s-dot{background:var(--t3);box-shadow:none;animation:none}
+    .s-dot{width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 6px var(--grn)}50%{opacity:.6;box-shadow:0 0 2px var(--grn)}}
+    @keyframes pulse-warn{0%,100%{opacity:1;box-shadow:0 0 5px rgba(239,108,0,.5)}50%{opacity:.65;box-shadow:0 0 2px rgba(239,108,0,.25)}}
+
+    #loginAlert{
+      display:none;align-items:center;gap:9px;
+      background:var(--rdim);border:1px solid rgba(239,83,80,.2);
+      border-radius:var(--rsm);padding:10px 12px;
+      font-size:11px;color:var(--red);margin-bottom:14px;
+    }
+    #loginAlert.show{display:flex;animation:shake .35s ease}
+    #loginAlert.alert-success{background:var(--gdim);border:1px solid rgba(102,187,106,.2);color:var(--grn)}
+    #loginAlert.alert-success svg{stroke:var(--grn)}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    #loginAlert svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;fill:none}
+
+    .form{display:flex;flex-direction:column;gap:14px}
+    .field{display:flex;flex-direction:column;gap:5px}
+    .field-label{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;padding-left:2px}
+    .input-wrap{position:relative;display:flex;align-items:center}
+    .input-ico{position:absolute;left:13px;width:15px;height:15px;color:var(--t3);pointer-events:none;transition:color .2s}
+    .input-wrap:focus-within .input-ico{color:var(--acc)}
+    .field-input{
+      width:100%;background:var(--ele);border:1px solid var(--bdr2);border-radius:var(--rmd);
+      padding:12px 13px 12px 40px;color:var(--t1);font-size:13px;font-family:var(--ff);
+      outline:none;transition:border .2s,background .2s,box-shadow .2s;
+    }
+    .field-input::placeholder{color:var(--t3)}
+    .field-input:focus{border-color:var(--acc);background:rgba(239,83,80,.04);box-shadow:0 0 0 3px rgba(239,83,80,.1)}
+    .eye-btn{position:absolute;right:12px;background:none;border:none;cursor:pointer;padding:4px;color:var(--t3);transition:color .2s;display:flex;align-items:center}
+    .eye-btn:hover{color:var(--t2)}
+    .eye-btn svg{width:15px;height:15px}
+
+    .form-opts{display:flex;align-items:center;justify-content:space-between;margin-top:2px;flex-wrap:wrap;gap:8px}
+    .checkbox-wrap{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+    .checkbox-wrap input[type=checkbox]{display:none}
+    .custom-check{
+      width:16px;height:16px;border-radius:5px;border:1.5px solid var(--bdr3);
+      background:var(--ele);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;
+    }
+    .checkbox-wrap input:checked + .custom-check{background:var(--acc);border-color:var(--acc)}
+    .custom-check svg{width:10px;height:10px;color:#000;display:none}
+    .checkbox-wrap input:checked + .custom-check svg{display:block}
+    .check-label{font-size:11px;color:var(--t2)}
+    .forgot{font-size:11px;color:var(--acc);text-decoration:none;cursor:pointer;transition:opacity .15s}
+    .forgot:hover{opacity:.7}
+
+    .btn-login{
+      width:100%;padding:13px;
+      background:linear-gradient(135deg,var(--acc) 0%,var(--acc2) 100%);
+      border:none;border-radius:var(--rmd);color:#000;font-size:13px;font-weight:700;
+      font-family:var(--ff);cursor:pointer;letter-spacing:.2px;transition:all .2s;
+      box-shadow:0 4px 16px rgba(239,83,80,.25);position:relative;overflow:hidden;margin-top:4px;
+    }
+    .btn-login::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 60%);opacity:0;transition:opacity .2s}
+    .btn-login:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(239,83,80,.35)}
+    .btn-login:hover::after{opacity:1}
+    .btn-login:active{transform:translateY(0)}
+    .btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .btn-inner{display:flex;align-items:center;justify-content:center;gap:7px;position:relative;z-index:1}
+    .btn-inner svg{width:15px;height:15px;stroke:currentColor;fill:none}
+    .spinner{width:15px;height:15px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .btn-passkey{
+      width:100%;padding:11px 13px;margin-top:4px;
+      background:rgba(239,83,80,.06);border:1px solid rgba(239,83,80,.25);
+      border-radius:var(--rmd);color:var(--acc);font-size:12px;font-weight:600;font-family:var(--ff);
+      cursor:pointer;transition:background .2s,border .2s,transform .15s;
+    }
+    .btn-passkey:hover{background:rgba(239,83,80,.1);border-color:rgba(239,83,80,.4)}
+    .btn-passkey:active{transform:scale(.99)}
+    .passkey-hint{font-size:10px;color:var(--t3);text-align:center;margin-top:8px;line-height:1.4}
+
+    .divider{display:flex;align-items:center;gap:10px;margin:16px 0 4px}
+    .divider-line{flex:1;height:1px;background:var(--bdr)}
+    .divider-text{font-size:10px;color:var(--t3);white-space:nowrap}
+
+    .success-overlay{
+      position:absolute;inset:0;border-radius:var(--rxl);background:var(--card);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+      opacity:0;pointer-events:none;transition:opacity .3s;z-index:10;
+    }
+    .success-overlay.show{opacity:1;pointer-events:all}
+    .success-icon{
+      width:56px;height:56px;border-radius:50%;background:var(--gdim);border:2px solid var(--grn);
+      display:flex;align-items:center;justify-content:center;
+      animation:scaleIn .4s cubic-bezier(.22,.68,0,1.4) both;
+    }
+    @keyframes scaleIn{from{transform:scale(0)}to{transform:scale(1)}}
+    .success-icon svg{width:26px;height:26px;color:var(--grn);stroke:currentColor;fill:none}
+    .success-text{font-size:14px;font-weight:700;color:var(--grn)}
+    .success-sub{font-size:11px;color:var(--t3)}
+
+    .card-footer{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:20px;font-size:10px;color:var(--t3);flex-wrap:wrap;text-align:center}
+    .card-footer svg{width:11px;height:11px;stroke:currentColor;fill:none;flex-shrink:0}
+    .footer-version{font-family:monospace;font-size:9px;color:var(--t3)}
+
+    @media(max-width:460px){
+      .card{margin:0;padding:28px 22px 24px;border-radius:var(--rlg)}
+    }
+    </style>
 </head>
+<body>
+<div class="bg-wrap">
+  <div class="bg-grid"></div>
+  <div class="top-accent"></div>
+  <div class="deco deco1"></div>
+  <div class="deco deco2"></div>
 
-<body class="hold-transition login-page">
-    <div class="login-box">
-        <div class="login-logo">
-            <a href="https://github.com/ngoduykhanh/wireguard-ui">WireGuard UI</a>
+  <div class="card">
+    <div class="success-overlay" id="successOverlay">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <!-- /.login-logo -->
-        <div class="card">
-            <div class="card-body login-card-body">
-                <p class="login-box-msg">Sign in to start your session</p>
-                <form action="" method="post">
-                    <div class="input-group mb-3">
-                        <input id="username" type="text" class="form-control" placeholder="Username">
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-envelope"></span>
+      <div class="success-text">{{tr .UILang "login.success_title"}}</div>
+      <div class="success-sub">{{tr .UILang "login.success_sub"}}</div>
                             </div>
+
+    <div class="card-header">
+      <a href="https://github.com/ngoduykhanh/wireguard-ui" class="logo-wrap" style="text-decoration:none;color:inherit" title="WireGuard UI">
+        <img src="{{.basePath}}/static/wireguard.svg" alt="WireGuard logo">
+      </a>
+      <div class="app-name">WireGuard UI</div>
+      <div class="app-sub">{{tr .UILang "login.subtitle"}}</div>
+                        </div>
+
+    <div class="status-row status-{{if .loginStatusState}}{{.loginStatusState}}{{else}}active{{end}}" id="wg-login-status" role="status" aria-live="polite">
+      <span class="s-dot" id="wg-login-status-dot" aria-hidden="true"></span>
+      <span id="wg-login-status-text">{{.loginStatusLine}}</span>
+                    </div>
+
+    <div id="loginAlert" role="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="message"></span>
+                            </div>
+
+    <form class="form" id="loginForm" action="" method="post">
+      <div class="field">
+        <label class="field-label" for="username">{{tr .UILang "login.user"}}</label>
+        <div class="input-wrap">
+          <svg class="input-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input class="field-input" id="username" name="username" type="text" placeholder="{{tr .UILang "login.user"}}" autocomplete="username"/>
                         </div>
                     </div>
-                    <div class="input-group mb-3">
-                        <input id="password" type="password" class="form-control" placeholder="Password">
-                        <div class="input-group-append">
-                            <div class="input-group-text">
-                                <span class="fas fa-lock"></span>
+
+      <div class="field">
+        <label class="field-label" for="password">{{tr .UILang "login.pass"}}</label>
+        <div class="input-wrap">
+          <svg class="input-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="field-input" id="password" name="password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+          <button class="eye-btn" type="button" onclick="toggleLoginPass()" tabindex="-1" aria-label="{{tr .UILang "login.show_pass"}}">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-8">
-                            <div class="icheck-primary">
-                                <input type="checkbox" id="remember">
-                                <label for="remember">
-                                    Remember Me
-                                </label>
-                            </div>
+
+      <div class="form-opts">
+        <label class="checkbox-wrap">
+          <input type="checkbox" id="remember" checked/>
+          <div class="custom-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
-                        <!-- /.col -->
-                        <div class="col-4">
-                            <button id="btn_login" type="submit" class="btn btn-primary btn-block">Sign In</button>
-                        </div>
-                        <!-- /.col -->
+          <span class="check-label">{{tr .UILang "login.remember"}}</span>
+        </label>
+        <span class="forgot" title="{{tr .UILang "login.forgot_unavailable_tip"}}">{{tr .UILang "login.forgot"}}</span>
                     </div>
-                </form>
-                <div class="text-center mb-3">
-                    <p id="message"></p>
-                </div>
-            </div>
-            <!-- /.login-card-body -->
+
+      <button class="btn-login" id="btn_login" type="submit">
+        <div class="btn-inner">
+          <div class="spinner" id="loginSpinner"></div>
+          <svg id="loginIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+          </svg>
+          <span id="loginTxt">{{tr .UILang "login.submit"}}</span>
         </div>
+      </button>
+
+      {{if .passkeysEnabled}}
+      <button type="button" class="btn-passkey" id="btn_passkey">{{tr .UILang "login.passkey"}}</button>
+      <p class="passkey-hint">{{tr .UILang "login.passkey_hint"}}</p>
+      {{end}}
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">{{tr .UILang "login.secure"}}</span>
+        <div class="divider-line"></div>
+      </div>
+    </form>
+
+    <div class="card-footer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      WireGuard UI &nbsp;·&nbsp;
+      <span class="footer-version">v{{.appVersion}}</span>
+      &nbsp;·&nbsp; {{tr .UILang "login.encrypted"}}
     </div>
-    <!-- /.login-box -->
-    <!-- jQuery -->
-    <script src="{{.basePath}}/static/plugins/jquery/jquery.min.js"></script>
-    <!-- Bootstrap 4 -->
-    <script src="{{.basePath}}/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- AdminLTE App -->
-    <script src="{{.basePath}}/static/dist/js/adminlte.min.js"></script>
+  </div>
+</div>
 
-</body>
+    <script src="{{.basePath}}/static/plugins/jquery/jquery.min.js"></script>
+    <script src="{{.basePath}}/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>window.WG_T={{.WGMsgJSON}};window.wgT=function(k){try{var m=window.WG_T;return(m&&typeof m[k]==='string')?m[k]:k;}catch(e){return k;}};</script>
+
 <script>
+function toggleLoginPass() {
+    var inp = document.getElementById('password');
+    var ico = document.getElementById('eyeIcon');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        ico.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+        inp.type = 'password';
+        ico.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+}
+
+function setLoginLoading(on) {
+    var btn = document.getElementById('btn_login');
+    var spinner = document.getElementById('loginSpinner');
+    var icon = document.getElementById('loginIcon');
+    var txt = document.getElementById('loginTxt');
+    btn.disabled = !!on;
+    spinner.style.display = on ? 'block' : 'none';
+    icon.style.display = on ? 'none' : 'block';
+    txt.textContent = on ? wgT('login.submit_checking') : wgT('login.submit');
+}
+
+function showLoginAlert(html, isSuccess) {
+    var box = document.getElementById('loginAlert');
+    var msg = document.getElementById('message');
+    msg.innerHTML = html;
+    box.classList.remove('alert-success');
+    if (isSuccess) {
+        box.classList.add('alert-success');
+    }
+    box.classList.add('show');
+}
+
+function hideLoginAlert() {
+    document.getElementById('loginAlert').classList.remove('show', 'alert-success');
+    document.getElementById('message').innerHTML = '';
+}
+
     function redirectNext() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const nextURL = urlParams.get('next');
+    var urlParams = new URLSearchParams(window.location.search);
+    var nextURL = urlParams.get('next');
         if (nextURL && /(?:^\/[a-zA-Z_])|(?:^\/$)/.test(nextURL.trim())) {
             window.location.href = nextURL;
         } else {
-            window.location.href = '/{{.basePath}}';
-        } 
+        var bp = {{printf "%q" .basePath}};
+        window.location.href = (bp && bp.length) ? bp : '/';
     }
-</script>
-<script>
+}
+
+function b64urlToBytes(s) {
+    var pad = "=".repeat((4 - (s.length % 4)) % 4);
+    var b64 = (s + pad).replace(/-/g, "+").replace(/_/g, "/");
+    var raw = atob(b64);
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+}
+function bytesToB64url(buf) {
+    var bytes = new Uint8Array(buf);
+    var str = "";
+    for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+    return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+function publicKeyCredentialToJSON(cred) {
+    if (cred instanceof Array) return cred.map(publicKeyCredentialToJSON);
+    if (cred instanceof ArrayBuffer) return bytesToB64url(cred);
+    if (cred && typeof cred === "object") {
+        var obj = {};
+        for (var k in cred) obj[k] = publicKeyCredentialToJSON(cred[k]);
+        return obj;
+    }
+    return cred;
+}
+
     $(document).ready(function () {
         $('form').on('submit', function(e) {
             e.preventDefault();
-            $("#btn_login").trigger('click');
-        });
+        $('#btn_login').trigger('click');
+    });
 
-        $("#btn_login").click(function () {
-            const username = $("#username").val();
-            const password = $("#password").val();
-            let rememberMe = false;
-            if ($("#remember").is(':checked')){
-                rememberMe = true;
-            }
-            const data = {"username": username, "password": password, "rememberMe": rememberMe}
-
+    $('#btn_login').click(function () {
+        var username = $('#username').val();
+        var password = $('#password').val();
+        var rememberMe = $('#remember').is(':checked');
+        hideLoginAlert();
+        setLoginLoading(true);
             $.ajax({
                 cache: false,
                 method: 'POST',
                 url: '{{.basePath}}/login',
                 dataType: 'json',
-                contentType: "application/json",
-                data: JSON.stringify(data),
+            contentType: 'application/json',
+            data: JSON.stringify({ username: username, password: password, rememberMe: rememberMe }),
                 success: function(data) {
-                    document.getElementById("message").innerHTML = `<p style="color:green">${data['message']}</p>`;
-                    // redirect after logging in successfully
-                    redirectNext();
-                },
-                error: function(jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    document.getElementById("message").innerHTML = `<p style="color:#ff0000">${responseJson['message']}</p>`;
+                setLoginLoading(false);
+                showLoginAlert('<p style="margin:0">' + (data.message || 'OK') + '</p>', true);
+                document.getElementById('successOverlay').classList.add('show');
+                setTimeout(function() { redirectNext(); }, 450);
+            },
+            error: function(jqXHR) {
+                setLoginLoading(false);
+                var responseJson = {};
+                try { responseJson = JSON.parse(jqXHR.responseText || '{}'); } catch (e) {}
+                showLoginAlert('<p style="margin:0">' + (responseJson.message || 'Error') + '</p>', false);
                 }
             });
         });
+
+    {{if .passkeysEnabled}}
+    $('#btn_passkey').click(async function () {
+        var username = ($('#username').val() || '').trim();
+        var rememberMe = $('#remember').is(':checked');
+        hideLoginAlert();
+        try {
+            var beginResp = await fetch('{{.basePath}}/api/passkeys/login/begin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(username ? { username: username } : {})
+            });
+            var beginData = await beginResp.json();
+            if (!beginResp.ok || !beginData.status) {
+                throw new Error(beginData.message || wgT('login.passkey_begin_fail'));
+            }
+            var options = beginData.options.publicKey || beginData.options;
+            options.challenge = b64urlToBytes(options.challenge);
+            if (options.allowCredentials) {
+                options.allowCredentials = options.allowCredentials.map(function (c) {
+                    c.id = b64urlToBytes(c.id);
+                    return c;
+                });
+            }
+
+            var assertion = await navigator.credentials.get({ publicKey: options });
+            var credential = publicKeyCredentialToJSON(assertion);
+
+            var finishBody = {
+                rememberMe: rememberMe,
+                id: credential.id,
+                rawId: credential.rawId,
+                type: credential.type,
+                response: credential.response,
+                clientExtensionResults: credential.clientExtensionResults || {}
+            };
+            if (username) finishBody.username = username;
+
+            var finishResp = await fetch('{{.basePath}}/api/passkeys/login/finish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finishBody)
+            });
+            var finishData = await finishResp.json();
+            if (!finishResp.ok || !finishData.status) {
+                throw new Error(finishData.message || wgT('login.passkey_invalid'));
+            }
+            showLoginAlert('<p style="margin:0">' + (finishData.message || 'OK') + '</p>', true);
+            document.getElementById('successOverlay').classList.add('show');
+            setTimeout(function() { redirectNext(); }, 450);
+        } catch (e) {
+            showLoginAlert('<p style="margin:0">' + (e.message || wgT('login.passkey_unavailable')) + '</p>', false);
+        }
+    });
+    {{end}}
+
+    (function () {
+        var bp = {{printf "%q" .basePath}};
+        function applyLoginStatus(data) {
+            var row = document.getElementById('wg-login-status');
+            var txt = document.getElementById('wg-login-status-text');
+            if (!row || !txt || !data) return;
+            txt.textContent = data.message || '';
+            row.classList.remove('status-active', 'status-inactive', 'status-unknown');
+            var st = String(data.state || '').trim();
+            if (st !== 'active' && st !== 'inactive' && st !== 'unknown') {
+                st = 'unknown';
+            }
+            row.classList.add('status-' + st);
+        }
+        function pollLoginWg() {
+            fetch(bp + '/api/public/login-wg-status', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(applyLoginStatus)
+                .catch(function () {});
+        }
+        pollLoginWg();
+        setInterval(pollLoginWg, 8000);
+    })();
     });
 </script>
+</body>
 </html>

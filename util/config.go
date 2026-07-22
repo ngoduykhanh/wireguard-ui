@@ -2,6 +2,8 @@ package util
 
 import (
 	"net"
+	"os"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/gommon/log"
@@ -64,6 +66,20 @@ const (
 	DefaultClientExtraAllowedIpsEnvVar     = "WGUI_DEFAULT_CLIENT_EXTRA_ALLOWED_IPS"
 	DefaultClientUseServerDNSEnvVar        = "WGUI_DEFAULT_CLIENT_USE_SERVER_DNS"
 	DefaultClientEnableAfterCreationEnvVar = "WGUI_DEFAULT_CLIENT_ENABLE_AFTER_CREATION"
+	AllowSysctlIPForwardEnvVar             = "WGUI_ALLOW_SYSCTL_IP_FORWARD"
+	AllowWgQuickCtlEnvVar                  = "WGUI_ALLOW_WG_QUICK"
+	RestartWGViaSystemdEnvVar              = "WGUI_WG_RESTART_VIA_SYSTEMD"
+	WebAuthnRPIDEnvVar                     = "WGUI_WEBAUTHN_RP_ID"
+	WebAuthnRPOriginsEnvVar                = "WGUI_WEBAUTHN_RP_ORIGINS"
+	WebAuthnRPDisplayNameEnvVar            = "WGUI_WEBAUTHN_RP_DISPLAY_NAME"
+	// WebAuthnPublicOriginHeader optional HTTPS origin from trusted mobile clients (validated against RP origins / RP ID).
+	WebAuthnPublicOriginHeader = "X-WGUI-WebAuthn-Public-Origin"
+	// SyncConfAfterApplyEnvVar: if set, parse as bool — run wg-quick strip | wg syncconf after writing wg.conf (“Apply config”).
+	// If unset, defaults to matching WGUI_ALLOW_WG_QUICK so peers update in-kernel without full restart when host tools exist.
+	SyncConfAfterApplyEnvVar = "WGUI_WG_SYNCCONF_AFTER_APPLY"
+	// WgConfPendingWhenTunnelStoppedEnvVar: default true — when Apply does not restart WireGuard while the netdev is absent/down,
+	// writes to `<config>.wgui-pending` instead of overwriting `wg.conf` so systemd path units watching wg.conf cannot pull wg-quick up.
+	WgConfPendingWhenTunnelStoppedEnvVar = "WGUI_WGCONF_PENDING_WHEN_TUNNEL_STOPPED"
 )
 
 func ParseBasePath(basePath string) string {
@@ -116,4 +132,18 @@ func ParseSubnetRanges(subnetRangesStr string) map[string]([]*net.IPNet) {
 		}
 	}
 	return subnetRanges
+}
+
+// WgConfPendingWhenTunnelStopped mirrors WGUI_WGCONF_PENDING_WHEN_TUNNEL_STOPPED (default true).
+func WgConfPendingWhenTunnelStopped() bool {
+	v, ok := os.LookupEnv(WgConfPendingWhenTunnelStoppedEnvVar)
+	if !ok {
+		return true
+	}
+	b, err := strconv.ParseBool(strings.TrimSpace(v))
+	if err != nil {
+		log.Warnf("[%s]: invalid bool %q, using default true", WgConfPendingWhenTunnelStoppedEnvVar, v)
+		return true
+	}
+	return b
 }

@@ -2,8 +2,7 @@ package util
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/gob"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +14,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -43,8 +43,10 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 	clientAddress := fmt.Sprintf("Address = %s\n", strings.Join(client.AllocatedIPs, ","))
 	clientPrivateKey := fmt.Sprintf("PrivateKey = %s\n", client.PrivateKey)
 	clientDNS := ""
-	if client.UseServerDNS {
-		clientDNS = fmt.Sprintf("DNS = %s\n", strings.Join(setting.DNSServers, ","))
+	if client.UseServerDNS || setting.GlobalDNSOverride {
+		if len(setting.DNSServers) > 0 {
+			clientDNS = fmt.Sprintf("DNS = %s\n", strings.Join(setting.DNSServers, ","))
+		}
 	}
 	clientMTU := ""
 	if setting.MTU > 0 {
@@ -60,18 +62,15 @@ func BuildClientConfig(client model.Client, server model.Server, setting model.G
 
 	peerAllowedIPs := fmt.Sprintf("AllowedIPs = %s\n", strings.Join(client.AllowedIPs, ","))
 
-	desiredHost := setting.EndpointAddress
-	desiredPort := server.Interface.ListenPort
-	if strings.Contains(desiredHost, ":") {
-		split := strings.Split(desiredHost, ":")
-		desiredHost = split[0]
-		if n, err := strconv.Atoi(split[1]); err == nil {
-			desiredPort = n
-		} else {
-			log.Error("Endpoint appears to be incorrectly formatted: ", err)
-		}
+	listenUDP := 51820
+	if server.Interface != nil {
+		listenUDP = server.Interface.ListenPort
 	}
-	peerEndpoint := fmt.Sprintf("Endpoint = %s:%d\n", desiredHost, desiredPort)
+	if listenUDP < 1 || listenUDP > 65535 {
+		listenUDP = 51820
+	}
+	desiredHost, desiredPort := ParseWireGuardEndpointListen(setting.EndpointAddress, listenUDP)
+	peerEndpoint := FormatWireGuardEndpointLine(desiredHost, desiredPort)
 
 	peerPersistentKeepalive := ""
 	if setting.PersistentKeepalive > 0 {
@@ -165,6 +164,14 @@ func ValidateServerAddresses(cidrs []string) bool {
 	return true
 }
 
+// ValidateMTU returns true for 0 (omit MTU from generated configs) or values in 1280–9000 (IPv6 min path MTU … jumbo-safe range).
+func ValidateMTU(mtu int) bool {
+	if mtu == 0 {
+		return true
+	}
+	return mtu >= 1280 && mtu <= 9000
+}
+
 // ValidateIPAddress to validate the IPv4 and IPv6 address
 func ValidateIPAddress(ip string) bool {
 	if net.ParseIP(ip) == nil {
@@ -181,6 +188,40 @@ func ValidateIPAddressList(ips []string) bool {
 		}
 	}
 	return true
+}
+
+// ParseWireGuardEndpointListen splits the Endpoint Address stored in settings (IPv4/DNS/no-IP/bracketed-IPv6:port).
+// Never resolves DNS. If addr has no explicit port (no valid SplitHostPort), listenDefault is used for the UDP port field.
+func ParseWireGuardEndpointListen(addr string, listenDefault int) (host string, port int) {
+	addr = strings.TrimSpace(addr)
+	if addr == "" {
+		return "", listenDefault
+	}
+	if listenDefault < 1 || listenDefault > 65535 {
+		listenDefault = 51820
+	}
+	host, ps, err := net.SplitHostPort(addr)
+	if err == nil && strings.TrimSpace(host) != "" {
+		if p, e2 := strconv.Atoi(strings.TrimSpace(ps)); e2 == nil && p >= 1 && p <= 65535 {
+			return strings.TrimSpace(host), p
+		}
+	}
+	return addr, listenDefault
+}
+
+// FormatWireGuardEndpointLine builds Endpoint = … for client configs. IPv6 literals are bracketed; hostnames unchanged.
+func FormatWireGuardEndpointLine(host string, port int) string {
+	h := strings.TrimSpace(host)
+	if h == "" || port < 1 || port > 65535 {
+		return ""
+	}
+	if ip := net.ParseIP(h); ip != nil {
+		if ip.To4() != nil {
+			return fmt.Sprintf("Endpoint = %s:%d\n", ip.String(), port)
+		}
+		return fmt.Sprintf("Endpoint = [%s]:%d\n", ip.String(), port)
+	}
+	return fmt.Sprintf("Endpoint = %s:%d\n", h, port)
 }
 
 // GetInterfaceIPs to get local machine's interface ip addresses
@@ -540,8 +581,8 @@ func GetSubnetRangesString() string {
 	return strings.TrimSpace(strB.String())
 }
 
-// WriteWireGuardServerConfig to write Wireguard server config. e.g. wg0.conf
-func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting) error {
+// WriteWireGuardServerConfig renders wg.conf template. When outputConfPath is empty, globalSettings.ConfigFilePath is used.
+func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, clientDataList []model.ClientData, usersList []model.User, globalSettings model.GlobalSetting, outputConfPath string) error {
 	var tmplWireguardConf string
 
 	// if set, read wg.conf template from WgConfTemplate
@@ -575,8 +616,13 @@ func WriteWireGuardServerConfig(tmplDir fs.FS, serverConfig model.Server, client
 		return err
 	}
 
+	target := strings.TrimSpace(outputConfPath)
+	if target == "" {
+		target = strings.TrimSpace(globalSettings.ConfigFilePath)
+	}
+
 	// write config file to disk
-	f, err := os.Create(globalSettings.ConfigFilePath)
+	f, err := os.Create(target)
 	if err != nil {
 		return err
 	}
@@ -657,9 +703,11 @@ func LookupEnvOrString(key string, defaultVal string) string {
 
 func LookupEnvOrBool(key string, defaultVal bool) bool {
 	if val, ok := os.LookupEnv(key); ok {
+		val = strings.TrimSpace(val)
 		v, err := strconv.ParseBool(val)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "LookupEnvOrBool[%s]: %v\n", key, err)
+			fmt.Fprintf(os.Stderr, "LookupEnvOrBool[%s]: %q invalid, using default=%v (%v)\n", key, val, defaultVal, err)
+			return defaultVal
 		}
 		return v
 	}
@@ -841,12 +889,63 @@ func filterStringSlice(s []string, excludedStr string) []string {
 }
 
 func GetDBUserCRC32(dbuser model.User) uint32 {
-	buf := new(bytes.Buffer)
-	enc := gob.NewEncoder(buf)
-	if err := enc.Encode(dbuser); err != nil {
-		panic("model.User is gob-incompatible, session verification is impossible")
+	// Deterministic snapshot for session validity checks.
+	// Avoid hashing full webauthn.Credential via gob, as nested maps/slices can lead to unstable digests.
+	passkeyIDs := make([]string, 0, len(dbuser.Passkeys))
+	for _, pk := range dbuser.Passkeys {
+		if len(pk.ID) == 0 {
+			continue
+		}
+		passkeyIDs = append(passkeyIDs, base64.RawURLEncoding.EncodeToString(pk.ID))
 	}
-	return crc32.ChecksumIEEE(buf.Bytes())
+	sort.Strings(passkeyIDs)
+
+	labels := map[string]string{}
+	if len(dbuser.PasskeyLabels) > 0 {
+		valid := map[string]struct{}{}
+		for _, id := range passkeyIDs {
+			valid[id] = struct{}{}
+		}
+		for k, v := range dbuser.PasskeyLabels {
+			k = strings.TrimSpace(k)
+			if k == "" {
+				continue
+			}
+			if _, ok := valid[k]; !ok {
+				continue
+			}
+			labels[k] = strings.TrimSpace(v)
+		}
+	}
+
+	snapshot := struct {
+		Username    string            `json:"username"`
+		Password    string            `json:"password"`
+		PasswordHash string           `json:"password_hash"`
+		Admin       bool              `json:"admin"`
+		Disabled    bool              `json:"disabled"`
+		AuthEpoch   int64             `json:"auth_epoch"`
+		DisplayName string            `json:"display_name"`
+		Email       string            `json:"email"`
+		PasskeyIDs  []string          `json:"passkey_ids"`
+		Labels      map[string]string `json:"labels"`
+	}{
+		Username:    dbuser.Username,
+		Password:    dbuser.Password,
+		PasswordHash: dbuser.PasswordHash,
+		Admin:       dbuser.Admin,
+		Disabled:    dbuser.Disabled,
+		AuthEpoch:   dbuser.AuthEpoch,
+		DisplayName: strings.TrimSpace(dbuser.DisplayName),
+		Email:       strings.TrimSpace(dbuser.Email),
+		PasskeyIDs:  passkeyIDs,
+		Labels:      labels,
+	}
+	b, err := json.Marshal(snapshot)
+	if err != nil {
+		panic("cannot marshal deterministic user snapshot")
+	}
+	return crc32.ChecksumIEEE(b)
 }
 
 func ConcatMultipleSlices(slices ...[]byte) []byte {

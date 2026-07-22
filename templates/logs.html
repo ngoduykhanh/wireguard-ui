@@ -1,0 +1,242 @@
+{{define "title"}}{{ tr .UILang "logs.title" }}{{end}}
+{{define "top_css"}}
+<style>
+.wg-log-shell{background:#121212;border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden}
+.wg-log-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:#0f0f0f;border-bottom:1px solid rgba(255,255,255,.06)}
+.wg-log-filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wg-log-filter{border:0;background:transparent;color:#9e9e9e;font-size:11px;font-weight:800;letter-spacing:.2px;padding:5px 8px;border-radius:9px;cursor:pointer}
+.wg-log-filter.active{background:rgba(239,83,80,.14);color:#EF5350}
+.wg-log-filter[data-level="ERROR"]{color:#ef5350}
+.wg-log-filter[data-level="WARN"]{color:#ffca28}
+.wg-log-filter[data-level="INFO"]{color:#66bb6a}
+.wg-log-actions{display:flex;align-items:center;gap:8px}
+.wg-log-btn{background:#212121;border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#d5d5d5;font-size:11px;font-weight:700;padding:6px 12px;cursor:pointer}
+.wg-log-btn:hover{border-color:rgba(239,83,80,.4);color:#EF5350}
+.wg-log-btn.warn{color:#ef5350}
+.wg-log-head{display:flex;justify-content:space-between;align-items:center;background:#1a1a1a;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.06)}
+.wg-log-title{font-size:12px;font-weight:700;color:#ddd}
+.wg-live{display:inline-flex;align-items:center;gap:6px;color:#8fd18f;font-size:10px}
+.wg-live i{width:7px;height:7px;background:#66BB6A;border-radius:50%;box-shadow:0 0 6px rgba(102,187,106,.45)}
+.wg-live-muted{color:#9e9e9e!important}
+.wg-live-muted i{background:#616161!important;box-shadow:none!important}
+.wg-log-viewport{background:#141414;max-height:min(62vh,calc(100vh - 220px));overflow:auto;padding:10px 12px}
+.wg-log-line{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;line-height:1.45;color:#e5e5e5;white-space:pre-wrap;word-break:break-word;padding:1px 0}
+.wg-log-line[data-level="ERROR"]{color:#ff8a80}
+.wg-log-line[data-level="WARN"]{color:#ffe082}
+.wg-log-line[data-level="INFO"]{color:#c8e6c9}
+.wg-log-line[data-hidden="1"]{display:none}
+.wg-log-source{color:#8aa8c8}
+.wg-note{font-size:12px;color:#9e9e9e;line-height:1.5;margin-bottom:10px}
+.wg-note-warn{color:#ffca28}
+.wg-note-warn a{color:#EF5350;font-weight:700}
+</style>
+{{end}}
+{{define "username"}} {{ .username }} {{end}}
+{{define "page_title"}}{{ tr .UILang "logs.page" }}{{end}}
+
+{{define "page_content"}}
+<section class="content wg-shell-page">
+{{if not (and .globalSettings .globalSettings.RealtimeStatsEnabled)}}
+<p class="wg-note wg-note-warn">{{ tr .UILang "logs.disabled_warn_before" }} <a href="{{.basePath}}/global-settings">{{ tr .UILang "logs.disabled_warn_link" }}</a> {{ tr .UILang "logs.disabled_warn_after" }}</p>
+{{end}}
+<p class="wg-note">{{ printf (tr .UILang "logs.console_note") .ifaceName }}</p>
+<div class="wg-log-shell">
+  <div class="wg-log-toolbar">
+    <div class="wg-log-filters">
+      <button type="button" class="wg-log-filter active" data-level="ALL">{{ tr .UILang "logs.filter_all" }}</button>
+      <button type="button" class="wg-log-filter" data-level="ERROR">ERROR</button>
+      <button type="button" class="wg-log-filter" data-level="WARN">WARN</button>
+      <button type="button" class="wg-log-filter" data-level="INFO">INFO</button>
+    </div>
+    <div class="wg-log-actions">
+      <button type="button" class="wg-log-btn" id="wg-log-export">{{ tr .UILang "logs.export" }}</button>
+      <button type="button" class="wg-log-btn warn" id="wg-log-clear">{{ tr .UILang "logs.clear" }}</button>
+    </div>
+  </div>
+
+  <div class="wg-log-head">
+    <div class="wg-log-title" translate="no">wireguard-ui · {{.ifaceName}}</div>
+    {{if and .globalSettings .globalSettings.RealtimeStatsEnabled}}
+    <span class="wg-live" id="wg-log-live-badge"><i aria-hidden="true"></i>{{ tr .UILang "logs.live_badge" }}</span>
+    {{else}}
+    <span class="wg-live wg-live-muted" id="wg-log-live-badge"><i aria-hidden="true"></i>{{ tr .UILang "logs.live_paused" }}</span>
+    {{end}}
+  </div>
+
+  <div class="wg-log-viewport" id="wg-log-viewport">
+    {{ range .systemSections }}
+      {{ $source := .Title }}
+      {{ range .Lines }}
+        <div class="wg-log-line" data-level="ALL"><span class="wg-log-source">[{{$source}}]</span> {{.}}</div>
+      {{ end }}
+    {{ end }}
+    {{ if .logTailUnset }}
+      <div class="wg-log-line" data-level="INFO"><span class="wg-log-source">[archivo]</span> {{if .baseData.Admin}}Sin archivo en {{.logEnvHint}}.{{else}}No hay logs de archivo disponibles.{{end}}</div>
+    {{ else }}
+      {{ range .logLines }}
+        <div class="wg-log-line" data-level="ALL"><span class="wg-log-source">[archivo]</span> {{.}}</div>
+      {{ end }}
+    {{ end }}
+  </div>
+</div>
+</section>
+{{end}}
+
+{{define "bottom_js"}}
+<script>
+(function(){
+  var viewport = document.getElementById('wg-log-viewport');
+  if (!viewport) return;
+  var pollEnabled = {{if and .globalSettings .globalSettings.RealtimeStatsEnabled}}true{{else}}false{{end}};
+  var basePath = window.APP_BASE_PATH || '';
+  var lines = [];
+  var activeLevel = 'ALL';
+  /** Default to tail-like view: keep at the bottom until the user scrolls up manually. */
+  var stickTail = true;
+
+  function syncStickTailFromViewport(){
+    var gap = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    stickTail = gap < 96;
+  }
+
+  viewport.addEventListener('scroll', syncStickTailFromViewport, { passive: true });
+
+  function snapToTail(){
+    if (!stickTail) return;
+    viewport.scrollTop = viewport.scrollHeight;
+  }
+
+  /** After filters/DOM updates, height measurement can be wrong in a single animation frame. */
+  function snapToTailLayout(){
+    snapToTail();
+    requestAnimationFrame(function(){
+      snapToTail();
+    });
+  }
+
+  function detectLevel(text){
+    var t = String(text || '').toUpperCase();
+    if (t.indexOf('ERROR') >= 0 || t.indexOf('DENIED') >= 0 || t.indexOf('FAILED') >= 0) return 'ERROR';
+    if (t.indexOf('WARN') >= 0 || t.indexOf('RETRY') >= 0) return 'WARN';
+    if (t.indexOf('INFO') >= 0 || t.indexOf('HANDSHAKE') >= 0 || t.indexOf('ACTIVE') >= 0) return 'INFO';
+    return 'ALL';
+  }
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function collectLines(){
+    lines = Array.prototype.slice.call(viewport.querySelectorAll('.wg-log-line'));
+  }
+
+  function classifyLines(){
+    lines.forEach(function(el){
+      if (el.getAttribute('data-level') === 'ALL') {
+        el.setAttribute('data-level', detectLevel(el.textContent));
+      }
+    });
+  }
+
+  function applyFilter(level){
+    activeLevel = level;
+    lines.forEach(function(el){
+      var show = (level === 'ALL') || (el.getAttribute('data-level') === level);
+      el.setAttribute('data-hidden', show ? '0' : '1');
+    });
+    document.querySelectorAll('.wg-log-filter').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-level') === level);
+    });
+    snapToTailLayout();
+  }
+
+  function buildHtml(data){
+    var parts = [];
+    (data.sections || []).forEach(function(sec){
+      var title = sec.Title || sec.title || '';
+      (sec.Lines || sec.lines || []).forEach(function(line){
+        parts.push('<div class="wg-log-line" data-level="ALL"><span class="wg-log-source">' + escapeHtml('[' + title + ']') + '</span> ' + escapeHtml(String(line)) + '</div>');
+      });
+    });
+    var tailUnset = !!(data.log_tail_unset || data.logTailUnset);
+    var fl = data.log_lines || data.logLines || [];
+    if (tailUnset) {
+      parts.push('<div class="wg-log-line" data-level="INFO"><span class="wg-log-source">[archivo]</span> ' + escapeHtml(wgLogTailHint()) + '</div>');
+    } else {
+      fl.forEach(function(line){
+        parts.push('<div class="wg-log-line" data-level="ALL"><span class="wg-log-source">[archivo]</span> ' + escapeHtml(String(line)) + '</div>');
+      });
+    }
+    return parts.join('');
+  }
+
+  function wgLogTailHint(){
+    var logFileHint = {{printf "%q" .logEnvHint}};
+    if ({{if .baseData.Admin}}true{{else}}false{{end}}) {
+      return 'Sin archivo en ' + logFileHint + '.';
+    }
+    return 'No hay logs de archivo disponibles.';
+  }
+
+  function refreshLogs(){
+    if (!pollEnabled || !basePath) return;
+    fetch(basePath + '/api/system-logs', { credentials: 'same-origin' })
+      .then(function(resp){
+        if (resp.status === 403) throw new Error('forbidden');
+        if (!resp.ok) throw new Error('HTTP');
+        return resp.json();
+      })
+      .then(function(data){
+        syncStickTailFromViewport();
+        viewport.innerHTML = buildHtml(data);
+        collectLines();
+        classifyLines();
+        applyFilter(activeLevel);
+      })
+      .catch(function(){});
+  }
+
+  collectLines();
+  classifyLines();
+
+  document.querySelectorAll('.wg-log-filter').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      applyFilter(btn.getAttribute('data-level') || 'ALL');
+    });
+  });
+
+  var btnExport = document.getElementById('wg-log-export');
+  if (btnExport) {
+    btnExport.addEventListener('click', function(){
+      collectLines();
+      var visible = lines.filter(function(el){ return el.getAttribute('data-hidden') !== '1'; }).map(function(el){ return el.textContent; });
+      var blob = new Blob([visible.join('\n') + '\n'], {type:'text/plain;charset=utf-8'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'wireguard-ui-logs.txt';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    });
+  }
+
+  var btnClear = document.getElementById('wg-log-clear');
+  if (btnClear) {
+    btnClear.addEventListener('click', function(){
+      viewport.innerHTML = '';
+      collectLines();
+      applyFilter(activeLevel);
+    });
+  }
+
+  applyFilter('ALL');
+
+  if (pollEnabled) {
+    setTimeout(refreshLogs, 600);
+    setInterval(refreshLogs, 4500);
+  }
+})();
+</script>
+{{end}}

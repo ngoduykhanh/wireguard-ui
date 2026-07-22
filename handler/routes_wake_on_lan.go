@@ -37,10 +37,11 @@ func GetWakeOnLanHosts(db store.IStore) echo.HandlerFunc {
 			return createError(c, err, fmt.Sprintf("wake_on_lan_hosts database error: %s", err))
 		}
 
-		err = c.Render(http.StatusOK, "wake_on_lan_hosts.html", map[string]interface{}{
-			"baseData": model.BaseData{Active: "wake_on_lan_hosts", CurrentUser: currentUser(c), Admin: isAdmin(c)},
-			"hosts":    hosts,
-			"error":    "",
+		err = renderShell(c, db, "wake_on_lan_hosts.html", map[string]interface{}{
+			"baseData":      model.BaseData{Active: "wake_on_lan_hosts", CurrentUser: currentUser(c), Admin: isAdmin(c)},
+			"page_subtitle": "Hosts Wake-on-LAN",
+			"hosts":         hosts,
+			"error":         "",
 		})
 		if err != nil {
 			return createError(c, err, fmt.Sprintf("wake_on_lan_hosts.html render error: %s", err))

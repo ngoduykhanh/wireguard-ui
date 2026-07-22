@@ -1,6 +1,4 @@
-{{define "title"}}
-Connected Peers
-{{end}}
+{{define "title"}}{{ tr .UILang "status.title" }}{{end}}
 
 {{define "top_css"}}
 {{end}}
@@ -9,9 +7,7 @@ Connected Peers
 {{ .username }}
 {{end}}
 
-{{define "page_title"}}
-Connected Peers
-{{end}}
+{{define "page_title"}}{{ tr .UILang "status.page" }}{{end}}
 
 {{define "page_content"}}
 <script>
@@ -28,7 +24,7 @@ Connected Peers
     return parseFloat(temporal.toFixed(2)) + units[pow]+"B"
   }
 </script>
-<section class="content">
+<section class="content wg-shell-page">
     <div class="container-fluid">
         {{ if .error }}
         <div class="alert alert-warning" role="alert">{{.error}}</div>

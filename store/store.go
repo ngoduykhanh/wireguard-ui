@@ -27,4 +27,6 @@ type IStore interface {
 	GetPath() string
 	SaveHashes(hashes model.ClientServerHashes) error
 	GetHashes() (model.ClientServerHashes, error)
+	LoadTrafficCacheSnapshot() (*model.TrafficCacheSnapshot, error)
+	SaveTrafficCacheSnapshot(s *model.TrafficCacheSnapshot) error
 }

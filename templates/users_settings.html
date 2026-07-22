@@ -1,294 +1,740 @@
-{{define "title"}}
-Users Settings
-{{end}}
+{{define "title"}}{{ tr .UILang "users.title" }}{{end}}
 
-{{define "top_css"}}
-{{end}}
+{{define "top_css"}}{{end}}
 
-{{define "username"}}
-{{ .username }}
-{{end}}
+{{define "username"}}{{ .username }}{{end}}
 
-{{define "page_title"}}
-Users Settings
-{{end}}
+{{define "page_title"}}{{ tr .UILang "users.page" }}{{end}}
 
 {{define "page_content"}}
-<section class="content">
-    <div class="container-fluid">
-        <div class="row" id="users-list">
+<section class="content wg-users-content">
+    <div class="container-fluid p-0">
+        <div class="wg-users-page" id="wg_users_root">
+            <div class="usr-stats">
+                <div class="sc cb">
+                    <div class="sl">{{ tr .UILang "users.stat_total_upper" }}</div>
+                    <div class="sv" id="wu-stat-total">0</div>
+                    <div class="sf2"><span class="pill pb">{{ tr .UILang "users.stat_total_badge" }}</span></div>
+                </div>
+                <div class="sc ca">
+                    <div class="sl">{{ tr .UILang "users.stat_admins_upper" }}</div>
+                    <div class="sv" id="wu-stat-admins">0</div>
+                    <div class="sf2"><span class="pill pa">{{ tr .UILang "users.stat_admins_badge" }}</span></div>
+                </div>
+                <div class="sc cg">
+                    <div class="sl">{{ tr .UILang "users.stat_with_pk_upper" }}</div>
+                    <div class="sv" id="wu-stat-passkeys">0</div>
+                    <div class="sf2"><span class="pill pg">{{ tr .UILang "users.stat_with_pk_badge" }}</span></div>
+                </div>
+                <div class="sc cr">
+                    <div class="sl">{{ tr .UILang "users.stat_no_pk_upper" }}</div>
+                    <div class="sv" id="wu-stat-nokeys">0</div>
+                    <div class="sf2"><span class="pill pr">{{ tr .UILang "users.stat_no_pk_badge" }}</span></div>
+                </div>
+            </div>
+
+            <div class="wu-toolbar">
+                <div class="sr-wrap">
+                    <svg class="sr-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" class="si" id="wu_search_input" autocomplete="off" placeholder="{{ tr .UILang "users.search_ph" }}"/>
+                </div>
+                <button type="button" class="wg-btn bp" id="wu_btn_new_open">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    {{ tr .UILang "users.btn_new" }}
+                </button>
+            </div>
+
+            <div class="usr-table">
+                <div class="usr-th">
+                    <div class="usr-thc">{{ tr .UILang "users.th_user" }}</div>
+                    <div class="usr-thc">{{ tr .UILang "users.th_email" }}</div>
+                    <div class="usr-thc">{{ tr .UILang "users.th_role" }}</div>
+                    <div class="usr-thc">{{ tr .UILang "users.th_state" }}</div>
+                    <div class="usr-thc">{{ tr .UILang "users.th_passkeys" }}</div>
+                    <div class="usr-thc" style="text-align:right">{{ tr .UILang "users.th_actions" }}</div>
+                </div>
+                <div id="wu_tbody"></div>
+            </div>
         </div>
     </div>
 </section>
 
-<div class="modal fade" id="modal_edit_user">
-    <div class="modal-dialog">
+{{/* New user modal */}}
+<div class="modal fade" id="modal_wu_new" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Edit User</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <h4 class="modal-title font-weight-bold">{{ tr .UILang "users.modal_new_title" }}</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
-            <form name="frm_edit_user" id="frm_edit_user">
                 <div class="modal-body">
-                    <div class="form-group" style="display:none">
-                        <input type="text" style="display:none" class="form-control" id="_previous_user_name"
-                               name="_previous_user_name">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>{{ tr .UILang "users.lbl_display_name" }}</label>
+                        <input type="text" class="form-control" id="wu_new_display" placeholder="{{ tr .UILang "users.ph_display_ex" }}"/>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>{{ tr .UILang "users.lbl_username" }}</label>
+                        <input type="text" class="form-control" id="wu_new_username" placeholder="{{ tr .UILang "users.ph_username_ex" }}"/>
+                    </div>
                     </div>
                     <div class="form-group">
-                        <label for="_user_name" class="control-label">Name</label>
-                        <input type="text" class="form-control" id="_user_name" name="_user_name">
+                    <label>{{ tr .UILang "users.lbl_email" }}</label>
+                    <input type="email" class="form-control" id="wu_new_email" placeholder="{{ tr .UILang "profile.ph_email" }}"/>
                     </div>
                     <div class="form-group">
-                        <label for="_user_password" class="control-label">Password</label>
-                        <input type="password" class="form-control" id="_user_password" name="_user_password" value=""
-                               placeholder="Leave empty to keep the password unchanged">
-                    </div>
-                    <div class="form-group">
-                        <div class="icheck-primary d-inline">
-                            <input type="checkbox" id="_admin">
-                            <label for="_admin">
-                                Admin
-                            </label>
-                        </div>
-                    </div>
-
+                    <label>{{ tr .UILang "users.lbl_initial_pw" }}</label>
+                    <input type="password" class="form-control" id="wu_new_password" autocomplete="new-password" placeholder="{{ tr .UILang "users.ph_min_pw" }}"/>
                 </div>
-                <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Save</button>
+                <div class="form-group mb-0">
+                    <label>{{ tr .UILang "users.lbl_role" }}</label>
+                    <select class="form-control" id="wu_new_admin">
+                        <option value="0">{{ tr .UILang "users.role_standard" }}</option>
+                        <option value="1">{{ tr .UILang "users.role_admin_option" }}</option>
+                    </select>
                 </div>
-            </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="wg-btn bg" data-dismiss="modal">{{ tr .UILang "users.btn_cancel" }}</button>
+                <button type="button" class="wg-btn bp" id="wu_new_submit">{{ tr .UILang "users.btn_create" }}</button>
+            </div>
         </div>
-        <!-- /.modal-content -->
     </div>
-    <!-- /.modal-dialog -->
 </div>
-<!-- /.modal -->
 
-<div class="modal fade" id="modal_remove_user">
-    <div class="modal-dialog">
-        <div class="modal-content bg-danger">
+{{/* Edit user modal */}}
+<div class="modal fade" id="modal_wu_edit" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Remove</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <h4 class="modal-title font-weight-bold" id="wu_edit_title">{{ tr .UILang "users.modal_edit_title" }}</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
+                <input type="hidden" id="wu_edit_previous"/>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>{{ tr .UILang "users.lbl_display_name" }}</label>
+                        <input type="text" class="form-control" id="wu_edit_display"/>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>{{ tr .UILang "users.lbl_username" }}</label>
+                        <input type="text" class="form-control" id="wu_edit_username"/>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>{{ tr .UILang "users.lbl_email" }}</label>
+                    <input type="email" class="form-control" id="wu_edit_email"/>
+                </div>
+                <div class="form-group">
+                    <label>{{ tr .UILang "users.lbl_password" }}</label>
+                    <input type="password" class="form-control" id="wu_edit_password" autocomplete="new-password" placeholder="{{ tr .UILang "users.ph_pw_unchanged" }}"/>
+                </div>
+                <div class="form-check" id="wu_edit_admin_wrap">
+                    <input type="checkbox" class="form-check-input" id="wu_edit_admin"/>
+                    <label class="form-check-label" for="wu_edit_admin">{{ tr .UILang "users.edit_admin_checkbox" }}</label>
+                    <small class="form-text text-muted">{{ tr .UILang "users.edit_admin_note" }}</small>
+                </div>
             </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-outline-dark" id="remove_user_confirm">Apply</button>
+            <div class="modal-footer">
+                <button type="button" class="wg-btn bg" data-dismiss="modal">{{ tr .UILang "users.btn_cancel" }}</button>
+                <button type="button" class="wg-btn bp" id="wu_edit_submit">{{ tr .UILang "users.btn_save" }}</button>
             </div>
         </div>
-        <!-- /.modal-content -->
     </div>
-    <!-- /.modal-dialog -->
 </div>
-<!-- /.modal -->
+
+{{/* Delete user modal */}}
+<div class="modal fade" id="modal_wu_del" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="close ml-auto" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body text-center pt-0 pb-4">
+                <div style="width:52px;height:52px;margin:0 auto 12px;border-radius:12px;background:rgba(239,83,80,.14);border:1px solid rgba(239,83,80,.28);display:flex;align-items:center;justify-content:center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF5350" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </div>
+                <h5 class="font-weight-bold mb-2">{{ tr .UILang "users.del_title" }}</h5>
+                <p class="text-muted small mb-0" id="wu_del_msg"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="wg-btn bg" data-dismiss="modal">{{ tr .UILang "users.btn_cancel" }}</button>
+                <button type="button" class="wg-btn brd" id="wu_del_confirm">{{ tr .UILang "users.del_confirm_btn" }}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {{end}}
 
 {{define "bottom_js"}}
 <script>
-    function populateUsersList() {
+(function () {
+    var BASE = '{{.basePath}}';
+    var WG_ME = '{{.baseData.CurrentUser}}';
+    var PASSKEYS_OK = {{if and .globalSettings .globalSettings.TOTPEnabled}}true{{else}}false{{end}};
+    if (typeof window.wgReauthenticateRedirectIfNeeded !== 'function') {
+        window.wgReauthenticateRedirectIfNeeded = function (resp) {
+            if (!resp || !resp.reauthenticate) return false;
+            window.location.assign(BASE + '/login');
+            return true;
+        };
+    }
+    var usersCache = [];
+    var avatarColors = ['#C62828','#388E3C','#F57C00','#7B1FA2','#C62828','#00838F','#558B2F','#AD1457'];
+
+    $('body').addClass('wusers-hide-new-client');
+
+    function avColor(seed) {
+        var s = String(seed || 'x');
+        var n = 0;
+        for (var i = 0; i < s.length; i++) n += s.charCodeAt(i);
+        return avatarColors[n % avatarColors.length];
+    }
+
+    function initials(name) {
+        var p = String(name || '').trim().split(/\s+/).filter(Boolean);
+        if (!p.length) return '??';
+        if (p.length === 1) return p[0].substring(0, 2).toUpperCase();
+        return (p[0][0] + p[p.length - 1][0]).toUpperCase();
+    }
+
+    function esc(s) { return typeof wgEscapeHtml === 'function' ? wgEscapeHtml(String(s ?? '')) : String(s ?? ''); }
+    function escAttr(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/\r|\n/g, '');
+    }
+
+    function toggleDetail(un) {
+        var det = document.getElementById('wu-det-' + un);
+        if (!det) return;
+        var open = det.classList.contains('open');
+        document.querySelectorAll('.wg-users-page .usr-detail.open').forEach(function (el) {
+            el.classList.remove('open');
+        });
+        if (!open) det.classList.add('open');
+    }
+
+    function updateStats(users) {
+        var t = users.length;
+        var a = users.filter(function (u) { return u.admin; }).length;
+        var w = users.filter(function (u) { return (u.passkeys && u.passkeys.length); }).length;
+        $('#wu-stat-total').text(t);
+        $('#wu-stat-admins').text(a);
+        $('#wu-stat-passkeys').text(w);
+        $('#wu-stat-nokeys').text(t - w);
+    }
+
+    function renderPkList(u) {
+        if (u.disabled) {
+            return '<div class="pk-empty">' + esc(wgT('users.pk_suspended')) + '</div>';
+        }
+        if (!PASSKEYS_OK) {
+            return '<div class="pk-empty">' + esc(wgT('users.pk_disabled_global')) + '</div>';
+        }
+        if (!u.passkeys || !u.passkeys.length) {
+            return '<div class="pk-empty"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><line x1="10.85" y1="12.15" x2="19" y2="4"/></svg>' + esc(wgT('users.pk_none_row')) + '</div>';
+        }
+        var lines = '<div class="pk-list">';
+        u.passkeys.forEach(function (pk) {
+            var nid = escAttr(pk.credential_id);
+            lines += '<div class="pk-item">' +
+              '<div class="pk-info">' +
+              '<div class="pk-name" tabindex="0" role="button" title="' + escAttr(wgT('users.rename_tooltip')) + '" data-un="' + escAttr(u.username) + '" data-crid="' + nid + '">' + esc(pk.name) + '</div>' +
+              '<div class="pk-fp">' + esc(pk.fingerprint) + '</div></div>' +
+              '<button type="button" class="pk-del wu-del-pk" data-un="' + escAttr(u.username) + '" data-crid="' + nid + '" title="' + escAttr(wgT('users.delete_pk_tooltip')) + '">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button></div>';
+        });
+        lines += '</div>';
+        return lines;
+    }
+
+    function rowHtml(u) {
+        var email = esc(u.email || '—');
+        var handle = esc(u.username);
+        var dn = esc(u.display_name || u.username);
+        var nk = u.passkeys ? u.passkeys.length : 0;
+        var nkLabel = nk + ' ' + (nk !== 1 ? wgT('users.key_plural') : wgT('users.key_single'));
+        var dis = !!u.disabled;
+        var adm = !!u.admin;
+        var adminsActive = usersCache.filter(function (x) { return x.admin && !x.disabled; }).length;
+        var onlyOneAdmin = adminsActive <= 1 && adm && !dis;
+        var adminBtnTxt = adm ? wgT('users.btn_demote_admin') : wgT('users.btn_promote_admin');
+        var adminSvg = adm
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+        var disableDemoteAdmin = adm && onlyOneAdmin && String(u.username) !== String(WG_ME);
+        var adminBtnStyle = disableDemoteAdmin ? 'opacity:0.45;pointer-events:none;' : '';
+        var canDeleteRow = !(adm || String(u.username) === String(WG_ME));
+        var delStyle = !canDeleteRow ? 'opacity:0.35;pointer-events:none' : '';
+
+        var forbidSuspendLastAdmin = adm && !dis && adminsActive <= 1;
+        var suspendBtnStyle = forbidSuspendLastAdmin ? 'opacity:0.45;pointer-events:none;' : '';
+        var revokeStyle = dis ? 'opacity:0.38;pointer-events:none;' : '';
+        var suspendLabel = dis ? wgT('users.btn_activate') : wgT('users.btn_suspend');
+
+        var roleBadge = adm
+          ? '<span class="role-admin">' + adminSvg + ' ' + esc(wgT('users.role_admin_badge')) + '</span>'
+          : '<span class="role-user"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + esc(wgT('users.role_user_badge')) + '</span>';
+
+        var stateBadge = dis
+          ? '<span class="usr-state usr-state-off">' + esc(wgT('users.state_suspended')) + '</span>'
+          : '<span class="usr-state usr-state-on">' + esc(wgT('users.state_active')) + '</span>';
+
+        return '<div class="usr-row' + (dis ? ' usr-disabled' : '') + '">' +
+          '<div class="usr-main" data-un="' + escAttr(u.username) + '">' +
+          '<div class="usr-ident">' +
+          '<div class="usr-av" style="background:' + avColor(u.username) + '">' + initials(u.display_name || u.username) + '</div>' +
+          '<div><div class="usr-name">' + dn + '</div><div class="usr-handle">@' + handle + '</div></div></div>' +
+          '<div class="usr-email">' + email + '</div>' +
+          '<div>' + roleBadge + '</div>' +
+          '<div class="usr-st-cell">' + stateBadge + '</div>' +
+          '<div class="usr-keys-count">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><line x1="10.85" y1="12.15" x2="19" y2="4"/><line x1="18" y1="5" x2="20" y2="7"/><line x1="15" y1="8" x2="17" y2="6"/></svg>'
+          + esc(nkLabel) + '</div>' +
+          '<div class="usr-actions-cell">' +
+          (String(u.username) === String(WG_ME)
+            ? '<span class="pill pb" style="font-size:10px">' + esc(wgT('users.account_yours')) + '</span>'
+            : '<button type="button" class="wg-btn bg wu-toggle-admin" data-un="' + escAttr(u.username) + '" style="' + escAttr(adminBtnStyle) + '">' + adminSvg + esc(adminBtnTxt) + '</button>'
+          ) +
+          '<button type="button" class="wg-btn bg wu-revoke-sessions" title="' + escAttr(wgT('users.btn_revoke_title')) + '" data-un="' + escAttr(u.username) + '" style="' + escAttr(revokeStyle) + '">' + esc(wgT('users.btn_revoke')) + '</button>' +
+          '<button type="button" class="wg-btn bg wu-toggle-disabled" title="' + escAttr(dis ? wgT('users.btn_suspend_title_allow') : wgT('users.btn_suspend_title_block')) + '" data-un="' + escAttr(u.username) + '" data-dis="' + (dis ? '1' : '0') + '" style="' + escAttr(suspendBtnStyle) + '">' + esc(suspendLabel) + '</button>' +
+          '<button type="button" class="wg-btn bg" title="' + escAttr(wgT('users.btn_edit_title')) + '" data-edit="' + escAttr(u.username) + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' + esc(wgT('users.btn_edit')) + '</button>' +
+          '<button type="button" class="wg-btn brd wu-del-btn" style="' + delStyle + '" data-un="' + escAttr(u.username) + '" data-dn="' + escAttr(u.display_name || u.username) + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>' +
+          '</div></div>' +
+          '<div class="usr-detail" id="wu-det-' + escAttr(u.username) + '">' +
+          '<div class="udet-inner">' +
+          '<div class="udet-title">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><circle cx="8" cy="15" r="4"/><line x1="10.85" y1="12.15" x2="19" y2="4"/><line x1="18" y1="5" x2="20" y2="7"/><line x1="15" y1="8" x2="17" y2="6"/></svg>'
+          + esc(wgT('users.passkeys_for')) + dn + '</div>' +
+          '<div id="wu-pkl-' + escAttr(u.username) + '">' + renderPkList(u) + '</div>' +
+          '<div class="pk-add-form" id="wu-pkf-' + escAttr(u.username) + '"' + (dis ? ' style="display:none"' : '') + '>' +
+          '<input type="text" id="wu-pkin-' + escAttr(u.username) + '" autocomplete="off" placeholder="' + escAttr(wgT('users.pk_placeholder_short')) + '"/>' +
+          '<button type="button" class="wg-btn bp wu-add-pk" data-un="' + escAttr(u.username) + '">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' + esc(wgT('users.pk_add_inline')) + '</button>' +
+          '</div></div></div></div>';
+    }
+
+    window.WU = {
+        redraw: renderAll
+    };
+
+    function filteredUsers(q) {
+        q = String(q || '').trim().toLowerCase();
+        if (!q) return usersCache.slice();
+        return usersCache.filter(function (u) {
+            var dn = String(u.display_name || '').toLowerCase();
+            var un = String(u.username || '').toLowerCase();
+            var em = String(u.email || '').toLowerCase();
+            return dn.indexOf(q) !== -1 || un.indexOf(q) !== -1 || em.indexOf(q) !== -1;
+        });
+    }
+
+    function renderAll(q) {
+        var list = filteredUsers(q);
+        var tbody = $('#wu_tbody');
+        tbody.empty();
+        if (!list.length) {
+            tbody.html('<div class="wu-empty">' + esc(wgT('users.empty_search')) + '</div>');
+            return;
+        }
+        list.forEach(function (u) {
+            tbody.append(rowHtml(u));
+        });
+        updateStats(usersCache);
+    }
+
+    function loadUsers() {
+        $.getJSON(BASE + '/get-users').done(function (data) {
+            usersCache = Array.isArray(data) ? data : [];
+            renderAll($('#wu_search_input').val());
+        }).fail(function (xhr) {
+            var m = wgT('users.err_load_users');
+            try { m = xhr.responseJSON.message || m; } catch (eE) {}
+            toastr.error(m);
+        });
+    }
+
+    $('#wu_search_input').on('input', function () {
+        renderAll($(this).val());
+    });
+
+    $('#wu_btn_new_open').click(function () {
+        $('#wu_new_display').val('');
+        $('#wu_new_username').val('');
+        $('#wu_new_email').val('');
+        $('#wu_new_password').val('');
+        $('#wu_new_admin').val('0');
+        $('#modal_wu_new').modal('show');
+    });
+
+    $('#wu_new_submit').click(function () {
+        var dn = $('#wu_new_display').val().trim();
+        var un = $('#wu_new_username').val().trim();
+        var em = $('#wu_new_email').val().trim();
+        var pw = $('#wu_new_password').val();
+        var ad = $('#wu_new_admin').val() === '1';
+        if (!un || !pw) {
+            toastr.error(wgT('users.err_new_user_pass'));
+            return;
+        }
         $.ajax({
             cache: false,
-            method: 'GET',
-            url: '{{.basePath}}/get-users',
+            method: 'POST',
+            url: BASE + '/create-user',
+            contentType: 'application/json',
             dataType: 'json',
-            contentType: "application/json",
-            success: function (data) {
-                renderUserList(data);
+            data: JSON.stringify({ username: un, password: pw, admin: ad, display_name: dn, email: em }),
+            success: function () {
+                toastr.success(wgT('users.ok_user_created'));
+                $('#modal_wu_new').modal('hide');
+                loadUsers();
             },
-            error: function (jqXHR, exception) {
-                const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                toastr.error(responseJson['message']);
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e0) {}
+                toastr.error(j.message || xhr.responseText);
             }
-        });
-    }
-</script>
-<script>
-    // load user list
-    $(document).ready(function () {
-        populateUsersList();
-        let newUserHtml = '<div class="col-sm-2 offset-md-4" style=" text-align: right;">' +
-            '<button style="" id="btn_new_user" type="button" class="btn btn-outline-primary btn-sm" ' +
-            'data-toggle="modal" data-target="#modal_edit_user" data-username="">' +
-            '<i class="nav-icon fas fa-plus"></i> New User</button></div>';
-        $('h1').parents(".row").append(newUserHtml);
-    })
-
-    // modal_remove_user modal event
-    $("#modal_remove_user").on('show.bs.modal', function (event) {
-        const button = $(event.relatedTarget);
-        const user_name = button.data('username');
-        const modal = $(this);
-        modal.find('.modal-body').text("You are about to remove user " + user_name);
-        modal.find('#remove_user_confirm').val(user_name);
-    })
-
-    // remove_user_confirm button event
-    $(document).ready(function () {
-        $("#remove_user_confirm").click(function () {
-            const user_name = $(this).val();
-            const data = {"username": user_name};
-            $.ajax({
-                cache: false,
-                method: 'POST',
-                url: '{{.basePath}}/remove-user',
-                dataType: 'json',
-                contentType: "application/json",
-                data: JSON.stringify(data),
-                success: function (data) {
-                    $("#modal_remove_user").modal('hide');
-                    toastr.success('Removed user successfully');
-                    const divElement = document.getElementById('user_' + user_name);
-                    divElement.style.display = "none";
-                    location.reload()
-                },
-                error: function (jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
-                }
-            });
         });
     });
 
-    // Edit user modal event
-    $(document).ready(function () {
-        $("#modal_edit_user").on('show.bs.modal', function (event) {
-            let modal = $(this);
-            const button = $(event.relatedTarget);
-            const user_name = button.data('username');
+    $(document).on('click', '[data-edit]', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var un = $(this).data('edit');
+        $.getJSON(BASE + '/api/user/' + encodeURIComponent(un)).done(function (u) {
+            $('#wu_edit_title').text(wgT('users.modal_edit_title') + ' — ' + un);
+            $('#wu_edit_previous').val(u.username);
+            $('#wu_edit_username').val(u.username);
+            $('#wu_edit_display').val(u.display_name || '');
+            $('#wu_edit_email').val(u.email || '');
+            $('#wu_edit_password').val('');
+            $('#wu_edit_admin').prop('checked', !!u.admin);
+            var editingOther = WG_ME !== u.username;
+            $('#wu_edit_admin').prop('disabled', !editingOther);
+            $('#wu_edit_admin_wrap').toggle(editingOther);
+            $('#modal_wu_edit').modal('show');
+        }).fail(function (xhr) {
+            var j = {}; try { j = xhr.responseJSON; } catch (e1) {}
+            toastr.error(j.message || wgT('users.err_generic_short'));
+        });
+    });
 
-            // update user modal data
-            if (user_name !== "") {
+    $('#wu_edit_submit').click(function () {
+        var prev = $('#wu_edit_previous').val();
+        var un = $('#wu_edit_username').val().trim();
+        var dn = $('#wu_edit_display').val().trim();
+        var em = $('#wu_edit_email').val().trim();
+        var pw = $('#wu_edit_password').val();
+        var ad = $('#wu_edit_admin').is(':checked');
+        if (!prev || !un) {
+            toastr.error(wgT('users.err_username_req'));
+            return;
+        }
+            $.ajax({
+                cache: false,
+                method: 'POST',
+            url: BASE + '/update-user',
+            contentType: 'application/json',
+                dataType: 'json',
+            data: JSON.stringify({
+                previous_username: prev,
+                username: un,
+                password: pw,
+                admin: ad,
+                display_name: dn,
+                email: em
+            }),
+            success: function (resp) {
+                toastr.success((resp && resp.message) || wgT('users.ok_user_updated'));
+                if (window.wgReauthenticateRedirectIfNeeded && window.wgReauthenticateRedirectIfNeeded(resp)) return;
+                $('#modal_wu_edit').modal('hide');
+                loadUsers();
+                if (un === WG_ME || prev === WG_ME) {
+                    window.location.reload();
+                }
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e2) {}
+                toastr.error(j.message || xhr.responseText);
+            }
+        });
+    });
+
+    var pendingDel = null;
+
+    $(document).on('click', '.wu-del-btn', function (e) {
+        e.stopPropagation();
+        var un = $(this).data('un');
+        pendingDel = un;
+        var dn = $(this).data('dn');
+        $('#wu_del_msg').text(wgT('users.del_body_fmt').replace(/\{display\}/g, String(dn)).replace(/\{username\}/g, String(un)));
+        $('#modal_wu_del').modal('show');
+    });
+
+    $('#wu_del_confirm').click(function () {
+        if (!pendingDel) return;
+        var un = pendingDel;
                 $.ajax({
                     cache: false,
-                    method: 'GET',
-                    url: '{{.basePath}}/api/user/' + user_name,
+            method: 'POST',
+            url: BASE + '/remove-user',
+            contentType: 'application/json',
                     dataType: 'json',
-                    contentType: "application/json",
-                    success: function (resp) {
-                        const user = resp;
-
-                        modal.find(".modal-title").text("Edit user " + user.username);
-                        modal.find("#_user_name").val(user.username);
-                        modal.find("#_previous_user_name").val(user.username);
-                        modal.find("#_user_password").val("");
-                        modal.find("#_user_password").prop("placeholder", "Leave empty to keep the password unchanged")
-                        modal.find("#_admin").prop("checked", user.admin);
-                    },
-                    error: function (jqXHR, exception) {
-                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                        toastr.error(responseJson['message']);
-                    }
-                });
-            } else {
-                modal.find(".modal-title").text("Add new user");
-                modal.find("#_user_name").val("");
-                modal.find("#_previous_user_name").val("");
-                modal.find("#_user_password").val("");
-                modal.find("#_user_password").prop("placeholder", "")
-                modal.find("#_admin").prop("checked", false);
+            data: JSON.stringify({ username: un }),
+            success: function () {
+                toastr.success(wgT('users.ok_user_deleted'));
+                $('#modal_wu_del').modal('hide');
+                pendingDel = null;
+                loadUsers();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e3) {}
+                toastr.error(j.message || xhr.responseText);
             }
         });
     });
 
-    function updateUserInfo() {
-        const username = $("#_user_name").val();
-        const previous_username = $("#_previous_user_name").val();
-        const password = $("#_user_password").val();
-        let admin = false;
-        if ($("#_admin").is(':checked')) {
-            admin = true;
+    $(document).on('click', '.wu-toggle-admin', function (e) {
+        e.stopPropagation();
+        var un = $(this).data('un');
+        if (String(un) === String(WG_ME)) {
+            toastr.info(wgT('users.self_promote_hint'));
+            return;
         }
-        const data = {
-            "username": username,
-            "password": password,
-            "previous_username": previous_username,
-            "admin": admin
-        };
+        var u = usersCache.find(function (x) { return x.username === un; });
+        if (!u) return;
+        var next = !u.admin;
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: BASE + '/api/user/set-admin',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ username: un, admin: next }),
+            success: function () {
+                toastr.success(next ? wgT('users.ok_promoted_admin') : wgT('users.ok_demoted_admin'));
+                loadUsers();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e4) {}
+                toastr.error(j.message || xhr.responseText);
+            }
+        });
+    });
 
-        if (previous_username !== "") {
+    $(document).on('click', '.wu-revoke-sessions', function (e) {
+        e.stopPropagation();
+        var un = $(this).attr('data-un');
+        var u = usersCache.find(function (x) { return x.username === un; });
+        if (!u || u.disabled) return;
+        if (!confirm(wgT('users.confirm_revoke_fmt').replace(/\{username\}/g, String(un)))) return;
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '{{.basePath}}/update-user',
+            url: BASE + '/api/user/revoke-sessions',
+            contentType: 'application/json',
                 dataType: 'json',
-                contentType: "application/json",
-                data: JSON.stringify(data),
-                success: function (data) {
-                    toastr.success("Updated user information successfully");
-                    location.reload();
-                },
-                error: function (jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
-                }
-            });
-        } else {
+            data: JSON.stringify({ username: un }),
+            success: function (resp) {
+                toastr.success((resp && resp.message) || wgT('users.ok_sessions_revoked'));
+                if (window.wgReauthenticateRedirectIfNeeded && window.wgReauthenticateRedirectIfNeeded(resp)) return;
+                loadUsers();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (er) {}
+                toastr.error(j.message || xhr.responseText);
+            }
+        });
+    });
+
+    $(document).on('click', '.wu-toggle-disabled', function (e) {
+        e.stopPropagation();
+        var $b = $(this);
+        var un = $b.attr('data-un');
+        var curDis = $b.attr('data-dis') === '1';
+        var nextDis = !curDis;
+        if (nextDis) {
+            if (!confirm(wgT('users.confirm_suspend_fmt').replace(/\{username\}/g, String(un)))) return;
+        }
             $.ajax({
                 cache: false,
                 method: 'POST',
-                url: '{{.basePath}}/create-user',
+            url: BASE + '/api/user/set-disabled',
+            contentType: 'application/json',
                 dataType: 'json',
-                contentType: "application/json",
-                data: JSON.stringify(data),
-                success: function (data) {
-                    toastr.success("Created user successfully");
-                    location.reload();
-                },
-                error: function (jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
-                }
-            });
+            data: JSON.stringify({ username: un, disabled: nextDis }),
+            success: function (resp) {
+                toastr.success((resp && resp.message) || wgT('users.ok_state_updated'));
+                if (window.wgReauthenticateRedirectIfNeeded && window.wgReauthenticateRedirectIfNeeded(resp)) return;
+                loadUsers();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (ed) {}
+                toastr.error(j.message || xhr.responseText);
+            }
+        });
+    });
 
+    function b64urlToBytes(s) {
+        var pad = '='.repeat((4 - (s.length % 4)) % 4);
+        var b64 = (s + pad).replace(/-/g, '+').replace(/_/g, '/');
+        var raw = atob(b64);
+        var out = new Uint8Array(raw.length);
+        for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+        return out;
+    }
+    function bytesToB64url(buf) {
+        var bytes = new Uint8Array(buf);
+        var str = '';
+        for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+        return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    }
+    function publicKeyCredentialToJSON(cred) {
+        if (cred instanceof Array) return cred.map(publicKeyCredentialToJSON);
+        if (cred instanceof ArrayBuffer) return bytesToB64url(cred);
+        if (cred && typeof cred === 'object') {
+            var obj = {};
+            for (var k in cred) obj[k] = publicKeyCredentialToJSON(cred[k]);
+            return obj;
         }
+        return cred;
     }
 
-    $(document).ready(function () {
-        $.validator.setDefaults({
-            submitHandler: function (form) {
-                updateUserInfo();
+    $(document).on('click', '.wu-add-pk', async function (e) {
+        e.stopPropagation();
+        var un = $(this).data('un');
+        var input = document.getElementById('wu-pkin-' + un);
+        var label = (input && input.value || '').trim();
+        if (!label) {
+            toastr.error(wgT('users.err_pk_need_name_inline'));
+            if (input) input.focus();
+            return;
+        }
+        if (!PASSKEYS_OK) {
+            toastr.error(wgT('users.err_pk_disabled'));
+            return;
+        }
+        if (!window.PublicKeyCredential || !navigator.credentials) {
+            toastr.error(wgT('users.err_pk_browser_inline'));
+            return;
+        }
+        try {
+            var beginResp = await fetch(BASE + '/api/passkeys/register/' + encodeURIComponent(un) + '/begin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+            var options = await beginResp.json();
+            if (!beginResp.ok) throw new Error(options.message || wgT('profile.err_pk_begin'));
+            var pk = options.publicKey || options;
+            pk.challenge = b64urlToBytes(pk.challenge);
+            if (pk.user && pk.user.id) pk.user.id = b64urlToBytes(pk.user.id);
+            if (pk.excludeCredentials) {
+                pk.excludeCredentials = pk.excludeCredentials.map(function (c) {
+                    c.id = b64urlToBytes(c.id);
+                    return c;
+                });
             }
-        });
-        // Edit user form validation
-        $("#frm_edit_user").validate({
-            rules: {
-                _user_name: {
-                    required: true
-                },
-                _user_password: {
-                    required: function () {
-                        return $("#_previous_user_name").val() === "";
-                    }
-                },
-            },
-            messages: {
-                _user_name: {
-                    required: "Please enter a username"
-                },
-                _user_password: {
-                    required: "Please input a password"
-                },
-            },
-            errorElement: 'span',
-            errorPlacement: function (error, element) {
-                error.addClass('invalid-feedback');
-                element.closest('.form-group').append(error);
-            },
-            highlight: function (element, errorClass, validClass) {
-                $(element).addClass('is-invalid');
-            },
-            unhighlight: function (element, errorClass, validClass) {
-                $(element).removeClass('is-invalid');
-            }
-        });
-        //
+            var cred = await navigator.credentials.create({ publicKey: pk });
+            var cjson = publicKeyCredentialToJSON(cred);
+            var finishBody = {
+                credential_name: label,
+                id: cjson.id,
+                rawId: cjson.rawId,
+                type: cjson.type,
+                response: cjson.response,
+                clientExtensionResults: cjson.clientExtensionResults || {}
+            };
+            var finishResp = await fetch(BASE + '/api/passkeys/register/' + encodeURIComponent(un) + '/finish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finishBody)
+            });
+            var finishData = await finishResp.json();
+            if (!finishResp.ok || !finishData.status) throw new Error(finishData.message || wgT('profile.err_pk_finish'));
+            toastr.success(wgT('users.ok_pk_registered'));
+            if (input) input.value = '';
+            loadUsers();
+            setTimeout(function () {
+                toggleDetail(un);
+                var d = document.getElementById('wu-det-' + un);
+                if (d) d.classList.add('open');
+            }, 50);
+        } catch (err) {
+            toastr.error(err.message || String(err));
+        }
     });
+
+    $(document).on('click', '.wu-del-pk', function (e) {
+        e.stopPropagation();
+        var un = $(this).attr('data-un');
+        var cr = $(this).attr('data-crid');
+        var self = String(un) === String(WG_ME);
+        var cmsg = self ? wgT('profile.confirm_remove_pk') : wgT('users.confirm_del_pk_other');
+        if (!confirm(cmsg)) return;
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: BASE + '/api/passkeys/remove',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ username: un, credential_id: cr }),
+            success: function (resp) {
+                var self = String(un) === String(WG_ME);
+                var msg = (resp && resp.message) || wgT('profile.warn_pk_removed');
+                if (self) {
+                    toastr.warning(msg);
+                } else {
+                    toastr.success(msg);
+                }
+                if (window.wgReauthenticateRedirectIfNeeded && window.wgReauthenticateRedirectIfNeeded(resp)) return;
+                loadUsers();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e5) {}
+                toastr.error(j.message || xhr.responseText);
+            }
+        });
+    });
+
+    $(document).on('click', '.pk-name[role=\"button\"]', function (e) {
+        e.stopPropagation();
+        var un = $(this).data('un');
+        var cr = $(this).data('crid');
+        var cur = ($(this).text() || '').trim();
+        var n = prompt(wgT('profile.prompt_pk_name'), cur || '');
+        if (n === null) return;
+        n = String(n).trim();
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: BASE + '/api/passkeys/rename',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ username: un, credential_id: cr, name: n }),
+            success: function () {
+                toastr.success(wgT('users.ok_rename_pk'));
+                loadUsers();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e6) {}
+                toastr.error(j.message || xhr.responseText);
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        $('#wg_users_root').on('click', '.usr-main', function (e) {
+            if ($(e.target).closest('.usr-actions-cell').length) return;
+            toggleDetail($(this).data('un'));
+        });
+        loadUsers();
+    });
+})();
 </script>
 {{end}}

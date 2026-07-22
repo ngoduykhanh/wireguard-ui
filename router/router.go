@@ -4,6 +4,8 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"text/template"
@@ -13,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/ngoduykhanh/wireguard-ui/locale"
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
@@ -32,11 +35,15 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 
 	// inject more app data information. E.g. appVersion
 	if reflect.TypeOf(data).Kind() == reflect.Map {
+		m := data.(map[string]interface{})
 		for k, v := range t.extraData {
-			data.(map[string]interface{})[k] = v
+			m[k] = v
 		}
 
-		data.(map[string]interface{})["client_defaults"] = util.ClientDefaultsFromEnv()
+		m["client_defaults"] = util.ClientDefaultsFromEnv()
+		if _, ok := m["dashboardNavBadge"]; !ok {
+			m["dashboardNavBadge"] = 0
+		}
 	}
 
 	// login page does not need the base layout
@@ -51,11 +58,37 @@ func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c 
 func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo.Echo {
 	e := echo.New()
 
+	if raw := strings.TrimSpace(os.Getenv("WGUI_FLUTTER_WEB_ORIGINS")); raw != "" {
+		chunks := strings.Split(raw, ",")
+		var origins []string
+		for _, p := range chunks {
+			o := strings.TrimSpace(p)
+			if o != "" {
+				origins = append(origins, o)
+			}
+		}
+		if len(origins) > 0 {
+			e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+				AllowOrigins: origins,
+				AllowMethods: []string{
+					http.MethodGet, http.MethodPost, http.MethodHead, http.MethodOptions,
+				},
+				AllowCredentials: true,
+				AllowHeaders: []string{
+					echo.HeaderOrigin,
+					echo.HeaderContentType,
+					echo.HeaderAccept,
+					echo.HeaderCookie,
+				},
+			}))
+		}
+	}
+
 	cookiePath := util.GetCookiePath()
 
 	cookieStore := sessions.NewCookieStore(secret[:32], secret[32:])
 	cookieStore.Options.Path = cookiePath
-	cookieStore.Options.HttpOnly = true
+	util.ApplySessionSecureFlags(cookieStore.Options)
 	cookieStore.MaxAge(86400 * 7)
 
 	e.Use(session.Middleware(cookieStore))
@@ -101,6 +134,21 @@ func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo
 		log.Fatal(err)
 	}
 
+	tmplDashboardString, err := util.StringFromEmbedFile(tmplDir, "dashboard.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmplTrafficString, err := util.StringFromEmbedFile(tmplDir, "traffic.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmplLogsString, err := util.StringFromEmbedFile(tmplDir, "logs.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	tmplWakeOnLanHostsString, err := util.StringFromEmbedFile(tmplDir, "wake_on_lan_hosts.html")
 	if err != nil {
 		log.Fatal(err)
@@ -111,9 +159,18 @@ func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo
 		log.Fatal(err)
 	}
 
+	templateLang := func(lang interface{}) string {
+		if s, ok := lang.(string); ok {
+			return locale.Normalize(s)
+		}
+		return "es"
+	}
 	// create template list
 	funcs := template.FuncMap{
 		"StringsJoin": strings.Join,
+		"tr": func(lang interface{}, key string) string {
+			return locale.T(templateLang(lang), key)
+		},
 	}
 	templates := make(map[string]*template.Template)
 	templates["login.html"] = template.Must(template.New("login").Funcs(funcs).Parse(tmplLoginString))
@@ -123,6 +180,9 @@ func New(tmplDir fs.FS, extraData map[string]interface{}, secret [64]byte) *echo
 	templates["global_settings.html"] = template.Must(template.New("global_settings").Funcs(funcs).Parse(tmplBaseString + tmplGlobalSettingsString))
 	templates["users_settings.html"] = template.Must(template.New("users_settings").Funcs(funcs).Parse(tmplBaseString + tmplUsersSettingsString))
 	templates["status.html"] = template.Must(template.New("status").Funcs(funcs).Parse(tmplBaseString + tmplStatusString))
+	templates["dashboard.html"] = template.Must(template.New("dashboard").Funcs(funcs).Parse(tmplBaseString + tmplDashboardString))
+	templates["traffic.html"] = template.Must(template.New("traffic").Funcs(funcs).Parse(tmplBaseString + tmplTrafficString))
+	templates["logs.html"] = template.Must(template.New("logs").Funcs(funcs).Parse(tmplBaseString + tmplLogsString))
 	templates["wake_on_lan_hosts.html"] = template.Must(template.New("wake_on_lan_hosts").Funcs(funcs).Parse(tmplBaseString + tmplWakeOnLanHostsString))
 	templates["about.html"] = template.Must(template.New("about").Funcs(funcs).Parse(tmplBaseString + aboutPageString))
 

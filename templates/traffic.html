@@ -1,0 +1,621 @@
+{{define "title"}}{{ tr .UILang "traffic.title" }}{{end}}
+{{define "top_css"}}
+<style>
+.wg-t-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px;width:100%;}
+.wg-t-kpi .k{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.wg-t-kpi-sub{font-size:11px;color:var(--t3);margin-top:6px;font-weight:600}
+.wg-t-kpi-hint{font-size:9px;color:#757575;margin-top:6px;line-height:1.3}
+.wg-t-kpi .k{background:#1e1e1e;border-radius:16px;padding:14px;border:1px solid rgba(255,255,255,.06);}
+.wg-t-kpi .k .lbl{font-size:10px;color:#9e9e9e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.wg-t-kpi .k .rx{color:#EF5350;font-size:22px;font-weight:800}
+.wg-t-kpi .k .tx{color:#FFCA28;font-size:22px;font-weight:800}
+.wg-t-band-card{background:#1e1e1e;border-radius:16px;border:1px solid rgba(255,255,255,.06);padding:14px 14px 10px;margin-bottom:14px;}
+.wg-t-band-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.wg-t-band-title{font-size:12px;color:#eaeaea;font-weight:800;}
+.wg-t-band-sub{font-size:10px;color:#757575;}
+.wg-t-chart{position:relative;display:flex;align-items:stretch;height:200px;gap:8px;overflow-x:auto;overflow-y:hidden;padding:6px 2px 4px;}
+.wg-t-chart::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,.08);pointer-events:none;}
+.wg-t-bar{position:relative;display:block;min-width:22px;flex:0 0 22px;height:100%;}
+.wg-t-seg{position:absolute;left:0;width:100%;border-radius:3px;}
+.wg-t-seg-up{bottom:50%;background:rgba(239,83,80,.95);}
+.wg-t-seg-down{top:50%;background:rgba(255,202,40,.95);}
+.wg-t-legend{display:flex;align-items:center;gap:10px;margin-top:8px;}
+.wg-t-legend .lg{display:flex;align-items:center;gap:7px;color:#757575;font-size:11px;font-weight:700;}
+.wg-t-legend .dot{width:10px;height:10px;border-radius:3px;background:#EF5350;}
+.wg-t-legend .dot.tx{background:#FFCA28;}
+.wg-t-mini-hint{font-size:9px;color:#757575;margin-top:6px;font-style:italic;}
+.wg-t-range-tabs{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.wg-t-range-btn{border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--t2,#9e9e9e);padding:6px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;line-height:1.2}
+.wg-t-range-btn:hover{color:var(--t1,#eee);border-color:rgba(239,83,80,.35)}
+.wg-t-range-btn.active{background:rgba(239,83,80,.14);border-color:rgba(239,83,80,.45);color:#EF5350}
+.wg-t-table-wrap{overflow-x:auto;}
+.wg-traf-table{font-size:12px;color:#eaeaea;background:#1e1e1e;border:1px solid rgba(255,255,255,.06);border-radius:16px;overflow:hidden;margin:0;width:100%}
+.wg-traf-table th{font-size:9px;text-transform:uppercase;color:#757575;font-weight:700;background:#252525;padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left}
+.wg-traf-table td{border-top:1px solid rgba(255,255,255,.06);padding:10px;font-family:ui-monospace,monospace;vertical-align:top;}
+.wg-rx{color:#EF5350;font-weight:600}
+.wg-txc{color:#FFCA28;font-weight:600}
+</style>
+{{end}}
+{{define "username"}} {{ .username }} {{end}}
+{{define "page_title"}}{{ tr .UILang "traffic.page" }}{{end}}
+
+{{define "page_content"}}
+<section class="content wg-shell-page">
+    {{ if .error }}<div class="alert alert-danger">{{ .error }}</div>{{ end }}
+
+    {{ if not .error }}
+    <div class="wg-t-kpi">
+        <div class="k">
+            <div class="lbl">{{ tr .UILang "traffic.kpi_dl_total" }}</div>
+            <div class="rx"><span id="wg-traf-total-rx">—</span></div>
+            <div class="wg-t-kpi-hint">{{ tr .UILang "traffic.kpi_all_peers_24h" }}</div>
+            <div class="wg-t-kpi-sub" id="wg-traf-rate-rx-now" title="{{ tr .UILang "traffic.kpi_rate_window_title" }}">—</div>
+        </div>
+        <div class="k">
+            <div class="lbl">{{ tr .UILang "traffic.kpi_ul_total" }}</div>
+            <div class="tx"><span id="wg-traf-total-tx">—</span></div>
+            <div class="wg-t-kpi-hint">{{ tr .UILang "traffic.kpi_all_peers_24h" }}</div>
+            <div class="wg-t-kpi-sub" id="wg-traf-rate-tx-now" title="{{ tr .UILang "traffic.kpi_rate_window_title" }}">—</div>
+        </div>
+        <div class="k b">
+            <div class="lbl">{{ tr .UILang "traffic.kpi_peak_dl_today" }}</div>
+            <div class="rx"><span id="wg-traf-peak-tx">—</span></div>
+            <div class="wg-t-kpi-hint">{{ tr .UILang "traffic.kpi_peak_perspective" }}</div>
+            <div class="wg-t-kpi-sub" id="wg-traf-peak-updated">—</div>
+        </div>
+        <div class="k"><div class="lbl">{{ tr .UILang "traffic.kpi_wg_ifaces" }}</div><div class="rx" style="color:#eaeaea">{{ if .devices }}{{len .devices}}{{ else }}0{{ end }}</div></div>
+    </div>
+    <div class="wg-t-band-card">
+        <div class="wg-t-band-head">
+            <div>
+                <div class="wg-t-band-title">{{ tr .UILang "traffic.bandwidth" }}</div>
+                <div class="wg-t-band-sub" id="wg-traf-range-label">{{ tr .UILang "traffic.range_24h_live" }}</div>
+            </div>
+            <div class="wg-t-range-tabs" role="tablist" aria-label="{{ tr .UILang "traffic.range_tabs_aria" }}">
+                <button type="button" class="wg-t-range-btn active" data-range="24h">24h</button>
+                <button type="button" class="wg-t-range-btn" data-range="7d">7d</button>
+                <button type="button" class="wg-t-range-btn" data-range="30d">30d</button>
+            </div>
+        </div>
+        <div class="wg-t-chart" id="wg-traf-chart" aria-label="{{ tr .UILang "traffic.chart_aria" }}"></div>
+        <div class="wg-t-legend">
+            <div class="lg"><span class="dot"></span>{{ tr .UILang "traffic.legend_dl_top" }}</div>
+            <div class="lg"><span class="dot tx"></span>{{ tr .UILang "traffic.legend_ul_bottom" }}</div>
+        </div>
+        <div class="wg-t-mini-hint">{{ tr .UILang "traffic.peer_perspective_hint" }}</div>
+    </div>
+    <div class="wg-t-kpi-hint" style="margin-bottom:8px;">{{ tr .UILang "traffic.table_intro" }}</div>
+    <div class="wg-t-table-wrap">
+    <table class="wg-traf-table">
+      <thead><tr>
+        <th>{{ tr .UILang "traffic.th_client" }}</th><th>{{ tr .UILang "traffic.th_ips" }}</th><th class="wg-rx">{{ tr .UILang "traffic.th_dl" }}</th><th class="wg-txc">{{ tr .UILang "traffic.th_ul" }}</th><th>{{ tr .UILang "traffic.th_handshake" }}</th>
+      </tr></thead>
+      <tbody>
+      {{ range $d := .devices }}
+          {{ range $p := .Peers }}
+             <tr data-peer-pubkey="{{ $p.PublicKey }}" data-peer-name="{{ if $p.Name }}{{ $p.Name }}{{ else }}{{ tr $.UILang "traffic.peer_fallback" }}{{ end }}">
+               <td><strong>{{ if $p.Name }}{{ $p.Name }}{{ else }}{{ tr $.UILang "traffic.peer_fallback" }}{{ end }}</strong></td>
+               <td style="white-space:normal;max-width:280px;line-height:1.35;text-align:left;">{{ $p.AllocatedIP }}</td>
+               <td class="wg-rx"><span class="wg-traf-row-rx">—</span></td>
+               <td class="wg-txc"><span class="wg-traf-row-tx">—</span></td>
+               <td>{{ if $p.LastHandshakeTime.IsZero }}-{{ else }}{{ $p.LastHandshakeTime.Format "02-01 15:04:05" }}{{ end }}</td>
+             </tr>
+          {{ end }}
+      {{ end }}
+      </tbody>
+    </table>
+    </div>
+    {{ end }}
+</section>
+{{end}}
+
+{{define "bottom_js"}}
+<script>
+(function(){
+  function fmtBytesKB(n){
+    var v = Number(n);
+    if (!isFinite(v) || v < 0) return '—';
+    var kb = v / 1024;
+    if (kb < 1) kb = 0;
+    if (kb < 1024) return kb.toFixed(kb >= 100 ? 0 : (kb >= 10 ? 1 : 2)) + ' KB';
+    var mb = kb / 1024;
+    if (mb < 1024) return mb.toFixed(mb >= 100 ? 0 : (mb >= 10 ? 1 : 2)) + ' MB';
+    var gb = mb / 1024;
+    if (gb < 1024) return gb.toFixed(gb >= 100 ? 0 : (gb >= 10 ? 1 : 2)) + ' GB';
+    var tb = gb / 1024;
+    return tb.toFixed(tb >= 100 ? 0 : (tb >= 10 ? 1 : 2)) + ' TB';
+  }
+
+  function fmtRateKbitPerSec(bytesPerSec){
+    var v = Number(bytesPerSec);
+    if (!isFinite(v) || v < 0) return '—';
+    var bps = v * 8; // bits/s
+    var kbps = bps / 1000;
+    if (kbps < 1000) return kbps.toFixed(kbps >= 100 ? 0 : (kbps >= 10 ? 1 : 2)) + ' Kb/s';
+    var mbps = kbps / 1000;
+    if (mbps < 1000) return mbps.toFixed(mbps >= 100 ? 0 : (mbps >= 10 ? 1 : 2)) + ' Mb/s';
+    var gbps = mbps / 1000;
+    return gbps.toFixed(gbps >= 10 ? 1 : 2) + ' Gb/s';
+  }
+
+  function fmtClientBytesMBGB(n){
+    var v = Number(n);
+    if (!isFinite(v) || v < 0) return '—';
+    var mb = v / (1024 * 1024);
+    if (mb < 1024) return mb.toFixed(mb >= 100 ? 0 : (mb >= 10 ? 1 : 2)) + ' MB';
+    var gb = mb / 1024;
+    if (gb < 1024) return gb.toFixed(gb >= 100 ? 0 : (gb >= 10 ? 1 : 2)) + ' GB';
+    var tb = gb / 1024;
+    return tb.toFixed(tb >= 100 ? 0 : (tb >= 10 ? 1 : 2)) + ' TB';
+  }
+
+  var chartEl = document.getElementById('wg-traf-chart');
+  if (!chartEl) return;
+
+  var basePath = {{printf "%q" .basePath}};
+  var pollMs = 4000;
+
+  var selectedRange = '24h';
+  var peerNameByPub = {};
+  function trafficRangeLabel(r) {
+    if (r === '7d') return wgT('traffic.range_7d_live');
+    if (r === '30d') return wgT('traffic.range_30d_live');
+    return wgT('traffic.range_24h_live');
+  }
+
+  function buildPeerNameMap(){
+    peerNameByPub = {};
+    document.querySelectorAll('tr[data-peer-pubkey]').forEach(function(tr){
+      var pk = (tr.getAttribute('data-peer-pubkey') || '').trim();
+      if (!pk) return;
+      var nm = (tr.getAttribute('data-peer-name') || '').trim();
+      peerNameByPub[pk] = nm || 'peer';
+    });
+  }
+
+  /** Per-row download/upload uses the same range as the chart (peer_totals). */
+  function updateTrafficTableForRange(resp){
+    if (!resp) return;
+    var byPub = {};
+    (resp.peer_totals || []).forEach(function(p){
+      var pk = String((p && p.public_key) || '');
+      if (!pk) return;
+      byPub[pk] = {
+        rxBytes: Number((p && p.rx_bytes) || 0),
+        txBytes: Number((p && p.tx_bytes) || 0)
+      };
+    });
+    document.querySelectorAll('.wg-traf-table tr[data-peer-pubkey]').forEach(function(tr){
+      var pub = (tr.getAttribute('data-peer-pubkey') || '').trim();
+      var t = byPub[pub];
+      var dl = t ? t.txBytes : 0;
+      var ul = t ? t.rxBytes : 0;
+      var rxEl = tr.querySelector('.wg-traf-row-rx');
+      var txEl = tr.querySelector('.wg-traf-row-tx');
+      if (rxEl) rxEl.textContent = fmtBytesKB(dl);
+      if (txEl) txEl.textContent = fmtBytesKB(ul);
+    });
+  }
+
+  function setActiveRangeButtons() {
+    document.querySelectorAll('.wg-t-range-btn').forEach(function(btn){
+      var r = btn.getAttribute('data-range');
+      if (r === selectedRange) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+  }
+
+  /** Top KPIs: always last 24h, sum across peers (peer_totals with range=24h). */
+  function applyKpiFrom24h(resp){
+    if (!resp) return;
+    var rxTotalEl = document.getElementById('wg-traf-total-rx');
+    var txTotalEl = document.getElementById('wg-traf-total-tx');
+    var rxRateEl = document.getElementById('wg-traf-rate-rx-now');
+    var txRateEl = document.getElementById('wg-traf-rate-tx-now');
+    var peakEl = document.getElementById('wg-traf-peak-tx');
+    var updEl = document.getElementById('wg-traf-peak-updated');
+
+    var peerTotals = resp.peer_totals || [];
+    var sumDl = 0;
+    var sumUl = 0;
+    peerTotals.forEach(function(p){
+      sumDl += Number((p && p.tx_bytes) || 0);
+      sumUl += Number((p && p.rx_bytes) || 0);
+    });
+    if (rxTotalEl) rxTotalEl.textContent = fmtBytesKB(sumDl);
+    if (txTotalEl) txTotalEl.textContent = fmtBytesKB(sumUl);
+    var txBpsPeak = typeof resp.tx_rate_recent_max_bps !== 'undefined' && resp.tx_rate_recent_max_bps !== null
+      ? resp.tx_rate_recent_max_bps : resp.tx_rate_now_bps;
+    var rxBpsPeak = typeof resp.rx_rate_recent_max_bps !== 'undefined' && resp.rx_rate_recent_max_bps !== null
+      ? resp.rx_rate_recent_max_bps : resp.rx_rate_now_bps;
+    if (rxRateEl) rxRateEl.textContent = (typeof txBpsPeak !== 'undefined') ? fmtRateKbitPerSec(txBpsPeak) : '—';
+    if (txRateEl) txRateEl.textContent = (typeof rxBpsPeak !== 'undefined') ? fmtRateKbitPerSec(rxBpsPeak) : '—';
+
+    if (peakEl) {
+      var peak = Number(resp.peak_peer_download_mbps != null ? resp.peak_peer_download_mbps : resp.peak_tx_mbps);
+      if (!isFinite(peak) || peak < 0) peak = 0;
+      peakEl.textContent = (peak < 10 ? peak.toFixed(2) : peak.toFixed(1)) + ' Mb/s';
+    }
+    if (updEl) {
+      var age = Number(resp.updated_age_secs || 0);
+      updEl.textContent = String(wgT('traffic.kpi_updated_ago')).replace(/\{s\}/g, String(age));
+    }
+  }
+
+  function renderBandwidthChart(resp){
+    if (!resp) return;
+
+    var rangeLabel = document.getElementById('wg-traf-range-label');
+    if (rangeLabel) rangeLabel.textContent = trafficRangeLabel(selectedRange);
+
+    chartEl.innerHTML = '';
+    var peers = resp.peer_totals || [];
+    if (!peers.length) peers = resp.peer_current_totals || [];
+    var maxPeerBytes = 0;
+    for (var i=0;i<peers.length;i++){
+      var pi = peers[i] || {};
+      var rxBi = Number(pi.rx_bytes || 0);
+      var txBi = Number(pi.tx_bytes || 0);
+      if (rxBi > maxPeerBytes) maxPeerBytes = rxBi;
+      if (txBi > maxPeerBytes) maxPeerBytes = txBi;
+    }
+    if (maxPeerBytes <= 0) maxPeerBytes = 1;
+
+    for (var j=0;j<peers.length;j++){
+      var p = peers[j] || {};
+      var pub = String(p.public_key || '');
+      var nm = pub ? (peerNameByPub[pub] || wgT('traffic.peer_fallback')) : wgT('traffic.peer_fallback');
+      var rxBytes = Number(p.tx_bytes || 0); // peer download = server TX
+      var txBytes = Number(p.rx_bytes || 0); // peer upload = server RX
+      var upH = (rxBytes / maxPeerBytes) * 50;   // top half (descarga)
+      var downH = (txBytes / maxPeerBytes) * 50; // bottom half (subida)
+
+      var bar = document.createElement('div');
+      bar.className = 'wg-t-bar';
+
+      var segUp = document.createElement('div');
+      segUp.className = 'wg-t-seg wg-t-seg-up';
+      segUp.style.height = upH + '%';
+      bar.appendChild(segUp);
+
+      var segDown = document.createElement('div');
+      segDown.className = 'wg-t-seg wg-t-seg-down';
+      segDown.style.height = downH + '%';
+      bar.appendChild(segDown);
+
+      bar.title = String(wgT('traffic.bar_title'))
+        .replace(/\{name\}/g, nm)
+        .replace(/\{dl\}/g, fmtClientBytesMBGB(rxBytes))
+        .replace(/\{ul\}/g, fmtClientBytesMBGB(txBytes));
+      chartEl.appendChild(bar);
+    }
+  }
+
+  async function fetchSeries(){
+    try{
+      var url24 = basePath + '/api/wg-traffic-series?range=24h';
+      var urlSel = basePath + '/api/wg-traffic-series?range=' + encodeURIComponent(selectedRange);
+
+      var p24 = fetch(url24, { credentials: 'same-origin' }).then(function(r){ return r.ok ? r.json() : null; });
+      var data24 = await p24;
+      applyKpiFrom24h(data24);
+
+      var dataChart;
+      if (selectedRange === '24h') {
+        dataChart = data24;
+      } else {
+        var r = await fetch(urlSel, { credentials: 'same-origin' });
+        if (!r.ok) return;
+        dataChart = await r.json();
+      }
+      renderBandwidthChart(dataChart);
+      updateTrafficTableForRange(dataChart);
+    }catch(e){
+      // ignore
+    }
+  }
+
+  document.querySelectorAll('.wg-t-range-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      selectedRange = btn.getAttribute('data-range') || '24h';
+      setActiveRangeButtons();
+      fetchSeries();
+    });
+  });
+
+  setActiveRangeButtons();
+  buildPeerNameMap();
+  fetchSeries();
+  setInterval(fetchSeries, pollMs);
+
+  // Skip legacy logic that used to live below this script.
+  return;
+  function fmtBytesKB(n){
+    var v = Number(n);
+    if (!isFinite(v) || v < 0) return '—';
+    var kb = v / 1024;
+    if (kb < 1) kb = 0;
+    if (kb < 1024) return kb.toFixed(kb >= 100 ? 0 : (kb >= 10 ? 1 : 2)) + ' KB';
+    var mb = kb / 1024;
+    if (mb < 1024) return mb.toFixed(mb >= 100 ? 0 : (mb >= 10 ? 1 : 2)) + ' MB';
+    var gb = mb / 1024;
+    if (gb < 1024) return gb.toFixed(gb >= 100 ? 0 : (gb >= 10 ? 1 : 2)) + ' GB';
+    var tb = gb / 1024;
+    return tb.toFixed(tb >= 100 ? 0 : (tb >= 10 ? 1 : 2)) + ' TB';
+  }
+
+  // Mb/s = bytes/s * 8 / 1e6
+  function fmtMbpsFromBytesPerSec(bytesPerSec){
+    var v = Number(bytesPerSec);
+    if (!isFinite(v) || v < 0) return 0;
+    return (v * 8) / 1e6;
+  }
+
+  // Formato tasas en Kb/s y Mb/s (kilobit / megabit por segundo).
+  function fmtRateKbitPerSec(bytesPerSec){
+    var v = Number(bytesPerSec);
+    if (!isFinite(v) || v < 0) return '—';
+    // bits/s
+    var bps = v * 8;
+    var kbps = bps / 1000;
+    if (kbps < 1000) return kbps.toFixed(kbps >= 100 ? 0 : (kbps >= 10 ? 1 : 2)) + ' Kb/s';
+    var mbps = kbps / 1000;
+    if (mbps < 1000) return mbps.toFixed(mbps >= 100 ? 0 : (mbps >= 10 ? 1 : 2)) + ' Mb/s';
+    var gbps = mbps / 1000;
+    return gbps.toFixed(gbps >= 10 ? 1 : 2) + ' Gb/s';
+  }
+
+  var chartEl = document.getElementById('wg-traf-chart');
+  if (!chartEl) return;
+
+  var basePath = {{printf "%q" .basePath}};
+  var pollMs = 5000;
+  var baseBucketMs = 30 * 60 * 1000; // 30 min granularity (=> 1440 buckets for 30d)
+  var maxBaseBuckets = 1440; // 30d * 24h * 2
+
+  // Display configs
+  var ranges = {
+    '24h':  { windowBaseBuckets: 48,  displayCount: 48, groupFactor: 1,  label: 'últimas 24h (estimado en vivo)' },
+    '7d':   { windowBaseBuckets: 336, displayCount: 56, groupFactor: 6,  label: 'últimos 7 días (estimado en vivo)' },
+    '30d':  { windowBaseBuckets: 1440,displayCount: 60, groupFactor: 24, label: 'últimos 30 días (estimado en vivo)' },
+  };
+
+  var selectedRange = '24h';
+  var baseBucketId = new Array(maxBaseBuckets).fill(null);
+  var rxSum = new Array(maxBaseBuckets).fill(0);
+  var rxCount = new Array(maxBaseBuckets).fill(0);
+  var txSum = new Array(maxBaseBuckets).fill(0);
+  var txCount = new Array(maxBaseBuckets).fill(0);
+
+  var prev = null; // {t, rx, tx}
+  var lastDataAtMs = null;
+
+  // Warm start: reuse last totals from previous visits so first load can render immediately.
+  // This avoids the "blank chart until it updates" effect.
+  try {
+    var stored = localStorage.getItem('wg-traf-prev-totals');
+    if (stored) {
+      var parsed = JSON.parse(stored);
+      if (parsed && typeof parsed.t !== 'undefined' && typeof parsed.rx !== 'undefined' && typeof parsed.tx !== 'undefined') {
+        prev = parsed;
+      }
+    }
+  } catch (e) { /* ignore */ }
+
+  function bidFor(ts){ return Math.floor(ts / baseBucketMs); }
+  function idxFor(bid){ return ((bid % maxBaseBuckets) + maxBaseBuckets) % maxBaseBuckets; }
+
+  function resetBaseBucketAt(bid){
+    var idx = idxFor(bid);
+    baseBucketId[idx] = bid;
+    rxSum[idx] = 0; rxCount[idx] = 0;
+    txSum[idx] = 0; txCount[idx] = 0;
+  }
+
+  function sumPeerStats(stats){
+    var rx = 0, tx = 0;
+    if (!stats) return {rx:0, tx:0};
+    for (var k in stats){
+      if (!Object.prototype.hasOwnProperty.call(stats,k)) continue;
+      var row = stats[k] || {};
+      rx += Number(row.rx || 0);
+      tx += Number(row.tx || 0);
+    }
+    return {rx:rx, tx:tx};
+  }
+
+  function fmtAge(now){
+    if (!lastDataAtMs) return '';
+    var diff = now - lastDataAtMs;
+    var sec = Math.max(0, Math.floor(diff/1000));
+    return 'actualizado hace ' + sec + 's';
+  }
+
+  function updateStaticTotals(){
+    var rxTotalEl = document.getElementById('wg-traf-total-rx');
+    var txTotalEl = document.getElementById('wg-traf-total-tx');
+    if (rxTotalEl) rxTotalEl.textContent = fmtBytesKB(rxTotalEl.getAttribute('data-wg-bytes'));
+    if (txTotalEl) txTotalEl.textContent = fmtBytesKB(txTotalEl.getAttribute('data-wg-bytes'));
+    document.querySelectorAll('.wg-traf-bytes[data-wg-bytes]').forEach(function(el){
+      el.textContent = fmtBytesKB(el.getAttribute('data-wg-bytes'));
+    });
+  }
+
+  function currentKpisUpdate(rxRateBps, txRateBps, totals){
+    var rxRateEl = document.getElementById('wg-traf-rate-rx-now');
+    var txRateEl = document.getElementById('wg-traf-rate-tx-now');
+    if (rxRateEl) rxRateEl.textContent = rxRateBps != null ? fmtRateKbitPerSec(rxRateBps) : '—';
+    if (txRateEl) txRateEl.textContent = txRateBps != null ? fmtRateKbitPerSec(txRateBps) : '—';
+
+    // totals
+    var rxTotalEl = document.getElementById('wg-traf-total-rx');
+    var txTotalEl = document.getElementById('wg-traf-total-tx');
+    if (totals){
+      if (rxTotalEl && typeof totals.rx !== 'undefined') rxTotalEl.textContent = fmtBytesKB(totals.rx);
+      if (txTotalEl && typeof totals.tx !== 'undefined') txTotalEl.textContent = fmtBytesKB(totals.tx);
+    }
+  }
+
+  function computePeakTodayMb(now){
+    // scan last 24h base buckets (48)
+    var cfg = ranges['24h'];
+    var peak = 0;
+    var peakBid = null;
+    var currentBid = bidFor(now);
+    var startBid = currentBid - (cfg.windowBaseBuckets - 1);
+    for (var i=0;i<cfg.windowBaseBuckets;i++){
+      var bid = startBid + i;
+      var idx = idxFor(bid);
+      if (baseBucketId[idx] !== bid) continue;
+      var txAvgBps = txCount[idx] ? (txSum[idx]/txCount[idx]) : 0;
+      var mbps = fmtMbpsFromBytesPerSec(txAvgBps);
+      if (mbps > peak){
+        peak = mbps;
+        peakBid = bid;
+      }
+    }
+    var peakEl = document.getElementById('wg-traf-peak-tx');
+    if (peakEl) {
+      if (!peak || peak <= 0) peakEl.textContent = '—';
+      else peakEl.textContent = (peak < 10 ? peak.toFixed(2) : peak.toFixed(1)) + ' Mb/s';
+    }
+    var upd = document.getElementById('wg-traf-peak-updated');
+    if (upd) upd.textContent = fmtAge(now) || 'actualizado hace —';
+  }
+
+  function renderChart(now){
+    var cfg = ranges[selectedRange];
+    if (!cfg) return;
+
+    var currentBid = bidFor(now);
+    var startBid = currentBid - (cfg.windowBaseBuckets - 1);
+    var maxTotal = 0;
+
+    var bars = new Array(cfg.displayCount);
+    for (var i=0;i<cfg.displayCount;i++){
+      var baseStartBid = startBid + i*cfg.groupFactor;
+      var rxSumGroup = 0, rxCountGroup = 0;
+      var txSumGroup = 0, txCountGroup = 0;
+
+      for (var g=0; g<cfg.groupFactor; g++){
+        var bid = baseStartBid + g;
+        var idx = idxFor(bid);
+        if (baseBucketId[idx] !== bid) continue;
+        rxSumGroup += rxSum[idx];
+        rxCountGroup += rxCount[idx];
+        txSumGroup += txSum[idx];
+        txCountGroup += txCount[idx];
+      }
+
+      var rxAvg = rxCountGroup ? (rxSumGroup / rxCountGroup) : 0;
+      var txAvg = txCountGroup ? (txSumGroup / txCountGroup) : 0;
+      var total = rxAvg + txAvg;
+      if (total > maxTotal) maxTotal = total;
+      bars[i] = { rxAvg: rxAvg, txAvg: txAvg, total: total };
+    }
+
+    if (maxTotal <= 0) maxTotal = 1;
+    chartEl.innerHTML = '';
+
+    for (var j=0;j<bars.length;j++){
+      var b = bars[j];
+      var barTotalPct = (b.total / maxTotal) * 100;
+      var rxPct = b.total > 0 ? (b.rxAvg / b.total) : 0;
+      var rxH = barTotalPct * rxPct;
+      var txH = barTotalPct - rxH;
+
+      var bar = document.createElement('div');
+      bar.className = 'wg-t-bar';
+
+      // RX on top
+      var segRx = document.createElement('div');
+      segRx.className = 'wg-t-seg wg-t-seg-rx';
+      segRx.style.height = rxH + '%';
+      segRx.title = 'Descarga: ' + fmtRateKbitPerSec(b.rxAvg);
+      bar.appendChild(segRx);
+
+      // TX bottom
+      var segTx = document.createElement('div');
+      segTx.className = 'wg-t-seg wg-t-seg-tx';
+      segTx.style.height = txH + '%';
+      segTx.title = 'Subida: ' + fmtRateKbitPerSec(b.txAvg);
+      bar.appendChild(segTx);
+
+      bar.title = 'RX: ' + fmtRateKbitPerSec(b.rxAvg) + ' · TX: ' + fmtRateKbitPerSec(b.txAvg);
+      chartEl.appendChild(bar);
+    }
+
+    // peak depends on today window always
+    computePeakTodayMb(now);
+
+    // range label
+    var rangeLabel = document.getElementById('wg-traf-range-label');
+    if (rangeLabel && cfg.label) rangeLabel.textContent = cfg.label;
+  }
+
+  async function sample(){
+    try{
+      var resp = await fetch(basePath + '/api/wg-peer-stats', { credentials: 'same-origin' });
+      if (!resp.ok) return;
+      var stats = await resp.json();
+      var totals = sumPeerStats(stats);
+      var now = Date.now();
+
+      if (prev){
+        var dtSec = (now - prev.t) / 1000;
+        if (dtSec > 0){
+          var rxRate = (totals.rx - prev.rx) / dtSec; // bytes/s
+          var txRate = (totals.tx - prev.tx) / dtSec; // bytes/s
+          if (!isNaN(rxRate) && !isNaN(txRate)){
+            var bid = bidFor(now);
+            var idx = idxFor(bid);
+            if (baseBucketId[idx] !== bid) resetBaseBucketAt(bid);
+
+            rxSum[idx] += Math.max(0, rxRate);
+            rxCount[idx] += 1;
+            txSum[idx] += Math.max(0, txRate);
+            txCount[idx] += 1;
+
+            currentKpisUpdate(rxRate, txRate, totals);
+          }
+        }
+      }
+
+      prev = {t:now, rx:totals.rx, tx:totals.tx};
+      lastDataAtMs = now;
+      renderChart(now);
+      // Re-render once more shortly after layout settles (fixes first paint blank on some browsers/tabs).
+      setTimeout(function(){
+        try { renderChart(Date.now()); } catch (e) {}
+      }, 450);
+
+      try {
+        localStorage.setItem('wg-traf-prev-totals', JSON.stringify(prev));
+      } catch (e) { /* ignore */ }
+    }catch(e){
+      // ignore polling errors
+    }
+  }
+
+  // Range button handlers
+  document.querySelectorAll('.wg-t-range-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var r = btn.getAttribute('data-range');
+      if (!ranges[r]) return;
+      selectedRange = r;
+      document.querySelectorAll('.wg-t-range-btn').forEach(function(x){ x.classList.remove('active'); });
+      btn.classList.add('active');
+      renderChart(Date.now());
+    });
+  });
+
+  updateStaticTotals();
+  renderChart(Date.now());
+
+  // Warmup: one extra sample after a short delay in case we started without localStorage.
+  setTimeout(function(){ sample(); }, 1200);
+
+  setInterval(sample, pollMs);
+})();
+</script>
+{{end}}

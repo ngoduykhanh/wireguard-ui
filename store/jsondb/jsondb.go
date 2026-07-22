@@ -3,7 +3,9 @@ package jsondb
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"strconv"
@@ -407,4 +409,26 @@ func (o *JsonDB) SaveHashes(hashes model.ClientServerHashes) error {
 		return err
 	}
 	return output
+}
+
+// LoadTrafficCacheSnapshot restores traffic history from db/server/traffic_cache.json if present.
+func (o *JsonDB) LoadTrafficCacheSnapshot() (*model.TrafficCacheSnapshot, error) {
+	var s model.TrafficCacheSnapshot
+	err := o.conn.Read("server", "traffic_cache", &s)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) || os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &s, nil
+}
+
+// SaveTrafficCacheSnapshot writes traffic history for the next process start.
+func (o *JsonDB) SaveTrafficCacheSnapshot(s *model.TrafficCacheSnapshot) error {
+	trafficPath := path.Join(path.Join(o.dbPath, "server"), "traffic_cache.json")
+	if err := o.conn.Write("server", "traffic_cache", s); err != nil {
+		return err
+	}
+	return util.ManagePerms(trafficPath)
 }

@@ -1,6 +1,4 @@
-{{define "title"}}
-Wireguard Clients
-{{end}}
+{{define "title"}}{{ tr .UILang "meta.title_clients" }}{{end}}
 
 {{define "top_css"}}
 <style>
@@ -9,6 +7,16 @@ Wireguard Clients
         cursor: pointer;
     }
     i[class^="paused-client"]:hover { transform: scale(1.5); }
+    /* Inner margin from the panel edge (.container-fluid) */
+    .wg-clients-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:14px 0;border-bottom:1px solid var(--bdr,rgba(255,255,255,.08))}
+    .wg-client-search{flex:1;min-width:220px;max-width:420px}
+    .wg-client-search input{width:100%;background:var(--ele);border:1px solid var(--bdr2);border-radius:10px;padding:8px 10px;color:var(--t1);font-size:12px;outline:none}
+    .wg-client-search input:focus{border-color:rgba(239,83,80,.35)}
+    .wg-client-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .wg-filter-pills{display:inline-flex;gap:6px;flex-wrap:wrap}
+    .wg-filter-pills .wg-pill{border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--t2,#9e9e9e);padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;line-height:1.2}
+    .wg-filter-pills .wg-pill:hover{color:var(--t1,#eee);border-color:rgba(239,83,80,.35)}
+    .wg-filter-pills .wg-pill.active{background:rgba(239,83,80,.14);border-color:rgba(239,83,80,.45);color:#EF5350}
 </style>
 {{end}}
 
@@ -16,17 +24,26 @@ Wireguard Clients
 {{ .username }}
 {{end}}
 
-{{define "page_title"}}
-Wireguard Clients
-{{end}}
+{{define "page_title"}}{{ tr .UILang "page.clients" }}{{end}}
 
 {{define "page_content"}}
-<section class="content">
-    <div class="container-fluid">
-        <!-- <h5 class="mt-4 mb-2">Wireguard Clients</h5> -->
-        <div class="row" id="client-list">
+<section class="content wg-clients-page" style="max-width:100%">
+    <div class="container-fluid" style="padding:0;width:100%;max-width:1100px">
+        {{if .globalSettings}}<input type="hidden" id="wg-global-dns" value="{{StringsJoin .globalSettings.DNSServers ","}}">
+        <input type="hidden" id="wg-global-keepalive-sec" value="{{.globalSettings.PersistentKeepalive}}">{{end}}
+        <div class="wg-clients-toolbar">
+            <div class="wg-client-search">
+                <input type="text" id="client-search-input" autocomplete="off" placeholder="{{ tr .UILang "clients.search_ph" }}">
+            </div>
+            <div class="wg-client-controls">
+                <div class="wg-filter-pills" id="wg-client-pills" role="tablist">
+                    <button type="button" class="wg-pill" data-filter="enabled">{{ tr .UILang "clients.enabled" }}</button>
+                    <button type="button" class="wg-pill" data-filter="disabled">{{ tr .UILang "clients.disabled" }}</button>
+                </div>
+                <button type="button" class="wg-btn bp" data-toggle="modal" data-target="#modal_new_client"><i class="fas fa-plus"></i> {{ tr .UILang "clients.new_btn" }}</button>
+            </div>
         </div>
-        <!-- /.row -->
+        <div id="client-list" class="wg-client-stack"></div>
     </div>
 </section>
 
@@ -34,8 +51,8 @@ Wireguard Clients
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Email Configuration</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h4 class="modal-title">{{ tr .UILang "clients.email_modal_title" }}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -43,13 +60,13 @@ Wireguard Clients
                 <div class="modal-body">
                     <input type="hidden" id="e_client_id" name="e_client_id">
                     <div class="form-group">
-                        <label for="e_client_email" class="control-label">Email address</label>
+                        <label for="e_client_email" class="control-label">{{ tr .UILang "clients.email_label" }}</label>
                         <input type="text" class="form-control" id="e_client_email" name="e_client_email">
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Send</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{{ tr .UILang "modal.apply.cancel" }}</button>
+                    <button type="submit" class="btn btn-success">{{ tr .UILang "clients.email_modal_send" }}</button>
                 </div>
             </form>
         </div>
@@ -63,8 +80,8 @@ Wireguard Clients
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">QR Code</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h4 class="modal-title">{{ tr .UILang "clients.modal_qr" }}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -84,8 +101,8 @@ Wireguard Clients
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Telegram Configuration</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h4 class="modal-title">{{ tr .UILang "clients.modal_telegram_title" }}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -93,13 +110,13 @@ Wireguard Clients
                 <div class="modal-body">
                     <input type="hidden" id="tg_client_id" name="tg_client_id">
                     <div class="form-group">
-                        <label for="tg_client_userid" class="control-label">Telegram userid</label>
+                        <label for="tg_client_userid" class="control-label">{{ tr .UILang "clients.telegram_userid" }}</label>
                         <input type="text" class="form-control" id="tg_client_userid" name="tg_client_userid">
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Send</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{{ tr .UILang "modal.apply.cancel" }}</button>
+                    <button type="submit" class="btn btn-success">{{ tr .UILang "clients.email_modal_send" }}</button>
                 </div>
             </form>
         </div>
@@ -113,8 +130,8 @@ Wireguard Clients
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Edit Client</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h4 class="modal-title">{{ tr .UILang "clients.modal_edit_client" }}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -202,8 +219,8 @@ Wireguard Clients
                     </details>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Save</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{{ tr .UILang "modal.apply.cancel" }}</button>
+                    <button type="submit" class="btn btn-success" id="edit_client_save" disabled>{{ tr .UILang "clients.save_btn" }}</button>
                 </div>
             </form>
         </div>
@@ -217,16 +234,16 @@ Wireguard Clients
     <div class="modal-dialog">
         <div class="modal-content bg-warning">
             <div class="modal-header">
-                <h4 class="modal-title">Disable</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h4 class="modal-title">{{ tr .UILang "clients.modal_disable" }}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
             </div>
             <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-outline-dark" id="pause_client_confirm">Apply</button>
+                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">{{ tr .UILang "modal.apply.cancel" }}</button>
+                <button type="button" class="btn btn-outline-dark" id="pause_client_confirm">{{ tr .UILang "clients.modal_apply_btn" }}</button>
             </div>
         </div>
         <!-- /.modal-content -->
@@ -239,16 +256,16 @@ Wireguard Clients
     <div class="modal-dialog">
         <div class="modal-content bg-danger">
             <div class="modal-header">
-                <h4 class="modal-title">Remove</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h4 class="modal-title">{{ tr .UILang "clients.modal_remove" }}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
             </div>
             <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-outline-dark" id="remove_client_confirm">Apply</button>
+                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">{{ tr .UILang "modal.apply.cancel" }}</button>
+                <button type="button" class="btn btn-outline-dark" id="remove_client_confirm">{{ tr .UILang "clients.modal_apply_btn" }}</button>
             </div>
         </div>
         <!-- /.modal-content -->
@@ -260,6 +277,12 @@ Wireguard Clients
 
 {{define "bottom_js"}}
     <script>
+        function wgClientMsg(key, name) {
+            var s = String(wgT(key) || '');
+            if (name != null && name !== undefined) s = s.replace(/\{name\}/g, String(name));
+            return s;
+        }
+
         function populateClientList() {
             $.ajax({
                 cache: false,
@@ -268,7 +291,13 @@ Wireguard Clients
                 dataType: 'json',
                 contentType: "application/json",
                 success: function (data) {
-                    renderClientList(data);
+                    $.getJSON('{{.basePath}}/api/wg-peer-stats')
+                        .done(function (stats) {
+                            renderClientList(data, stats || {});
+                        })
+                        .fail(function () {
+                            renderClientList(data, {});
+                        });
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -286,8 +315,10 @@ Wireguard Clients
                 dataType: 'json',
                 contentType: "application/json",
                 data: JSON.stringify(data),
-                success: function (data) {
-                    console.log("Set client " + clientID + " status to " + status);
+                success: function () {
+                    if (typeof updateApplyConfigVisibility === 'function') {
+                        updateApplyConfigVisibility();
+                    }
                 },
                 error: function (jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -298,16 +329,55 @@ Wireguard Clients
 
         function resumeClient(clientID) {
             setClientStatus(clientID, true);
-            const divElement = document.getElementById("paused_" + clientID);
-            divElement.style.visibility = "hidden";
-            updateApplyConfigVisibility()
+            var divElement = document.getElementById("paused_" + clientID);
+            if (divElement) {
+                divElement.style.display = "none";
+                divElement.style.visibility = "hidden";
+                divElement.style.pointerEvents = "none";
+            }
+            var card = document.getElementById("client_" + clientID);
+            if (card) {
+                card.setAttribute("data-wg-enabled", "true");
+            }
+            wgSyncToggleFromCard(clientID)
         }
 
         function pauseClient(clientID) {
             setClientStatus(clientID, false);
-            const divElement = document.getElementById("paused_" + clientID);
-            divElement.style.visibility = "visible";
-            updateApplyConfigVisibility()
+            var divElement = document.getElementById("paused_" + clientID);
+            if (divElement) {
+                divElement.style.display = "flex";
+                divElement.style.visibility = "visible";
+                divElement.style.pointerEvents = "auto";
+            }
+            var card = document.getElementById("client_" + clientID);
+            if (card) {
+                card.setAttribute("data-wg-enabled", "false");
+                card.setAttribute("data-wg-vpn", "0");
+                card.setAttribute("data-wg-online", "0");
+            }
+            wgSyncToggleFromCard(clientID)
+        }
+
+        /** Sync checkbox + badges in helper-rendered cards */
+        window.wgSyncToggleFromCard = function (clientID) {
+            var card = document.getElementById("client_" + clientID);
+            if (!card) return;
+            var en = card.getAttribute("data-wg-enabled") === "true";
+            card.querySelectorAll(".wg-cc-toggle").forEach(function (cb) {
+                cb.checked = en;
+            });
+            if (typeof window.wgApplyPeerTrafficStats !== "function") return;
+            $.getJSON('{{.basePath}}/api/wg-peer-stats').done(window.wgApplyPeerTrafficStats);
+        }
+
+        /** Toggle in card header — uses existing resume/pause APIs */
+        window.wgPeerToggleEnable = function (ev, el) {
+            if (ev) ev.stopPropagation();
+            var id = el.getAttribute("data-clientid");
+            if (!id) return;
+            var want = el.checked;
+            if (want) resumeClient(id); else pauseClient(id);
         }
 
         // updateIPAllocationSuggestion function for automatically fill
@@ -345,47 +415,13 @@ Wireguard Clients
             });
         }
 
-        function updateSubnetRangesList(elementID, preselectedVal) {
-            $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
-                $(`${elementID} option`).remove();
-                $(elementID).append(
-                    $("<option></option>")
-                        .text("Any")
-                        .val("__default_any__")
-                );
-                $.each(data, function(index, item) {
-                    $(elementID).append(
-                        $("<option></option>")
-                            .text(item)
-                            .val(item)
-                    );
-                    if (item === preselectedVal) {
-                        console.log(preselectedVal);
-                        $(elementID).val(preselectedVal).trigger('change')
-                    }
-                });
-            });
-        }
-
         function updateSearchList() {
             $.getJSON("{{.basePath}}/api/subnet-ranges", null, function(data) {
                 $("#status-selector option").remove();
                 $("#status-selector").append(
-                    $("<option></option>")
-                        .text("All")
-                        .val("All"),
-                    $("<option></option>")
-                        .text("Enabled")
-                        .val("Enabled"),
-                    $("<option></option>")
-                        .text("Disabled")
-                        .val("Disabled"),
-                    $("<option></option>")
-                        .text("Connected")
-                        .val("Connected"),
-                    $("<option></option>")
-                        .text("Disconnected")
-                        .val("Disconnected")
+                    $("<option></option>").text("All").val("All"),
+                    $("<option></option>").text("Enabled").val("Enabled"),
+                    $("<option></option>").text("Disabled").val("Disabled")
                 );
                 $.each(data, function(index, item) {
                     $("#status-selector").append(
@@ -398,135 +434,146 @@ Wireguard Clients
         }
     </script>
     <script>
+        window.__wgModalTrigger = null;
+        function wgModalTrigger(ev) {
+            var $t = $(ev.relatedTarget);
+            if ($t && $t.length) return $t;
+            if (window.__wgModalTrigger) {
+                var $x = $(window.__wgModalTrigger);
+                window.__wgModalTrigger = null;
+                if ($x && $x.length) return $x;
+            }
+            return $();
+        }
+        function wgStashModalTrigger(el) {
+            if (el && (el.nodeType === 1)) window.__wgModalTrigger = el;
+        }
+        /* mousedown runs before Bootstrap's click/open — fixes missing relatedTarget */
+        $(document).on('mousedown pointerdown', '#client-list [data-toggle="modal"]', function () {
+            wgStashModalTrigger(this);
+        });
+        $(document).on('click', '#client-list [data-toggle="modal"]', function () {
+            wgStashModalTrigger(this);
+        });
+
+        /** Poll WG counters so download/upload chips update without a full reload */
+        var WG_TRAFFIC_POLL_MS = 4000;
+        var wgTrafficPollTimer = null;
+        function wgStartPeerTrafficPolling() {
+            if (wgTrafficPollTimer) {
+                clearInterval(wgTrafficPollTimer);
+                wgTrafficPollTimer = null;
+            }
+            wgTrafficPollTimer = setInterval(function () {
+                if (typeof window.wgApplyPeerTrafficStats !== 'function') return;
+                $.getJSON('{{.basePath}}/api/wg-peer-stats').done(window.wgApplyPeerTrafficStats);
+            }, WG_TRAFFIC_POLL_MS);
+        }
+
         // load client list
         $(document).ready(function () {
             updateSearchList();
             populateClientList();
+            wgStartPeerTrafficPolling();
         })
 
-        // show search bar and override :contains to be case-insensitive
+        // override :contains to be case-insensitive
         $(document).ready(function () {
-            $("#search-form").show();
             jQuery.expr[':'].contains = function(a, i, m) {
                 return jQuery(a).text().toUpperCase()
                     .indexOf(m[3].toUpperCase()) >= 0;
             };
         })
 
-        // hide all clients and display only the ones that meet the search criteria (name, email, IP)
-        $('#search-input').keyup(function () {
+        function applyClientFilters() {
+            var q = ($('#client-search-input').val() || '').trim().toUpperCase();
+            var active = $('#wg-client-pills .wg-pill.active').data('filter') || '';
+            $('.wg-client-card').each(function () {
+                var $card = $(this);
+                var enabled = $card.attr('data-wg-enabled') === 'true';
+                var matchesState = (active === 'enabled' && enabled) || (active === 'disabled' && !enabled) || (!active);
+                if (!matchesState) {
+                    $card.hide();
+                    return;
+                }
+                if (!q) {
+                    $card.show();
+                    return;
+                }
+                var text = ($card.text() || '').toUpperCase();
+                $card.toggle(text.indexOf(q) !== -1);
+            });
+        }
+
+        $(document).on('click', '#wg-client-pills .wg-pill', function () {
+            var which = $(this).data('filter');
+            if ($(this).hasClass('active')) {
+                $(this).removeClass('active');
+            } else {
+                $('#wg-client-pills .wg-pill').removeClass('active');
+                $(this).addClass('active');
+            }
+            $('#status-selector').val('All');
+            applyClientFilters();
+        });
+
+        $('#client-search-input').on('keyup input', function () {
             $("#status-selector").val("All");
-            let query = $(this).val().trim();
-            $('.col-lg-4').hide();
-            $(".info-box-text").each(function() {
-                if($(this).children('i.fa-user').length > 0 || $(this).children('i.fa-envelope').length > 0)
-                {
-                    $(this).filter(':contains("' + query + '")').parent().parent().parent().show();
-                }
-                })
-            $(".badge-secondary").filter(':contains("' + query + '")').parent().parent().parent().show();
-            $(".fa-tguserid").each(function () {
-                if ($(this).parent().text().trim().indexOf(query) != -1) {
-                    $(this).closest('.col-lg-4').show();
-                }
-            })
-            let upperQuery = query.toUpperCase()
-            $(".fa-additional_notes").each(function () {
-                if ($(this).parent().text().trim().indexOf(upperQuery) != -1) {
-                    $(this).closest('.col-lg-4').show();
-                }
-            })
+            applyClientFilters();
         })
 
         $("#status-selector").on('change', function () {
-            $('#search-input').val("");
+            $('#client-search-input').val("");
+            $('#wg-client-pills .wg-pill').removeClass('active');
             switch ($("#status-selector").val()) {
                 case "All":
-                    $('.col-lg-4').show();
+                    $('.wg-client-card').show();
                     break;
                 case "Enabled":
-                    $('.col-lg-4').hide();
-                    $('[id^="paused_"]').each(function () {
-                        if ($(this).css("visibility") === "hidden") {
-                            $(this).parent().parent().show();
-                        }
-                    });
+                    $('.wg-client-card').hide();
+                    $('.wg-client-card[data-wg-enabled="true"]').show();
                     break;
                 case "Disabled":
-                    $('.col-lg-4').hide();
-                    $('[id^="paused_"]').each(function () {
-                        if ($(this).css("visibility") !== "hidden") {
-                            $(this).parent().parent().show();
-                        }
-                    });
-                    break;
-                case "Connected":
-                    $('.col-lg-4').hide();
-                    $.ajax({
-                        cache: false,
-                        method: 'GET',
-                        url: '{{.basePath}}/status',
-                        success: function (data) {
-                            const returnedHTML = $(data).find(".table-success").get();
-                            var returnedString = "";
-                            returnedHTML.forEach(entry => returnedString += entry.outerHTML);
-                            $(".fa-key").each(function () {
-                                if (returnedString.indexOf($(this).parent().text().trim()) != -1) {
-                                    $(this).closest('.col-lg-4').show();
-                                }
-                            })
-                        }
-                    });
-                    break;
-                case "Disconnected":
-                    $('.col-lg-4').show();
-                    $.ajax({
-                        cache: false,
-                        method: 'GET',
-                        url: '{{.basePath}}/status',
-                        success: function (data) {
-                            const returnedHTML = $(data).find(".table-success").get();
-                            var returnedString = "";
-                            returnedHTML.forEach(entry => returnedString += entry.outerHTML);
-                            $(".fa-key").each(function () {
-                                if (returnedString.indexOf($(this).parent().text().trim()) != -1) {
-                                    $(this).closest('.col-lg-4').hide();
-                                }
-                            })
-                        }
-                    });
+                    $('.wg-client-card').hide();
+                    $('.wg-client-card[data-wg-enabled="false"]').show();
                     break;
                 default:
-                    $('.col-lg-4').hide();
-                    const selectedSR = $("#status-selector").val()
+                    $('.wg-client-card').hide();
+                    const selectedSR = $("#status-selector").val();
                     $(".fa-subnetrange").each(function () {
-                        const srs = $(this).parent().text().trim().split(',')
+                        const srs = $(this).parent().text().trim().split(',');
                         for (const sr of srs) {
                             if (sr === selectedSR) {
-                                $(this).closest('.col-lg-4').show();
-                                break
-                            }                            
+                                $(this).closest('.wg-client-card').show();
+                                break;
+                            }
                         }
-                    })
-                    // $('.col-lg-4').show();
+                    });
                     break;
             }
         });
 
         // modal_pause_client modal event
         $("#modal_pause_client").on('show.bs.modal', function (event) {
-            const button = $(event.relatedTarget);
+            const button = wgModalTrigger(event);
             const client_id = button.data('clientid');
+            if (!client_id) return;
             const client_name = button.data('clientname');
             const modal = $(this);
-            modal.find('.modal-body').text("You are about to disable client " + client_name);
-            modal.find('#pause_client_confirm').val(client_id);
+            const card = document.getElementById("client_" + client_id);
+            const currentlyEnabled = !!(card && card.getAttribute("data-wg-enabled") === "true");
+            const targetStatus = false;
+            modal.find('.modal-body').text(wgClientMsg('clients.about_disable_fmt', client_name));
+            modal.find('#pause_client_confirm').val(client_id).data('target-status', targetStatus);
+            // enable only when this modal action would produce a real state change
+            modal.find('#pause_client_confirm').prop('disabled', currentlyEnabled === targetStatus);
         })
 
         // pause_client_confirm button event
         $(document).ready(function () {
             $("#pause_client_confirm").click(function () {
                 const client_id = $(this).val();
+                if ($(this).prop('disabled')) return;
                 pauseClient(client_id);
                 $("#modal_pause_client").modal('hide');
             });
@@ -534,11 +581,12 @@ Wireguard Clients
 
         // modal_remove_client modal event
         $("#modal_remove_client").on('show.bs.modal', function (event) {
-            const button = $(event.relatedTarget);
+            const button = wgModalTrigger(event);
             const client_id = button.data('clientid');
+            if (!client_id) return;
             const client_name = button.data('clientname');
             const modal = $(this);
-            modal.find('.modal-body').text("You are about to remove client " + client_name);
+            modal.find('.modal-body').text(wgClientMsg('clients.about_remove_fmt', client_name));
             modal.find('#remove_client_confirm').val(client_id);
         })
 
@@ -556,7 +604,7 @@ Wireguard Clients
                     data: JSON.stringify(data),
                     success: function(data) {
                         $("#modal_remove_client").modal('hide');
-                        toastr.success('Removed client successfully');
+                        toastr.success(wgT('clients.removed_ok'));
                         const divElement = document.getElementById('client_' + client_id);
                         divElement.style.display = "none";
                         updateApplyConfigVisibility()
@@ -573,18 +621,50 @@ Wireguard Clients
 
         // Edit client modal event
         // This fills the modal dialogue with data from the DB when we open the edit menu
+        var wgEditClientSnap = null;
+        var wgEditClientTimer = null;
+
+        function wgEditClientPayload() {
+            const extraRaw = $("#_client_extra_allowed_ips").val();
+            return JSON.stringify({
+                id: $("#_client_id").val() || "",
+                name: $("#_client_name").val() || "",
+                email: $("#_client_email").val() || "",
+                telegram_userid: $("#_client_telegram_userid").val() || "",
+                allocated_ips: ($("#_client_allocated_ips").val() || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean),
+                allowed_ips: ($("#_client_allowed_ips").val() || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean),
+                extra_allowed_ips: (extraRaw || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean),
+                endpoint: $("#_client_endpoint").val() || "",
+                use_server_dns: $("#_use_server_dns").is(':checked'),
+                enabled: $("#_enabled").is(':checked'),
+                public_key: $("#_client_public_key").val() || "",
+                preshared_key: $("#_client_preshared_key").val() || "",
+                additional_notes: $("#_additional_notes").val() || "",
+                subnet_range: $("#_subnet_ranges").val() || ""
+            });
+        }
+
+        function wgEditClientRefreshSaveBtn() {
+            var btn = $("#edit_client_save");
+            if (!btn.length) return;
+            var dirty = String(wgEditClientSnap || "") !== wgEditClientPayload();
+            btn.prop("disabled", !dirty);
+        }
+
         $(document).ready(function () {
             $("#modal_edit_client").on('show.bs.modal', function (event) {
                 let modal = $(this);
-                const button = $(event.relatedTarget);
+                modal.find("#edit_client_save").prop("disabled", true);
+                const button = wgModalTrigger(event);
                 const client_id = button.data('clientid');
+                if (!client_id) return;
 
                 // IP Allocation tag input
                 modal.find("#_client_allocated_ips").tagsInput({
                     'width': '100%',
                     'height': '75%',
                     'interactive': true,
-                    'defaultText': 'Add More',
+                    'defaultText': wgT('js.tags_placeholder'),
                     'removeWithBackspace': true,
                     'minChars': 0,
                     'minInputWidth': '100%',
@@ -596,7 +676,7 @@ Wireguard Clients
                     'width': '100%',
                     'height': '75%',
                     'interactive': true,
-                    'defaultText': 'Add More',
+                    'defaultText': wgT('js.tags_placeholder'),
                     'removeWithBackspace': true,
                     'minChars': 0,
                     'minInputWidth': '100%',
@@ -607,7 +687,7 @@ Wireguard Clients
                     'width': '100%',
                     'height': '75%',
                     'interactive': true,
-                    'defaultText': 'Add More',
+                    'defaultText': wgT('js.tags_placeholder'),
                     'removeWithBackspace' : true,
                     'minChars': 0,
                     'minInputWidth': '100%',
@@ -624,7 +704,7 @@ Wireguard Clients
                     success: function (resp) {
                         const client = resp.Client;
 
-                        modal.find(".modal-title").text("Edit Client " + client.name);
+                        modal.find(".modal-title").text(wgClientMsg('clients.edit_title_fmt', client.name));
                         modal.find("#_client_id").val(client.id);
                         modal.find("#_client_telegram_userid").val(client.telegram_userid);
                         modal.find("#_client_name").val(client.name);
@@ -666,12 +746,29 @@ Wireguard Clients
                         $('#_subnet_ranges').on('select2:select', function (e) {
                             updateIPAllocationSuggestionExisting();
                         });
+
+                        // snapshot once data is fully loaded into controls
+                        setTimeout(function () {
+                            wgEditClientSnap = wgEditClientPayload();
+                            wgEditClientRefreshSaveBtn();
+                        }, 30);
                     },
                     error: function (jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
                         toastr.error(responseJson['message']);
                     }
                 });
+            });
+
+            $("#modal_edit_client").on('shown.bs.modal', function () {
+                if (wgEditClientTimer) clearInterval(wgEditClientTimer);
+                wgEditClientTimer = setInterval(wgEditClientRefreshSaveBtn, 500);
+            });
+            $("#modal_edit_client").on('hidden.bs.modal', function () {
+                if (wgEditClientTimer) clearInterval(wgEditClientTimer);
+                wgEditClientTimer = null;
+                wgEditClientSnap = null;
+                $("#edit_client_save").prop("disabled", true);
             });
         });
 
@@ -693,7 +790,7 @@ Wireguard Clients
                 success: function (resp) {
                     const client = resp.Client;
 
-                    $(".modal-title").text("Scan QR Code for " + client.name + " profile");
+                    $(".modal-title").text(wgClientMsg('clients.scan_qr_fmt', client.name));
                     QRCodeImg.attr('src', resp.QRCode).show();
                     QRCodeA.attr('download', resp.Client.name);
                     QRCodeA.attr('href', resp.QRCode).show();
@@ -719,7 +816,7 @@ Wireguard Clients
                 data: JSON.stringify(data),
                 success: function(resp) {
                     $("#modal_email_client").modal('hide');
-                    toastr.success('Sent email to client successfully');
+                    toastr.success(wgT('clients.sent_email_ok'));
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -742,7 +839,7 @@ Wireguard Clients
                 data: JSON.stringify(data),
                 success: function(resp) {
                     $("#modal_telegram_client").modal('hide');
-                    toastr.success('Sent config via telegram to client successfully');
+                    toastr.success(wgT('clients.sent_telegram_ok'));
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -755,6 +852,9 @@ Wireguard Clients
         // This sends dialogue data to the back-end when user presses "Save"
         // See e.g. routes.go:UpdateClient for where data is processed/verified.
         function submitEditClient() {
+            if ($("#edit_client_save").prop("disabled")) {
+                return;
+            }
             const client_id = $("#_client_id").val();
             const name = $("#_client_name").val();
             const email = $("#_client_email").val();
@@ -797,9 +897,13 @@ Wireguard Clients
                 data: JSON.stringify(data),
                 success: function(resp) {
                     $("#modal_edit_client").modal('hide');
-                    toastr.success('Updated client successfully');
-                     // Refresh the home page (clients page) after updating successfully
-                    location.reload();
+                    toastr.success(wgT('clients.updated_ok'));
+                    if (typeof updateApplyConfigVisibility === 'function') {
+                        updateApplyConfigVisibility();
+                    }
+                    // Keep the flow: after edit, enable the global Apply config toolbar (outside the modal).
+                    // Reload the row so card changes show without writing wg.conf yet.
+                    populateClient(client_id);
                 },
                 error: function(jqXHR, exception) {
                     const responseJson = jQuery.parseJSON(jqXHR.responseText);
@@ -822,8 +926,9 @@ Wireguard Clients
 
         $("#modal_email_client").on('show.bs.modal', function (event) {
             let modal = $(this);
-            const button = $(event.relatedTarget);
+            const button = wgModalTrigger(event);
             const client_id = button.data('clientid');
+            if (!client_id) return;
             $.ajax({
                 cache: false,
                 method: 'GET',
@@ -833,7 +938,7 @@ Wireguard Clients
                 success: function (resp) {
                     const client = resp.Client;
 
-                    modal.find(".modal-title").text("Send config to client " + client.name);
+                    modal.find(".modal-title").text(wgClientMsg('clients.send_config_fmt', client.name));
                     modal.find("#e_client_id").val(client.id);
                     modal.find("#e_client_email").val(client.email);
                 },
@@ -846,8 +951,9 @@ Wireguard Clients
 
         $("#modal_qr_client").on('show.bs.modal', function (event) {
             let modal = $(this);
-            const button = $(event.relatedTarget);
+            const button = wgModalTrigger(event);
             const client_id = button.data('clientid');
+            if (!client_id) return;
 
             modal.find("#qr_client_id").val(client_id);
             regenerateQRCode();
@@ -855,8 +961,9 @@ Wireguard Clients
 
         $("#modal_telegram_client").on('show.bs.modal', function (event) {
             let modal = $(this);
-            const button = $(event.relatedTarget);
+            const button = wgModalTrigger(event);
             const client_id = button.data('clientid');
+            if (!client_id) return;
             $.ajax({
                 cache: false,
                 method: 'GET',
@@ -866,7 +973,7 @@ Wireguard Clients
                 success: function (resp) {
                     const client = resp.Client;
 
-                    modal.find(".modal-title").text("Send config to client " + client.name);
+                    modal.find(".modal-title").text(wgClientMsg('clients.send_config_fmt', client.name));
                     modal.find("#tg_client_id").val(client.id);
                     modal.find("#tg_client_userid").val(client.telegram_userid);
                 },
@@ -892,7 +999,7 @@ Wireguard Clients
                 },
                 messages: {
                     client_name: {
-                        required: "Please enter a name"
+                        required: wgT('clients.validator_name')
                     },
                 },
                 errorElement: 'span',
@@ -917,7 +1024,7 @@ Wireguard Clients
                 },
                 messages: {
                     e_client_email: {
-                        required: "Please enter an email"
+                        required: wgT('clients.validator_email')
                     },
                 },
                 errorElement: 'span',
@@ -942,8 +1049,8 @@ Wireguard Clients
                 },
                 messages: {
                     tg_client_userid: {
-                        required: "Please enter a telegram userid",
-                        number: "Please enter a valid telegram userid"
+                        required: wgT('clients.validator_tg_req'),
+                        number: wgT('clients.validator_tg_num')
                     },
                 },
                 errorElement: 'span',

@@ -5,6 +5,7 @@
 *.so
 *.dylib
 wireguard-ui
+wireguard-ui-v2
 
 # Test binary, built with `go test -c`
 *.test
@@ -21,6 +22,18 @@ node_modules/
 # IDEs
 .vscode
 .idea
+
+# Agent skills (e.g. npx skills add → .agents/skills)
+.agents/
+skills-lock.json
+
+# Local agent tooling (e.g. Claude Code)
+.claude/
+
+.DS_Store
+
+# Firebase Admin SDK service account JSON (FCM_CREDENTIALS_FILE / GOOGLE_APPLICATION_CREDENTIALS)
+*firebase-adminsdk*.json
 
 # Vim
 .*.sw[op]

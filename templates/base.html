@@ -1,674 +1,927 @@
 {{define "base.html"}}
 <!DOCTYPE html>
-<html>
-
+<html lang="{{if eq .UILang "en"}}en{{else}}es{{end}}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>{{template "title" .}}</title>
-    <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Favicon -->
     <link rel="icon" href="{{.basePath}}/favicon">
 
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="{{.basePath}}/static/plugins/fontawesome-free/css/all.min.css">
-    <!-- iCheck for checkboxes and radio inputs -->
     <link rel="stylesheet" href="{{.basePath}}/static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
-    <!-- Select2 -->
     <link rel="stylesheet" href="{{.basePath}}/static/plugins/select2/css/select2.min.css">
-    <!-- Toastr -->
     <link rel="stylesheet" href="{{.basePath}}/static/plugins/toastr/toastr.min.css">
-    <!-- Jquery Tags Input -->
     <link rel="stylesheet" href="{{.basePath}}/static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.css">
-    <!-- Ionicons -->
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-    <!-- overlayScrollbars -->
     <link rel="stylesheet" href="{{.basePath}}/static/dist/css/adminlte.min.css">
-    <!-- Google Font: Source Sans Pro -->
-    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <link rel="stylesheet" href="{{.basePath}}/static/custom/css/wgshell.css">
 
-    <!-- START: On page css -->
     {{template "top_css" .}}
-    <!-- END: On page css -->
+    <script>window.APP_BASE_PATH = "{{.basePath}}";</script>
 </head>
 
-<body class="hold-transition sidebar-mini">
-    <!-- Site wrapper -->
-    <div class="wrapper">
-        <!-- Navbar -->
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-            <!-- Left navbar links -->
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-                </li>
-            </ul>
-
-            <!-- SEARCH FORM -->
-            <form class="form-inline ml-3" style="display: none" id="search-form">
-                <div class="input-group input-group-sm">
-                    <input class="form-control form-control-navbar" placeholder="Search"
-                        aria-label="Search" id="search-input">
-                    <div class="input-group-append">
-                        <button class="btn-navbar" type="submit" disabled>
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
+<body class="wg-body">
+<script>
+(function(){
+  try {
+    window.__WG_UI_THEME_RAW = '{{if .globalSettings}}{{if eq .globalSettings.UITheme "light"}}light{{else if eq .globalSettings.UITheme "auto"}}auto{{else}}dark{{end}}{{else}}dark{{end}}';
+    window.wgNormalizeShellThemeRaw = function (t) {
+      var s = String(t === null || t === undefined ? '' : t).toLowerCase().trim();
+      if (s === 'light' || s === 'auto') return s;
+      return 'dark';
+    };
+    window.wgSyncShellThemeClass = function () {
+      var r = window.wgNormalizeShellThemeRaw(window.__WG_UI_THEME_RAW);
+      window.__WG_UI_THEME_RAW = r;
+      var light = (r === 'light') || (r === 'auto' && typeof window.matchMedia !== 'undefined' && window.matchMedia('(prefers-color-scheme: light)').matches);
+      document.body.classList.toggle('wg-theme-light', light);
+    };
+    window.wgSetShellThemeRaw = function (t) {
+      window.__WG_UI_THEME_RAW = window.wgNormalizeShellThemeRaw(t);
+      window.wgSyncShellThemeClass();
+    };
+    window.wgSyncShellThemeClass();
+    if (!window.__wgPreferColorMqBound && typeof window.matchMedia !== 'undefined') {
+      try {
+        var mq = window.matchMedia('(prefers-color-scheme: light)');
+        var onPc = function () {
+          if (window.__WG_UI_THEME_RAW === 'auto') window.wgSyncShellThemeClass();
+        };
+        if (mq.addEventListener) mq.addEventListener('change', onPc);
+        else if (mq.addListener) mq.addListener(onPc);
+        window.__wgPreferColorMqBound = true;
+      } catch (e2) {}
+    }
+  } catch (e1) {}
+})();
+</script>
+<div class="shell">
+    <!-- Sidebar -->
+    <aside class="sb">
+        <div class="sb-top">
+            <a href="{{.basePath}}/" class="logo">
+                <div class="logo-ico"><img src="{{.basePath}}/static/wireguard.svg" alt="WireGuard" width="32" height="32"></div>
+                <div>
+                    <div class="ln">WireGuard</div>
+                    <div class="ls">UI</div>
                 </div>
-                <div class="form-group form-group-sm">
-                    <select name="status-selector" id="status-selector" class="custom-select form-control-navbar" style="margin-left: 0.5em; height: 90%; font-size: 14px;">
-                        <!-- THIS SECTION IS OVERRIDDEN BY JS. SEE updateSearchList() function in clients.html BEFORE EDITING -->
-                        <option value="All">All</option>
-                        <option value="Enabled">Enabled</option>
-                        <option value="Disabled">Disabled</option>
-                        <option value="Connected">Connected</option>
-                        <option value="Disconnected">Disconnected</option>
-                        <!-- THIS SECTION IS OVERRIDDEN BY JS. SEE updateSearchList() function in clients.html BEFORE EDITING -->
+            </a>
+            {{if .baseData.CurrentUser}}
+            <div class="sb-mobile-actions" aria-label="{{tr .UILang "nav.mobile_user_aria"}}">
+                <a href="{{.basePath}}/profile" class="ma-btn" title="{{tr .UILang "nav.profile"}}">
+                    <i class="fas fa-user"></i>
+                </a>
+                <a href="{{.basePath}}/logout" class="ma-btn ma-btn-logout" title="{{tr .UILang "nav.logout_sidebar"}}">
+                    <i class="fas fa-sign-out-alt"></i><span>{{tr .UILang "nav.sign_out_mobile"}}</span>
+                </a>
+            </div>
+            {{end}}
+        </div>
+
+        <div class="sb-mid">
+        <div class="nl">{{tr .UILang "nav.section.main"}}</div>
+        <a href="{{.basePath}}/dashboard" class="ni ni-row {{if eq .baseData.Active "dashboard"}}act{{end}}">
+            <i class="fas fa-chart-pie" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.dashboard"}}</span>
+            <span id="wg-nav-dash-badge" class="nb-min" title="{{tr .UILang "nav.badge_tooltip"}}" {{if le .dashboardNavBadge 0}}hidden{{end}}>{{if gt .dashboardNavBadge 0}}{{.dashboardNavBadge}}{{end}}</span>
+        </a>
+        <a href="{{.basePath}}/" class="ni {{if eq .baseData.Active "clients"}}act{{end}}">
+            <i class="fas fa-user-secret" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.clients"}}</span>
+        </a>
+
+        {{if .baseData.Admin}}
+        <a href="{{.basePath}}/wg-server" class="ni {{if eq .baseData.Active "wg-server"}}act{{end}}">
+            <i class="fas fa-server" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.server"}}</span>
+        </a>
+        {{end}}
+
+        <div class="nl">{{tr .UILang "nav.section.monitor"}}</div>
+        <a href="{{.basePath}}/traffic" class="ni {{if eq .baseData.Active "traffic"}}act{{end}}">
+            <i class="fas fa-chart-line" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.traffic"}}</span>
+        </a>
+        <a id="wg-nav-link-logs" href="{{.basePath}}/logs" class="ni {{if eq .baseData.Active "logs"}}act{{end}}" {{if not (and .globalSettings .globalSettings.RealtimeStatsEnabled)}}hidden{{end}}>
+            <i class="fas fa-stream" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.logs"}}</span>
+        </a>
+        {{if .baseData.Admin}}
+        <a href="{{.basePath}}/global-settings" class="ni {{if eq .baseData.Active "global-settings"}}act{{end}}">
+            <i class="fas fa-cog" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.settings"}}</span>
+        </a>
+        {{end}}
+
+        {{if and .baseData.Admin (not .loginDisabled)}}
+        <div class="nl">{{tr .UILang "nav.section.admin"}}</div>
+        <a href="{{.basePath}}/users-settings" class="ni {{if eq .baseData.Active "users-settings"}}act{{end}}">
+            <i class="fas fa-users-cog" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.users"}}</span>
+        </a>
+        {{end}}
+
+        <div class="nl">{{tr .UILang "nav.section.other"}}</div>
+        <a href="{{.basePath}}/wake_on_lan_hosts" class="ni {{if eq .baseData.Active "wake_on_lan_hosts"}}act{{end}}">
+            <i class="fas fa-power-off" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.wol"}}</span>
+        </a>
+        <a href="{{.basePath}}/about" class="ni {{if eq .baseData.Active "about"}}act{{end}}">
+            <i class="fas fa-info-circle" style="width:15px;text-align:center"></i>
+            <span>{{tr .UILang "nav.about"}}</span>
+        </a>
+        </div>
+
+        <div class="sf">
+            <a href="{{.basePath}}/profile" class="uchip">
+                <div class="av"><i class="fas fa-user" style="font-size:12px;color:#fff"></i></div>
+                <div>
+                    <div class="un">{{if .baseData.CurrentUser}}{{.baseData.CurrentUser}}{{else}}{{tr .UILang "role.guest"}}{{end}}</div>
+                    <div class="ur">{{if .baseData.Admin}}{{tr .UILang "role.admin"}}{{else}}{{tr .UILang "role.user"}}{{end}}</div>
+                </div>
+            </a>
+            {{if .baseData.CurrentUser}}
+            <div style="padding:8px">
+                <a class="wg-btn bg" href="{{.basePath}}/logout" style="width:100%;justify-content:center"><i class="fas fa-sign-out-alt"></i> {{tr .UILang "nav.logout_sidebar"}}</a>
+            </div>
+            {{end}}
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+        <header class="topbar">
+            <div>
+                <div class="pt">{{template "page_title" .}}</div>
+                <div class="ps" id="wg-page-desc">{{if .page_subtitle}}{{.page_subtitle}}{{end}}</div>
+            </div>
+            <div class="tba">
+                <span class="sdot" title="WireGuard UI"></span>
+                <button type="button" class="wg-btn bg" onclick="location.reload()" title="{{tr .UILang "top.reload"}}"><i class="fas fa-sync-alt"></i> {{tr .UILang "top.sync"}}</button>
+                <form class="form-inline ml-2" id="search-form" style="display:none">
+                    <div class="input-group input-group-sm">
+                        <input class="form-control" placeholder="{{tr .UILang "top.search_placeholder"}}" aria-label="{{tr .UILang "top.search_placeholder"}}" id="search-input">
+                        <div class="input-group-append">
+                            <button class="btn btn-default" type="submit" disabled><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    <select name="status-selector" id="status-selector" class="custom-select form-control-sm ml-2" style="width:auto;">
+                        <option value="All">{{tr .UILang "top.status.all"}}</option>
+                        <option value="Enabled">{{tr .UILang "top.status.enabled"}}</option>
+                        <option value="Disabled">{{tr .UILang "top.status.disabled"}}</option>
+                        <option value="Connected">{{tr .UILang "top.status.connected"}}</option>
+                        <option value="Disconnected">{{tr .UILang "top.status.disconnected"}}</option>
                     </select>
+                </form>
+                {{if eq .baseData.Active "dashboard"}}
+                <button type="button" class="wg-btn bp" data-toggle="modal" data-target="#modal_new_client"><i class="fas fa-plus"></i> {{tr .UILang "top.new_client"}}</button>
+                {{end}}
+                <button id="apply-config-button" style="display: none;" type="button" class="wg-btn brd">
+                    <i class="fas fa-check"></i> {{tr .UILang "top.apply_config"}}
+                </button>
+            </div>
+        </header>
+
+        <div class="cv wg-cv">
+            {{template "page_content" .}}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modal_new_client">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">{{tr .UILang "modal.new_client.title"}}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{tr .UILang "aria.close"}}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form name="frm_new_client" id="frm_new_client">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="client_name" class="control-label">Name</label>
+                        <input type="text" class="form-control" id="client_name" name="client_name">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_email" class="control-label">Email</label>
+                        <input type="text" class="form-control" id="client_email" name="client_email">
+                    </div>
+                    <div class="form-group">
+                        <label for="subnet_ranges" class="control-label">Subnet range</label>
+                        <select id="subnet_ranges" class="select2"
+                            data-placeholder="Select a subnet range" style="width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="client_allocated_ips" class="control-label">IP Allocation</label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="client_allocated_ips">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_allowed_ips" class="control-label">Allowed IPs
+                            <i class="fas fa-info-circle" data-toggle="tooltip"
+                               data-original-title="Specify a list of addresses that will get routed to the
+                               server. These addresses will be included in 'AllowedIPs' of client config">
+                            </i>
+                        </label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="client_allowed_ips"
+                            value="{{ StringsJoin .client_defaults.AllowedIps "," }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_extra_allowed_ips" class="control-label">Extra Allowed IPs
+                            <i class="fas fa-info-circle" data-toggle="tooltip"
+                               data-original-title="Specify a list of addresses that will get routed to the
+                               client. These addresses will be included in 'AllowedIPs' of WG server config">
+                            </i>
+                        </label>
+                        <input type="text" data-role="tagsinput" class="form-control" id="client_extra_allowed_ips" value="{{ StringsJoin .client_defaults.ExtraAllowedIps "," }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_endpoint" class="control-label">Endpoint</label>
+                        <input type="text" class="form-control" id="client_endpoint" name="client_endpoint">
+                    </div>
+                    <div class="form-group">
+                        <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="use_server_dns" {{ if .client_defaults.UseServerDNS }}checked{{ end }}>
+                            <label for="use_server_dns">
+                                Use server DNS
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="icheck-primary d-inline">
+                            <input type="checkbox" id="enabled" {{ if .client_defaults.EnableAfterCreation }}checked{{ end }}>
+                            <label for="enabled">
+                                Enable after creation
+                            </label>
+                        </div>
+                    </div>
+                    <details>
+                        <summary><strong>Public and Preshared Keys</strong>
+                            <i class="fas fa-info-circle" data-toggle="tooltip"
+                               data-original-title="If you don't want to let the server generate and store the
+                               client's private key, you can manually specify its public and preshared key here
+                               . Note: QR code will not be generated">
+                            </i>
+                        </summary>
+                        <div class="form-group" style="margin-top: 1rem">
+                            <label for="client_public_key" class="control-label">
+                                Public Key
+                            </label>
+                            <input type="text" class="form-control" id="client_public_key" name="client_public_key" placeholder="Autogenerated" aria-invalid="false">
+                        </div>
+                        <div class="form-group">
+                            <label for="client_preshared_key" class="control-label">
+                                Preshared Key
+                            </label>
+                            <input type="text" class="form-control" id="client_preshared_key" name="client_preshared_key" placeholder="Autogenerated - enter &quot;-&quot; to skip generation">
+                        </div>
+                    </details>
+                    <details style="margin-top: 0.5rem;">
+                        <summary><strong>Additional configuration</strong>
+                        </summary>
+                        <div class="form-group" style="margin-top: 0.5rem;">
+                            <label for="client_telegram_userid" class="control-label">Telegram userid</label>
+                            <input type="text" class="form-control" id="client_telegram_userid" name="client_telegram_userid">
+                        </div>
+                        <div class="form-group">
+                            <label for="additional_notes" class="control-label">Notes</label>
+                            <textarea class="form-control" style="min-height: 6rem;" id="additional_notes" name="additional_notes" placeholder="Additional notes about this client"></textarea>
+                        </div>
+                    </details>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
                 </div>
             </form>
-
-            <!-- Right navbar links -->
-            <div class="navbar-nav ml-auto">
-                <button style="margin-left: 0.5em;" type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal"
-                    data-target="#modal_new_client"><i class="nav-icon fas fa-plus"></i> New
-                    Client</button>
-                <button id="apply-config-button" style="margin-left: 0.5em; display: none;" type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal"
-                    data-target="#modal_apply_config"><i class="nav-icon fas fa-check"></i> Apply
-                    Config</button>
-                {{if .baseData.CurrentUser}}
-                <button onclick="location.href='{{.basePath}}/logout';" style="margin-left: 0.5em;" type="button"
-                    class="btn btn-outline-danger btn-sm"><i class="nav-icon fas fa-sign-out-alt"></i> Logout</button>
-                {{end}}
-            </div>
-        </nav>
-        <!-- /.navbar -->
-
-        <!-- Main Sidebar Container -->
-        <aside class="main-sidebar sidebar-dark-primary elevation-4">
-            <!-- Brand Logo -->
-            <a href="{{.basePath}}" class="brand-link">
-                <span class="brand-text">&nbsp; WIREGUARD UI</span>
-            </a>
-
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <!-- Sidebar user (optional) -->
-                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-                    <div class="image">
-                        <i class="nav-icon fas fa-2x fa-user"></i>
-                    </div>
-                    <div class="info">
-                        {{if .baseData.CurrentUser}}
-
-                        {{if .baseData.Admin}}
-                        <a href="{{.basePath}}/profile" class="d-block">Administrator: {{.baseData.CurrentUser}}</a>
-                        {{else}}
-                        <a href="{{.basePath}}/profile" class="d-block">Manager: {{.baseData.CurrentUser}}</a>
-                        {{end}}
-
-                        {{else}}
-                        <a href="#" class="d-block">Administrator</a>
-                        {{end}}
-                    </div>
-                </div>
-
-                <!-- Sidebar Menu -->
-                <nav class="mt-2">
-                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                        <li class="nav-header">MAIN</li>
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/" class="nav-link {{if eq .baseData.Active ""}}active{{end}}">
-                                <i class="nav-icon fas fa-user-secret"></i>
-                                <p>
-                                    Wireguard Clients
-                                </p>
-                            </a>
-                        </li>
-
-                        {{if .baseData.Admin}}
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/wg-server" class="nav-link {{if eq .baseData.Active "wg-server" }}active{{end}}">
-                                <i class="nav-icon fas fa-server"></i>
-                                <p>
-                                    Wireguard Server
-                                </p>
-                            </a>
-                        </li>
-
-
-                        <li class="nav-header">SETTINGS</li>
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/global-settings" class="nav-link {{if eq .baseData.Active "global-settings" }}active{{end}}">
-                                <i class="nav-icon fas fa-cog"></i>
-                                <p>
-                                    Global Settings
-                                </p>
-                            </a>
-                        </li>
-                        {{if not .loginDisabled}}
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/users-settings" class="nav-link {{if eq .baseData.Active "users-settings" }}active{{end}}">
-                            <i class="nav-icon fas fa-cog"></i>
-                            <p>
-                                Users Settings
-                            </p>
-                            </a>
-                        </li>
-                        {{end}}
-                        {{end}}
-
-                        <li class="nav-header">UTILITIES</li>
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/status" class="nav-link {{if eq .baseData.Active "status" }}active{{end}}">
-                                <i class="nav-icon fas fa-signal"></i>
-                                <p>
-                                    Status
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/wake_on_lan_hosts" class="nav-link {{if eq .baseData.Active "wake_on_lan_hosts" }}active{{end}}">
-                                <i class="nav-icon fas  fa-solid fa-power-off"></i>
-                                <p>
-                                    WoL Hosts
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-header">ABOUT</li>
-                        <li class="nav-item">
-                            <a href="{{.basePath}}/about" class="nav-link {{if eq .baseData.Active "about" }}active{{end}}">
-                            <i class="nav-icon fas  fa-solid fa-id-card"></i>
-                            <p>
-                                About
-                            </p>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-                <!-- /.sidebar-menu -->
-            </div>
-            <!-- /.sidebar -->
-        </aside>
-
-        <div class="modal fade" id="modal_new_client">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h4 class="modal-title">New Wireguard Client</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <form name="frm_new_client" id="frm_new_client">
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label for="client_name" class="control-label">Name</label>
-                                <input type="text" class="form-control" id="client_name" name="client_name">
-                            </div>
-                            <div class="form-group">
-                                <label for="client_email" class="control-label">Email</label>
-                                <input type="text" class="form-control" id="client_email" name="client_email">
-                            </div>
-                            <div class="form-group">
-                                <label for="subnet_ranges" class="control-label">Subnet range</label>
-                                <select id="subnet_ranges" class="select2"
-                                    data-placeholder="Select a subnet range" style="width: 100%;">
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="client_allocated_ips" class="control-label">IP Allocation</label>
-                                <input type="text" data-role="tagsinput" class="form-control" id="client_allocated_ips">
-                            </div>
-                            <div class="form-group">
-                                <label for="client_allowed_ips" class="control-label">Allowed IPs
-                                    <i class="fas fa-info-circle" data-toggle="tooltip"
-                                       data-original-title="Specify a list of addresses that will get routed to the
-                                       server. These addresses will be included in 'AllowedIPs' of client config">
-                                    </i>
-                                </label>
-                                <input type="text" data-role="tagsinput" class="form-control" id="client_allowed_ips"
-                                    value="{{ StringsJoin .client_defaults.AllowedIps "," }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="client_extra_allowed_ips" class="control-label">Extra Allowed IPs
-                                    <i class="fas fa-info-circle" data-toggle="tooltip"
-                                       data-original-title="Specify a list of addresses that will get routed to the
-                                       client. These addresses will be included in 'AllowedIPs' of WG server config">
-                                    </i>
-                                </label>
-                                <input type="text" data-role="tagsinput" class="form-control" id="client_extra_allowed_ips" value="{{ StringsJoin .client_defaults.ExtraAllowedIps "," }}">
-                            </div>
-                            <div class="form-group">
-                                <label for="client_endpoint" class="control-label">Endpoint</label>
-                                <input type="text" class="form-control" id="client_endpoint" name="client_endpoint">
-                            </div>
-                            <div class="form-group">
-                                <div class="icheck-primary d-inline">
-                                    <input type="checkbox" id="use_server_dns" {{ if .client_defaults.UseServerDNS }}checked{{ end }}>
-                                    <label for="use_server_dns">
-                                        Use server DNS
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <div class="icheck-primary d-inline">
-                                    <input type="checkbox" id="enabled" {{ if .client_defaults.EnableAfterCreation }}checked{{ end }}>
-                                    <label for="enabled">
-                                        Enable after creation
-                                    </label>
-                                </div>
-                            </div>
-                            <details>
-                                <summary><strong>Public and Preshared Keys</strong>
-                                    <i class="fas fa-info-circle" data-toggle="tooltip"
-                                       data-original-title="If you don't want to let the server generate and store the
-                                       client's private key, you can manually specify its public and preshared key here
-                                       . Note: QR code will not be generated">
-                                    </i>
-                                </summary>
-                                <div class="form-group" style="margin-top: 1rem">
-                                    <label for="client_public_key" class="control-label">
-                                        Public Key
-                                    </label>
-                                    <input type="text" class="form-control" id="client_public_key" name="client_public_key" placeholder="Autogenerated" aria-invalid="false">
-                                </div>
-                                <div class="form-group">
-                                    <label for="client_preshared_key" class="control-label">
-                                        Preshared Key
-                                    </label>
-                                    <input type="text" class="form-control" id="client_preshared_key" name="client_preshared_key" placeholder="Autogenerated - enter &quot;-&quot; to skip generation">
-                                </div>
-                            </details>
-                            <details style="margin-top: 0.5rem;">
-                                <summary><strong>Additional configuration</strong>
-                                </summary>
-                                <div class="form-group" style="margin-top: 0.5rem;">
-                                    <label for="client_telegram_userid" class="control-label">Telegram userid</label>
-                                    <input type="text" class="form-control" id="client_telegram_userid" name="client_telegram_userid">
-                                </div>
-                                <div class="form-group">
-                                    <label for="additional_notes" class="control-label">Notes</label>
-                                    <textarea class="form-control" style="min-height: 6rem;" id="additional_notes" name="additional_notes" placeholder="Additional notes about this client"></textarea>
-                                </div>
-                            </details>
-                        </div>
-                        <div class="modal-footer justify-content-between">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                    </form>
-                </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
         </div>
-        <!-- /.modal -->
-
-        <div class="modal fade" id="modal_apply_config">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h4 class="modal-title">Apply Config</h4>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Do you want to write config file and restart WireGuard server?</p>
-                    </div>
-                    <div class="modal-footer justify-content-between">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger" id="apply_config_confirm">Apply</button>
-                    </div>
-                </div>
-                <!-- /.modal-content -->
-            </div>
-            <!-- /.modal-dialog -->
-        </div>
-        <!-- /.modal -->
-
-        <!-- Content Wrapper. Contains page content -->
-        <div class="content-wrapper">
-            <!-- Content Header (Page header) -->
-            <section class="content-header">
-                <div class="container-fluid">
-                    <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1>{{template "page_title" .}}</h1>
-                        </div>
-                    </div>
-                </div><!-- /.container-fluid -->
-            </section>
-
-            <!-- Main content -->
-            {{template "page_content" .}}
-            <!-- /.content -->
-        </div>
-        <!-- /.content-wrapper -->
-        <!--
-        <footer class="main-footer">
-            <div class="float-right d-none d-sm-block">
-                <b>Version</b> {{ .appVersion }}
-            </div>
-            <strong>Copyright &copy; <script>document.write(new Date().getFullYear())</script> <a href="https://github.com/ngoduykhanh/wireguard-ui">Wireguard UI</a>.</strong> All rights
-            reserved.
-        </footer>
-        -->
-        <!-- Control Sidebar -->
-        <aside class="control-sidebar control-sidebar-dark">
-            <!-- Control sidebar content goes here -->
-        </aside>
-        <!-- /.control-sidebar -->
     </div>
-    <!-- ./wrapper -->
+</div>
 
-    <!-- jQuery -->
-    <script src="{{.basePath}}/static/plugins/jquery/jquery.min.js"></script>
-    <!-- Bootstrap 4 -->
-    <script src="{{.basePath}}/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- Select2 -->
-    <script src="{{.basePath}}/static/plugins/select2/js/select2.full.min.js"></script>
-    <!-- jquery-validation -->
-    <script src="{{.basePath}}/static/plugins/jquery-validation/jquery.validate.min.js"></script>
-    <!-- Toastr -->
-    <script src="{{.basePath}}/static/plugins/toastr/toastr.min.js"></script>
-    <!-- Jquery Tags Input -->
-    <script src="{{.basePath}}/static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.js"></script>
-    <!-- AdminLTE App -->
-    <script src="{{.basePath}}/static/dist/js/adminlte.min.js"></script>
-    <!-- Custom js -->
-    <script src="{{.basePath}}/static/custom/js/helper.js"></script>
-    <script>
-        // initialize all tooltips
-        $(function () {
-            $('[data-toggle="tooltip"]').tooltip()
-        })
+<div class="modal fade" id="modal_apply_config">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">{{tr .UILang "modal.apply.title"}}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{tr .UILang "aria.close"}}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>{{tr .UILang "modal.apply.body1"}}</p>
+                <p class="mb-0 text-muted small">{{tr .UILang "modal.apply.body2"}}</p>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{tr .UILang "modal.apply.cancel"}}</button>
+                <button type="button" class="btn btn-danger" id="apply_config_confirm">{{tr .UILang "modal.apply.confirm"}}</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        $(document).ready(function () {
+<div class="modal fade" id="modal_apply_kernel_manual" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">{{tr .UILang "modal.kernel.title"}}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{tr .UILang "aria.close"}}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>{{tr .UILang "modal.kernel.p1"}}</p>
+                <p class="mb-0">{{tr .UILang "modal.kernel.p2"}}</p>
+                <details class="mt-3">
+                    <summary style="cursor:pointer;">{{tr .UILang "modal.kernel.details"}}</summary>
+                    <pre id="apply-kernel-detail" style="margin-top:8px;white-space:pre-wrap;word-break:break-word;background:#1f1f1f;color:#ddd;padding:10px;border-radius:6px;border:1px solid #333;font-size:12px;">{{tr .UILang "modal.kernel.none"}}</pre>
+                </details>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{{tr .UILang "modal.kernel.close_btn"}}</button>
+                <a class="btn btn-primary" href="{{.basePath}}/wg-server">{{tr .UILang "modal.kernel.goto_server"}}</a>
+            </div>
+        </div>
+    </div>
+</div>
 
-            addGlobalStyle(`
-.toast-top-right-fix {
-    top: 67px;
-    right: 12px;
-}
-            `, 'toastrToastStyleFix')
-
-            toastr.options.closeDuration = 100;
-            // toastr.options.timeOut = 10000;
-            toastr.options.positionClass = 'toast-top-right-fix';
-
-            updateApplyConfigVisibility()
-
+<script src="{{.basePath}}/static/plugins/jquery/jquery.min.js"></script>
+<script src="{{.basePath}}/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="{{.basePath}}/static/plugins/select2/js/select2.full.min.js"></script>
+<script src="{{.basePath}}/static/plugins/jquery-validation/jquery.validate.min.js"></script>
+<script src="{{.basePath}}/static/plugins/toastr/toastr.min.js"></script>
+<script src="{{.basePath}}/static/plugins/jquery-tags-input/dist/jquery.tagsinput.min.js"></script>
+<script src="{{.basePath}}/static/dist/js/adminlte.min.js"></script>
+<script>window.WG_T={{.WGMsgJSON}};window.wgT=function(k){try{var m=window.WG_T;return(m&&typeof m[k]==='string')?m[k]:k;}catch(e){return k;}};</script>
+<script src="{{.basePath}}/static/custom/js/helper.js"></script>
+<script>
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+        /** Modals inside .shell sat under the body modal-backdrop; focus felt “stuck”. */
+        $(document).on('show.bs.modal', '.modal', function () {
+            var $m = $(this);
+            if ($m.closest('.shell').length && !$m.parent().is('body')) {
+                $m.appendTo(document.body);
+            }
         });
+    });
+    const wgSyncconfAfterApplyEnabled = {{if .syncconfAfterApplyEnabled}}true{{else}}false{{end}};
 
-        function addGlobalStyle(css, id) {
-            if (!document.querySelector('#' + id)) {
-                let head = document.head
-                if (!head) { return }
-                let style = document.createElement('style')
-                style.type = 'text/css'
-                style.id = id
-                style.innerHTML = css
-                head.appendChild(style)
+    $(document).ready(function () {
+        addGlobalStyle(`
+.toast-top-right-fix { top: 67px; right: 12px; }
+        `, 'toastrToastStyleFix')
+        toastr.options.closeDuration = 100;
+        toastr.options.positionClass = 'toast-top-right-fix';
+        wireUnifiedApplyButton();
+        updateApplyConfigVisibility()
+    });
+
+    // Mobile nav: keep horizontal scroll focused on current tab across full page reloads.
+    (function () {
+        var NAV_SCROLL_KEY = 'wg_mobile_nav_scroll_left_v1';
+        function isMobileNav() {
+            return window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+        }
+        function navEl() {
+            return document.querySelector('.sb-mid');
+        }
+        function saveNavScroll(v) {
+            try { localStorage.setItem(NAV_SCROLL_KEY, String(Math.max(0, Math.round(v)))); } catch (e) {}
+        }
+        function restoreNavScroll() {
+            if (!isMobileNav()) return;
+            var n = navEl();
+            if (!n) return;
+            var raw = null;
+            try { raw = localStorage.getItem(NAV_SCROLL_KEY); } catch (e) {}
+            var x = Number(raw);
+            if (isFinite(x) && x >= 0) {
+                n.scrollLeft = x;
+            }
+            var active = n.querySelector('.ni.act');
+            if (active && active.scrollIntoView) {
+                // Ensure active tab is visible without snapping hard to an edge.
+                active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
             }
         }
-
-        function updateApplyConfigVisibility() {
-                $.ajax({
-                    cache: false,
-                    method: 'GET',
-                    url: '{{.basePath}}/test-hash',
-                    dataType: 'json',
-                    contentType: "application/json",
-                    success: function(data) {
-                        if (data.status) {
-                            $("#apply-config-button").show()
-                        }
-                        else
-                        {
-                            $("#apply-config-button").hide()
-                        }
-                    },
-                    error: function(jqXHR, exception) {
-                        const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                        toastr.error(responseJson['message']);
-                    }
+        document.addEventListener('DOMContentLoaded', function () {
+            var n = navEl();
+            if (!n) return;
+            restoreNavScroll();
+            n.addEventListener('scroll', function () {
+                if (!isMobileNav()) return;
+                saveNavScroll(n.scrollLeft);
+            }, { passive: true });
+            n.querySelectorAll('a.ni').forEach(function (a) {
+                a.addEventListener('click', function () {
+                    if (!isMobileNav()) return;
+                    var target = this;
+                    var desired = target.offsetLeft - (n.clientWidth * 0.3);
+                    saveNavScroll(desired);
                 });
-        }
-        
-        // populateClient function for render new client info
-        // on the client page.
-        function populateClient(client_id) {
-            $.ajax({
-                cache: false,
-                method: 'GET',
-                url: '{{.basePath}}/api/client/' + client_id,
-                dataType: 'json',
-                contentType: "application/json",
-                success: function (resp) {
-                    renderClientList([resp]);
-                },
-                error: function (jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
-                }
             });
+        });
+        window.addEventListener('beforeunload', function () {
+            var n = navEl();
+            if (!n || !isMobileNav()) return;
+            saveNavScroll(n.scrollLeft);
+        });
+    })();
+
+    var WG_PENDING_KIND_KEY = 'wg_pending_global_apply_kind';
+
+    /** POST staged global settings from localStorage. Resolves true when a POST ran (nav/logs may need refresh after WG apply). opts.skipSuccessToast: suppress duplicate toasts */
+    function wgPostPendingGlobalSettingsIfNeeded(opts) {
+        opts = opts || {};
+        var raw = null;
+        try {
+            raw = localStorage.getItem('wg_pending_global_settings');
+        } catch (e) {}
+        if (!raw || !raw.length) {
+            return $.Deferred(function (def) { def.resolve(false); }).promise();
         }
-
-        // submitNewClient function for new client form submission
-        function submitNewClient() {
-            const name = $("#client_name").val();
-            const email = $("#client_email").val();
-            const telegram_userid = $("#client_telegram_userid").val();
-            const allocated_ips = $("#client_allocated_ips").val().split(",");
-            const allowed_ips = $("#client_allowed_ips").val().split(",");
-            const endpoint = $("#client_endpoint").val();
-            let use_server_dns = false;
-            let extra_allowed_ips = [];
-
-            if ($("#client_extra_allowed_ips").val() !== "") {
-                extra_allowed_ips = $("#client_extra_allowed_ips").val().split(",");
-            }
-
-
-            if ($("#use_server_dns").is(':checked')){
-                use_server_dns = true;
-            }
-
-            let enabled = false;
-
-            if ($("#enabled").is(':checked')){
-                enabled = true;
-            }
-            const public_key = $("#client_public_key").val();
-            const preshared_key = $("#client_preshared_key").val();
-            
-            const additional_notes = $("#additional_notes").val();
-
-            const data = {"name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
-                "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint, "use_server_dns": use_server_dns, "enabled": enabled,
-                "public_key": public_key, "preshared_key": preshared_key, "additional_notes": additional_notes};
-
-            $.ajax({
-                cache: false,
-                method: 'POST',
-                url: '{{.basePath}}/new-client',
-                dataType: 'json',
-                contentType: "application/json",
-                data: JSON.stringify(data),
-                success: function(resp) {
-                    $("#modal_new_client").modal('hide');
-                    toastr.success('Created new client successfully');
-                    // Update the home page (clients page) after adding successfully
-                    if (window.location.pathname === "{{.basePath}}/") {
-                        populateClient(resp.id);
-                    }
-                    updateApplyConfigVisibility()
-                },
-                error: function(jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
+        var payload = null;
+        try {
+            payload = JSON.parse(raw);
+        } catch (e2) {
+            try { localStorage.removeItem('wg_pending_global_settings'); } catch (e3) {}
+            return $.Deferred(function (def) {
+                def.reject({
+                    status: 400,
+                    responseJSON: { message: wgT('js.pending_global_invalid') }
+                });
+            }).promise();
+        }
+        var dfd = $.Deferred();
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: '{{.basePath}}/global-settings',
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function (resp) {
+                try { localStorage.removeItem('wg_pending_global_settings'); } catch (e4) {}
+                try { localStorage.removeItem(WG_PENDING_KIND_KEY); } catch (eKm) {}
+                if (!opts.skipSuccessToast) {
+                    toastr.success((resp && resp.message) || wgT('js.global_saved_ok'));
                 }
-            });
-        }
-
-        // updateIPAllocationSuggestion function for automatically fill
-        // the IP Allocation input with suggested ip addresses
-        function updateIPAllocationSuggestion(forceDefault = false) {
-            let subnetRange = $("#subnet_ranges").select2('val');
-
-            if (forceDefault || !subnetRange || subnetRange.length === 0) {
-                subnetRange = '__default_any__'
+                if (typeof window.wgRefreshGlobalSettingsBaseline === 'function') {
+                    try { window.wgRefreshGlobalSettingsBaseline(); } catch (e5) {}
+                }
+                dfd.resolve(true);
+            },
+            error: function (xhr) {
+                dfd.reject(xhr);
             }
-            $.ajax({
-                cache: false,
-                method: 'GET',
-                url: `{{.basePath}}/api/suggest-client-ips?sr=${subnetRange}`,
-                dataType: 'json',
-                contentType: "application/json",
-                success: function(data) {
-                    const allocated_ips = $("#client_allocated_ips").val().split(",");
-                    allocated_ips.forEach(function (item, index) {
-                        $('#client_allocated_ips').removeTag(escape(item));
+        });
+        return dfd.promise();
+    }
+
+    /** Session/appearance only: POST /global-settings without modal or wg.conf dump when no client/hash deltas are pending. */
+    function tryApplyUIPrefsFromConfigOnly() {
+        var pendingKind = '';
+        try { pendingKind = String(localStorage.getItem(WG_PENDING_KIND_KEY) || ''); } catch (eK) {}
+        var hasPen = false;
+        try { hasPen = !!localStorage.getItem('wg_pending_global_settings'); } catch (eP) {}
+        if (!hasPen || pendingKind !== 'ui_only') {
+            return false;
+        }
+        $.getJSON('{{.basePath}}/test-hash', function (hd) {
+            var hashDirty = !!(hd && hd.status);
+            if (hashDirty) {
+                $('#modal_apply_config').modal('show');
+                return;
+            }
+            wgPostPendingGlobalSettingsIfNeeded({ skipSuccessToast: true }).done(function (posted) {
+                toastr.success(wgT('js.session_prefs_ok'));
+                if (posted) {
+                    wgRefreshNavbarFromHints(function () {
+                        updateApplyConfigVisibility();
+                        if (typeof window.wgRefreshGlobalSettingsBaseline === 'function') {
+                            try { window.wgRefreshGlobalSettingsBaseline(); } catch (eB0) {}
+                        }
+                    });
+                    return;
+                }
+                updateApplyConfigVisibility();
+            }).fail(function (xhr) {
+                var msg = wgT('js.could_not_apply_prefs');
+                try {
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                } catch (eMsg) {}
+                toastr.error(msg);
+            });
+        }).fail(function () {
+            $('#modal_apply_config').modal('show');
+        });
+        return true;
+    }
+
+    function wireUnifiedApplyButton() {
+        $('#apply-config-button').off('click.wgUnified').on('click.wgUnified', function (ev) {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            if (tryApplyUIPrefsFromConfigOnly()) {
+                return;
+            }
+            $('#modal_apply_config').modal('show');
+        });
+    }
+
+    function maybeShowKernelReloadHelp(message) {
+        var rawMsg = String(message || '');
+        var msg = rawMsg.toLowerCase();
+        if (msg.indexOf('kernel reload failed') >= 0) {
+            var detailEl = document.getElementById('apply-kernel-detail');
+            if (detailEl) {
+                detailEl.textContent = rawMsg || wgT('js.kernel_detail_fallback');
+            }
+            $("#modal_apply_kernel_manual").modal('show');
+            return true;
+        }
+        return false;
+    }
+
+    function showManualKernelReloadHelp(message) {
+        var detailEl = document.getElementById('apply-kernel-detail');
+        if (detailEl) {
+            detailEl.textContent = String(message || wgT('js.manual_kernel_synconf_off'));
+        }
+        $("#modal_apply_kernel_manual").modal('show');
+    }
+
+    function addGlobalStyle(css, id) {
+        if (!document.querySelector('#' + id)) {
+            let style = document.createElement('style')
+            style.type = 'text/css'
+            style.id = id
+            style.innerHTML = css
+            document.head.appendChild(style)
+        }
+    }
+
+    /** Dark/light/auto theme (prefers-color-scheme) + documentElement lang attribute. */
+    function wgApplyShellPresentation(theme, lang) {
+        if (typeof window.wgSetShellThemeRaw === 'function') {
+            window.wgSetShellThemeRaw(theme);
+        } else {
+            var th = (theme != null && String(theme).toLowerCase() === 'light') ? 'light' : 'dark';
+            document.body.classList.toggle('wg-theme-light', th === 'light');
+        }
+        var lng = lang != null ? String(lang).toLowerCase().trim() : 'es';
+        if (lng !== 'en') {
+            lng = 'es';
+        }
+        document.documentElement.setAttribute('lang', lng);
+    }
+
+    window.wgApplyShellPresentation = wgApplyShellPresentation;
+
+    function wgRefreshNavbarFromHints(done) {
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: '{{.basePath}}/api/ui-nav-hints',
+            dataType: 'json'
+        }).done(function (data) {
+            wgApplyShellPresentation(data && data.ui_theme, data && data.ui_language);
+            var showLogs = !!(data && data.show_logs_nav);
+            var bd = Number((data && data.dashboard_nav_badge !== undefined && data.dashboard_nav_badge !== null) ? data.dashboard_nav_badge : 0);
+            var $logs = $('#wg-nav-link-logs');
+            if ($logs.length) {
+                $logs[0].hidden = !showLogs;
+            }
+            var $bd = $('#wg-nav-dash-badge');
+            if ($bd.length) {
+                $bd.prop('hidden', bd <= 0);
+                $bd.text(bd > 0 ? String(bd) : '');
+            }
+        }).always(function () {
+            if (typeof done === 'function') {
+                done();
+            }
+        });
+    }
+
+    function updateApplyConfigVisibility() {
+        var hasPendingGlobalSettings = false;
+        try {
+            hasPendingGlobalSettings = !!localStorage.getItem('wg_pending_global_settings');
+        } catch (e) {}
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: '{{.basePath}}/test-hash',
+            dataType: 'json',
+            contentType: "application/json",
+            success: function(data) {
+                if (data.status || hasPendingGlobalSettings) {
+                    $("#apply-config-button").show()
+                } else {
+                    $("#apply-config-button").hide()
+                }
+            },
+            error: function(jqXHR, exception) {
+                const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                toastr.error(responseJson['message']);
+            }
+        });
+    }
+
+    function populateClient(client_id) {
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: '{{.basePath}}/api/client/' + client_id,
+            dataType: 'json',
+            contentType: "application/json",
+            success: function (resp) {
+                $.getJSON('{{.basePath}}/api/wg-peer-stats')
+                    .done(function (traffic) {
+                        renderClientList([resp], traffic || {});
                     })
-                    data.forEach(function (item, index) {
-                        $('#client_allocated_ips').addTag(item);
-                    })
-                },
-                error: function(jqXHR, exception) {
-                    const allocated_ips = $("#client_allocated_ips").val().split(",");
-                    allocated_ips.forEach(function (item, index) {
-                        $('#client_allocated_ips').removeTag(escape(item));
-                    })
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
-                }
-            });
+                    .fail(function () {
+                        renderClientList([resp], {});
+                    });
+            },
+            error: function (jqXHR, exception) {
+                const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                toastr.error(responseJson['message']);
+            }
+        });
+    }
+
+    function submitNewClient() {
+        const name = $("#client_name").val();
+        const email = $("#client_email").val();
+        const telegram_userid = $("#client_telegram_userid").val();
+        const allocated_ips = $("#client_allocated_ips").val().split(",");
+        const allowed_ips = $("#client_allowed_ips").val().split(",");
+        const endpoint = $("#client_endpoint").val();
+        let use_server_dns = false;
+        let extra_allowed_ips = [];
+
+        if ($("#client_extra_allowed_ips").val() !== "") {
+            extra_allowed_ips = $("#client_extra_allowed_ips").val().split(",");
         }
-    </script>
-    <script>
-        //Initialize Select2 Elements
-        $(".select2").select2()
 
-        // IP Allocation tag input
-        $("#client_allocated_ips").tagsInput({
-            'width': '100%',
-            'height': '75%',
-            'interactive': true,
-            'defaultText': 'Add More',
-            'removeWithBackspace': true,
-            'minChars': 0,
-            'minInputWidth': '100%',
-            'placeholderColor': '#666666'
-        });
+        if ($("#use_server_dns").is(':checked')){
+            use_server_dns = true;
+        }
 
-        // AllowedIPs tag input
-        $("#client_allowed_ips").tagsInput({
-            'width': '100%',
-            'height': '75%',
-            'interactive': true,
-            'defaultText': 'Add More',
-            'removeWithBackspace': true,
-            'minChars': 0,
-            'minInputWidth': '100%',
-            'placeholderColor': '#666666'
-        });
+        let enabled = false;
 
-        $("#client_extra_allowed_ips").tagsInput({
-            'width': '100%',
-            'height': '75%',
-            'interactive': true,
-            'defaultText': 'Add More',
-            'removeWithBackspace': true,
-            'minChars': 0,
-            'minInputWidth': '100%',
-            'placeholderColor': '#666666'
-        });
+        if ($("#enabled").is(':checked')){
+            enabled = true;
+        }
+        const public_key = $("#client_public_key").val();
+        const preshared_key = $("#client_preshared_key").val();
 
-        // New client form validation
-        $(document).ready(function () {
-            $.validator.setDefaults({
-                submitHandler: function () {
-                    submitNewClient();
+        const additional_notes = $("#additional_notes").val();
+
+        const data = {"name": name, "email": email, "telegram_userid": telegram_userid, "allocated_ips": allocated_ips, "allowed_ips": allowed_ips,
+            "extra_allowed_ips": extra_allowed_ips, "endpoint": endpoint, "use_server_dns": use_server_dns, "enabled": enabled,
+            "public_key": public_key, "preshared_key": preshared_key, "additional_notes": additional_notes};
+
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: '{{.basePath}}/new-client',
+            dataType: 'json',
+            contentType: "application/json",
+            data: JSON.stringify(data),
+            success: function(resp) {
+                $("#modal_new_client").modal('hide');
+                toastr.success(wgT('js.client_created_success'));
+                if (typeof populateClientList === 'function') {
+                    // Clients page defines populateClientList() and needs full list refresh.
+                    populateClientList();
+                } else if (window.location.pathname === "{{.basePath}}/" && typeof populateClient === 'function') {
+                    // Fallback for pages that only render/update one card.
+                    populateClient(resp.id);
                 }
-            });
-            $("#frm_new_client").validate({
-                rules: {
-                    client_name: {
-                        required: true,
-                    },
+                updateApplyConfigVisibility()
+            },
+            error: function(jqXHR, exception) {
+                const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                toastr.error(responseJson['message']);
+            }
+        });
+    }
+
+    function updateIPAllocationSuggestion(forceDefault = false) {
+        let subnetRange = $("#subnet_ranges").select2('val');
+
+        if (forceDefault || !subnetRange || subnetRange.length === 0) {
+            subnetRange = '__default_any__'
+        }
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: `{{.basePath}}/api/suggest-client-ips?sr=${subnetRange}`,
+            dataType: 'json',
+            contentType: "application/json",
+            success: function(data) {
+                const allocated_ips = $("#client_allocated_ips").val().split(",");
+                allocated_ips.forEach(function (item, index) {
+                    $('#client_allocated_ips').removeTag(escape(item));
+                })
+                data.forEach(function (item, index) {
+                    $('#client_allocated_ips').addTag(item);
+                })
+            },
+            error: function(jqXHR, exception) {
+                const allocated_ips = $("#client_allocated_ips").val().split(",");
+                allocated_ips.forEach(function (item, index) {
+                    $('#client_allocated_ips').removeTag(escape(item));
+                })
+                const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                toastr.error(responseJson['message']);
+            }
+        });
+    }
+</script>
+<script>
+    $(".select2").select2()
+
+    $("#client_allocated_ips").tagsInput({
+        'width': '100%',
+        'height': '75%',
+        'interactive': true,
+        'defaultText': wgT('js.tags_placeholder'),
+        'removeWithBackspace': true,
+        'minChars': 0,
+        'minInputWidth': '100%',
+        'placeholderColor': '#666666'
+    });
+
+    $("#client_allowed_ips").tagsInput({
+        'width': '100%',
+        'height': '75%',
+        'interactive': true,
+        'defaultText': wgT('js.tags_placeholder'),
+        'removeWithBackspace': true,
+        'minChars': 0,
+        'minInputWidth': '100%',
+        'placeholderColor': '#666666'
+    });
+
+    $("#client_extra_allowed_ips").tagsInput({
+        'width': '100%',
+        'height': '75%',
+        'interactive': true,
+        'defaultText': wgT('js.tags_placeholder'),
+        'removeWithBackspace': true,
+        'minChars': 0,
+        'minInputWidth': '100%',
+        'placeholderColor': '#666666'
+    });
+
+    $(document).ready(function () {
+        $.validator.setDefaults({
+            submitHandler: function () {
+                submitNewClient();
+            }
+        });
+        $("#frm_new_client").validate({
+            rules: {
+                client_name: {
+                    required: true,
                 },
-                messages: {
-                    client_name: {
-                        required: "Please enter a name"
-                    },
+            },
+            messages: {
+                client_name: {
+                    required: wgT('js.validator_name_required')
                 },
-                errorElement: 'span',
-                errorPlacement: function (error, element) {
-                    error.addClass('invalid-feedback');
-                    element.closest('.form-group').append(error);
-                },
-                highlight: function (element, errorClass, validClass) {
-                    $(element).addClass('is-invalid');
-                },
-                unhighlight: function (element, errorClass, validClass) {
-                    $(element).removeClass('is-invalid');
+            },
+            errorElement: 'span',
+            errorPlacement: function (error, element) {
+                error.addClass('invalid-feedback');
+                element.closest('.form-group').append(error);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        $("#modal_new_client").on('shown.bs.modal', function (e) {
+            $("#client_name").val("");
+            $("#client_email").val("");
+            $("#client_public_key").val("");
+            $("#client_preshared_key").val("");
+            $("#client_allocated_ips").importTags('');
+            $("#client_extra_allowed_ips").importTags('');
+            $("#client_endpoint").val('');
+            $("#client_telegram_userid").val('');
+            $("#additional_notes").val('');
+            updateSubnetRangesList("#subnet_ranges");
+            updateIPAllocationSuggestion(true);
+        });
+    });
+
+    $('#subnet_ranges').on('select2:select', function (e) {
+        updateIPAllocationSuggestion();
+    });
+
+    $(document).ready(function () {
+        $("#apply_config_confirm").click(function () {
+            var confirmBtn = $("#apply_config_confirm");
+            confirmBtn.prop("disabled", true);
+
+            var pendingKindSnap = '';
+            var hasPendingGlobalPayload = false;
+            try { pendingKindSnap = String(localStorage.getItem(WG_PENDING_KIND_KEY) || ''); } catch (eS) {}
+            try { hasPendingGlobalPayload = !!localStorage.getItem('wg_pending_global_settings'); } catch (ePen) {}
+            /** ui_only (session/appearance cards): never restart WG. wg_card / both / client-only: restart only if tunnel is actually up (GET tunnel-status). */
+            function resolveApplyPayloadFromTunnel(tunnelResp) {
+                if (hasPendingGlobalPayload && pendingKindSnap === 'ui_only') {
+                    return { restart_wireguard: false };
                 }
-            });
-        });
+                var tunnelUp = !!(tunnelResp && tunnelResp.tunnel_running);
+                return { restart_wireguard: tunnelUp };
+            }
 
-        // New Client modal event
-        $(document).ready(function () {
-            $("#modal_new_client").on('shown.bs.modal', function (e) {
-                $("#client_name").val("");
-                $("#client_email").val("");
-                $("#client_public_key").val("");
-                $("#client_preshared_key").val("");
-                $("#client_allocated_ips").importTags('');
-                $("#client_extra_allowed_ips").importTags('');
-                $("#client_endpoint").val('');
-                $("#client_telegram_userid").val('');
-                $("#additional_notes").val('');
-                updateSubnetRangesList("#subnet_ranges");
-                updateIPAllocationSuggestion(true);
-            });
-        });
+            var applyPayload;
 
-        // handle subnet range select
-        $('#subnet_ranges').on('select2:select', function (e) {
-            // console.log('Selected Option: ', $("#subnet_ranges").select2('val'));
-            updateIPAllocationSuggestion();
-        });
-
-        // apply_config_confirm button event
-        $(document).ready(function () {
-            $("#apply_config_confirm").click(function () {
+            var applyWgConfig = function (reloadAfterApplyForNav) {
+                var skipKernelRestart = (applyPayload.restart_wireguard === false);
                 $.ajax({
                     cache: false,
                     method: 'POST',
                     url: '{{.basePath}}/api/apply-wg-config',
                     dataType: 'json',
                     contentType: "application/json",
+                    data: JSON.stringify(applyPayload),
                     success: function(data) {
-                        updateApplyConfigVisibility()
                         $("#modal_apply_config").modal('hide');
-                        toastr.success('Applied config successfully');
+                        toastr.success(wgT('js.apply_config_success'));
+                        var finalizeApplyUI = function () {
+                            updateApplyConfigVisibility();
+                            if (!reloadAfterApplyForNav && skipKernelRestart && !wgSyncconfAfterApplyEnabled) {
+                                showManualKernelReloadHelp(wgT('js.apply_kernel_hint'));
+                            }
+                        };
+                        if (reloadAfterApplyForNav) {
+                            wgRefreshNavbarFromHints(finalizeApplyUI);
+                            return;
+                        }
+                        finalizeApplyUI();
                     },
                     error: function(jqXHR, exception) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        maybeShowKernelReloadHelp(responseJson['message']);
                         toastr.error(responseJson['message']);
+                    },
+                    complete: function () {
+                        confirmBtn.prop("disabled", false);
                     }
                 });
-            });
+            };
+
+            function runStagedThenApply() {
+                var staged = wgPostPendingGlobalSettingsIfNeeded({});
+                staged.done(function (postedGlobalFromServer) {
+                    applyWgConfig(!!postedGlobalFromServer);
+                }).fail(function (xhr) {
+                    var msg = wgT('js.global_post_fail');
+                    try {
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        } else if (xhr.responseText) {
+                            var j = JSON.parse(xhr.responseText);
+                            if (j && j.message) msg = j.message;
+                        }
+                    } catch (e6) {}
+                    toastr.error(msg);
+                    confirmBtn.prop("disabled", false);
+                });
+            }
+
+            $.getJSON('{{.basePath}}/api/wireguard/tunnel-status')
+                .done(function (ts) {
+                    applyPayload = resolveApplyPayloadFromTunnel(ts);
+                    runStagedThenApply();
+                })
+                .fail(function () {
+                    applyPayload = (hasPendingGlobalPayload && pendingKindSnap === 'ui_only')
+                        ? { restart_wireguard: false }
+                        : {};
+                    runStagedThenApply();
+                });
         });
-    </script>
+    });
 
-    <!-- START: On page script -->
-    {{template "bottom_js" .}}
-    <!-- END: On page script -->
+</script>
+
+{{template "bottom_js" .}}
+
 </body>
-
 </html>
 {{end}}

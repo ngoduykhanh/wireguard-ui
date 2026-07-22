@@ -1,136 +1,407 @@
-{{ define "title"}}
-Profile
-{{ end }}
+{{ define "title"}}{{ tr .UILang "profile.title" }}{{ end }}
 
 {{ define "top_css"}}
+<style>
+.wg-profile-page{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.wg-prof-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rlg);padding:16px}
+.wg-prof-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.wg-prof-title{font-size:13px;font-weight:800;color:var(--t1);margin:0}
+.wg-prof-sub{font-size:10px;color:var(--t3);margin-top:4px}
+.wg-prof-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:860px){.wg-prof-grid{grid-template-columns:1fr}}
+.wg-prof-field{display:flex;flex-direction:column;gap:6px}
+.wg-prof-field label{font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.wg-prof-input{width:100%;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:9px 11px;color:var(--t1);font-size:12px;outline:none}
+.wg-prof-input:focus{border-color:var(--acc)}
+.wg-pass-wrap{position:relative}
+.wg-pass-wrap .wg-prof-input{padding-right:84px}
+.wg-pass-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--bdr2);background:var(--ele);color:var(--t2);font-size:10px;font-weight:700;cursor:pointer}
+.wg-pass-toggle:hover{color:var(--t1);background:var(--hov)}
+.wg-pass-meter{margin-top:6px}
+.wg-pass-bar{height:6px;border-radius:999px;background:var(--ele);border:1px solid var(--bdr);overflow:hidden}
+.wg-pass-fill{height:100%;width:0%;background:#6b7280;transition:width .18s ease,background .18s ease}
+.wg-pass-text{font-size:10px;color:var(--t3);margin-top:4px}
+.wg-prof-actions{display:flex;justify-content:flex-end;margin-top:12px}
+.wg-pk-list{display:flex;flex-direction:column;gap:8px}
+.wg-pk-item{display:flex;align-items:center;gap:10px;background:var(--ele);border:1px solid var(--bdr);border-radius:10px;padding:10px}
+.wg-pk-info{flex:1;min-width:0}
+.wg-pk-name{font-size:12px;font-weight:700;color:var(--t1)}
+.wg-pk-name[role="button"]{cursor:pointer;border-bottom:1px dashed transparent}
+.wg-pk-name[role="button"]:hover{border-bottom-color:rgba(239,83,80,.4)}
+.wg-pk-fp{font-size:10px;color:var(--t3);font-family:ui-monospace,monospace;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wg-pk-del{width:30px;height:30px;border-radius:8px;background:var(--rdim);border:1px solid rgba(239,83,80,.26);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--red)}
+.wg-pk-del svg{width:14px;height:14px}
+.wg-pk-empty{display:flex;align-items:center;gap:8px;padding:10px;border:1px dashed var(--bdr2);border-radius:10px;color:var(--t3);font-size:11px}
+.wg-pk-add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.wg-pk-add .wg-prof-input{flex:1;min-width:220px}
+</style>
 {{ end }}
 
-{{ define "username"}}
-{{ .username }}
-{{ end }}
+{{ define "username"}}{{ .username }}{{ end }}
 
-{{ define "page_title"}}
-Profile
-{{ end }}
+{{ define "page_title"}}{{ tr .UILang "profile.page" }}{{ end }}
 
 {{ define "page_content"}}
 <section class="content">
-    <div class="container-fluid">
-        <!-- <h5 class="mt-4 mb-2">Global Settings</h5> -->
-        <div class="row">
-            <!-- left column -->
-            <div class="col-md-6">
-                <div class="card card-success">
-                    <div class="card-header">
-                        <h3 class="card-title">Update user information</h3>
+    <div class="container-fluid p-0">
+        <div class="wg-profile-page">
+            <div class="wg-prof-card">
+                <div class="wg-prof-head">
+                    <div>
+                        <h3 class="wg-prof-title">{{ tr .UILang "profile.section_account_title" }}</h3>
+                        <div class="wg-prof-sub">{{ tr .UILang "profile.section_account_sub" }}</div>
                     </div>
-                    <!-- /.card-header -->
-                    <!-- form start -->
-                    <form role="form" id="frm_profile" name="frm_profile">
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label for="username" class="control-label">Username</label>
-                                <input type="text" class="form-control" name="username" id="username"
-                                       value="">
+                </div>
+                <form id="frm_profile" autocomplete="off">
+                    <input type="hidden" id="pf_prev_username"/>
+                    <input type="hidden" id="pf_admin"/>
+                    <div class="wg-prof-grid">
+                        <div class="wg-prof-field">
+                            <label for="pf_display_name">{{ tr .UILang "profile.lbl_display_name" }}</label>
+                            <input type="text" id="pf_display_name" class="wg-prof-input" placeholder="{{ tr .UILang "profile.ph_display_name" }}"/>
+                        </div>
+                        <div class="wg-prof-field">
+                            <label for="pf_username">{{ tr .UILang "profile.lbl_username" }}</label>
+                            <input type="text" id="pf_username" class="wg-prof-input" required/>
+                        </div>
+                        <div class="wg-prof-field">
+                            <label for="pf_email">{{ tr .UILang "profile.lbl_email" }}</label>
+                            <input type="email" id="pf_email" class="wg-prof-input" placeholder="{{ tr .UILang "profile.ph_email" }}"/>
                             </div>
-                            <div class="form-group">
-                                <label for="password" class="control-label">Password</label>
-                                <input type="password" class="form-control" name="password" id="password"
-                                       value="" placeholder="Leave empty to keep the password unchanged">
+                        <div class="wg-prof-field">
+                            <label for="pf_password">{{ tr .UILang "profile.lbl_new_password" }}</label>
+                            <div class="wg-pass-wrap">
+                                <input type="password" id="pf_password" class="wg-prof-input" autocomplete="new-password" placeholder="{{ tr .UILang "profile.ph_password_keep" }}"/>
+                                <button type="button" id="pf_toggle_password" class="wg-pass-toggle">{{ tr .UILang "profile.pass_show" }}</button>
                             </div>
-                            <!-- /.card-body -->
-                            <div class="card-footer">
-                                <button type="submit" class="btn btn-success" id="update">Update</button>
+                            <div class="wg-pass-meter">
+                                <div class="wg-pass-bar"><div id="pf_pass_fill" class="wg-pass-fill"></div></div>
+                                <div id="pf_pass_text" class="wg-pass-text">{{ tr .UILang "profile.pass_prefix" }} {{ tr .UILang "profile.pass_none" }}</div>
                             </div>
                         </div>
+                    </div>
+                    <div class="wg-prof-actions">
+                        <button type="submit" class="wg-btn bp">{{ tr .UILang "settings.save_footer" }}</button>
+                        </div>
                     </form>
+            </div>
+
+            <div class="wg-prof-card">
+                <div class="wg-prof-head">
+                    <div>
+                        <h3 class="wg-prof-title">{{ tr .UILang "profile.pk_section_title" }}</h3>
+                        <div class="wg-prof-sub">{{ tr .UILang "profile.passkeys_sub" }}</div>
+                    </div>
                 </div>
-                <!-- /.card -->
+                <div id="pf_passkeys_list"></div>
+                <div class="wg-pk-add">
+                    <input type="text" id="pf_new_pk_name" class="wg-prof-input" autocomplete="off" placeholder="{{ tr .UILang "profile.pk_name_ph" }}"/>
+                    <button type="button" class="wg-btn bp" id="pf_add_passkey_btn">{{ tr .UILang "profile.pk_add_btn" }}</button>
+                </div>
             </div>
         </div>
-        <!-- /.row -->
     </div>
 </section>
 {{ end }}
 
 {{ define "bottom_js"}}
 <script>
-    {
-        var previous_username;
-        var admin;
+(function () {
+    var BASE = '{{.basePath}}';
+    var ME = '{{.baseData.CurrentUser}}';
+    var PASSKEYS_OK = {{if and .globalSettings .globalSettings.TOTPEnabled}}true{{else}}false{{end}};
+    var passkeysCache = [];
+
+    if (typeof window.wgReauthenticateRedirectIfNeeded !== 'function') {
+        window.wgReauthenticateRedirectIfNeeded = function (resp) {
+            if (!resp || !resp.reauthenticate) return false;
+            window.location.assign(BASE + '/login');
+            return true;
+        };
     }
-    $(document).ready(function () {
+
+    function esc(s) { return typeof wgEscapeHtml === 'function' ? wgEscapeHtml(String(s ?? '')) : String(s ?? ''); }
+    function escAttr(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/\r|\n/g, '');
+    }
+
+    function b64urlToBytes(s) {
+        var pad = '='.repeat((4 - (s.length % 4)) % 4);
+        var b64 = (s + pad).replace(/-/g, '+').replace(/_/g, '/');
+        var raw = atob(b64);
+        var out = new Uint8Array(raw.length);
+        for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+        return out;
+    }
+    function bytesToB64url(buf) {
+        var bytes = new Uint8Array(buf);
+        var str = '';
+        for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+        return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    }
+    function publicKeyCredentialToJSON(cred) {
+        if (cred instanceof Array) return cred.map(publicKeyCredentialToJSON);
+        if (cred instanceof ArrayBuffer) return bytesToB64url(cred);
+        if (cred && typeof cred === 'object') {
+            var obj = {};
+            for (var k in cred) obj[k] = publicKeyCredentialToJSON(cred[k]);
+            return obj;
+        }
+        return cred;
+    }
+
+    function loadProfile() {
         $.ajax({
             cache: false,
             method: 'GET',
-            url: '{{.basePath}}/api/user/{{.baseData.CurrentUser}}',
+            url: BASE + '/api/user/' + encodeURIComponent(ME),
             dataType: 'json',
-            contentType: "application/json",
-            success: function (resp) {
-                const user = resp;
-                $("#username").val(user.username);
-                previous_username = user.username;
-                admin = user.admin;
+            contentType: 'application/json',
+            success: function (u) {
+                $('#pf_username').val(u.username || '');
+                $('#pf_prev_username').val(u.username || '');
+                $('#pf_display_name').val(u.display_name || '');
+                $('#pf_email').val(u.email || '');
+                $('#pf_admin').val(u.admin ? '1' : '0');
+                $('#pf_password').val('');
+                updatePasswordStrength('');
             },
-            error: function (jqXHR, exception) {
-                const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                toastr.error(responseJson['message']);
-            }
-        });
-    });
-
-
-    function updateUserInfo() {
-        const username = $("#username").val();
-        const password = $("#password").val();
-        const data = {"username": username, "password": password, "previous_username": previous_username, "admin":admin};
-        $.ajax({
-            cache: false,
-            method: 'POST',
-            url: '{{.basePath}}/update-user',
-            dataType: 'json',
-            contentType: "application/json",
-            data: JSON.stringify(data),
-            success: function (data) {
-                toastr.success("Updated user information successfully");
-                location.reload();
-            },
-            error: function (jqXHR, exception) {
-                const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                toastr.error(responseJson['message']);
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e0) {}
+                toastr.error(j.message || wgT('profile.err_load_profile'));
             }
         });
     }
 
-    $(document).ready(function () {
-        $.validator.setDefaults({
-            submitHandler: function () {
-                updateUserInfo();
+    function renderPasskeys() {
+        var root = $('#pf_passkeys_list');
+        root.empty();
+        if (!PASSKEYS_OK) {
+            root.html('<div class="wg-pk-empty">' + wgT('profile.pk_empty_disabled') + '</div>');
+            $('#pf_add_passkey_btn').prop('disabled', true);
+            $('#pf_new_pk_name').prop('disabled', true);
+            return;
+        }
+        if (!passkeysCache.length) {
+            root.html('<div class="wg-pk-empty">' + wgT('profile.pk_empty_none') + '</div>');
+            return;
+        }
+        var html = '<div class="wg-pk-list">';
+        passkeysCache.forEach(function (pk) {
+            var id = escAttr(pk.credential_id || '');
+            html += '<div class="wg-pk-item">' +
+                '<div class="wg-pk-info">' +
+                '<div class="wg-pk-name" role="button" tabindex="0" title="' + escAttr(wgT('profile.rename_tooltip')) + '" data-rename="' + id + '">' + esc(pk.name || wgT('profile.default_pk_name')) + '</div>' +
+                '<div class="wg-pk-fp">' + esc(pk.fingerprint || '—') + '</div>' +
+                '</div>' +
+                '<button type="button" class="wg-pk-del" title="' + escAttr(wgT('profile.delete_pk_tooltip')) + '" data-del="' + id + '">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>' +
+                '</button>' +
+                '</div>';
+        });
+        html += '</div>';
+        root.html(html);
+    }
+
+    function loadPasskeys() {
+        $.ajax({
+            cache: false,
+            method: 'GET',
+            url: BASE + '/api/profile/passkeys',
+            dataType: 'json',
+            success: function (resp) {
+                passkeysCache = (resp && Array.isArray(resp.passkeys)) ? resp.passkeys : [];
+                renderPasskeys();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e1) {}
+                toastr.error(j.message || wgT('profile.err_load_pk'));
             }
         });
-        $("#frm_profile").validate({
-            rules: {
-                username: {
-                    required: true
-                }
+    }
+
+    $('#frm_profile').on('submit', function (e) {
+        e.preventDefault();
+        var payload = {
+            previous_username: $('#pf_prev_username').val(),
+            username: ($('#pf_username').val() || '').trim(),
+            password: $('#pf_password').val() || '',
+            admin: $('#pf_admin').val() === '1',
+            display_name: ($('#pf_display_name').val() || '').trim(),
+            email: ($('#pf_email').val() || '').trim()
+        };
+        if (!payload.username) {
+            toastr.error(wgT('profile.err_username_required'));
+            return;
+        }
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: BASE + '/update-user',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify(payload),
+            success: function (resp) {
+                toastr.success((resp && resp.message) || wgT('profile.ok_saved'));
+                if (window.wgReauthenticateRedirectIfNeeded && window.wgReauthenticateRedirectIfNeeded(resp)) return;
+                loadProfile();
             },
-            messages: {
-                username: {
-                    required: "Please enter a username",
-                }
-            },
-            errorElement: 'span',
-            errorPlacement: function (error, element) {
-                error.addClass('invalid-feedback');
-                element.closest('.form-group').append(error);
-            },
-            highlight: function (element, errorClass, validClass) {
-                $(element).addClass('is-invalid');
-            },
-            unhighlight: function (element, errorClass, validClass) {
-                $(element).removeClass('is-invalid');
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e2) {}
+                toastr.error(j.message || xhr.responseText || wgT('profile.err_save'));
             }
         });
     });
+
+    function passwordStrengthMeta(pw) {
+        pw = String(pw || '');
+        if (!pw.length) return { score: 0, lk: 'none', color: '#6b7280' };
+        var score = 0;
+        if (pw.length >= 8) score++;
+        if (pw.length >= 12) score++;
+        if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+        if (/\d/.test(pw)) score++;
+        if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+        if (score <= 1) return { score: score, lk: 'vweak', color: '#ef4444' };
+        if (score <= 2) return { score: score, lk: 'weak', color: '#f97316' };
+        if (score <= 3) return { score: score, lk: 'medium', color: '#facc15' };
+        if (score <= 4) return { score: score, lk: 'strong', color: '#22c55e' };
+        return { score: score, lk: 'vstrong', color: '#16a34a' };
+    }
+
+    function updatePasswordStrength(pw) {
+        var meta = passwordStrengthMeta(pw);
+        var pct = Math.min(100, Math.max(0, Math.round((meta.score / 5) * 100)));
+        $('#pf_pass_fill').css({ width: pct + '%', background: meta.color });
+        $('#pf_pass_text').text(wgT('profile.pass_prefix') + ' ' + wgT('profile.pass_' + meta.lk));
+    }
+
+    $('#pf_password').on('input', function () {
+        updatePasswordStrength($(this).val());
+    });
+
+    $('#pf_toggle_password').on('click', function () {
+        var inp = document.getElementById('pf_password');
+        if (!inp) return;
+        var show = inp.type === 'password';
+        inp.type = show ? 'text' : 'password';
+        this.textContent = show ? wgT('profile.pass_hide') : wgT('profile.pass_show');
+    });
+
+    $('#pf_add_passkey_btn').on('click', async function () {
+        if (!PASSKEYS_OK) {
+            toastr.error(wgT('profile.err_pk_disabled_global'));
+            return;
+        }
+        if (!window.PublicKeyCredential || !navigator.credentials) {
+            toastr.error(wgT('profile.err_pk_browser'));
+            return;
+        }
+        var label = ($('#pf_new_pk_name').val() || '').trim();
+        if (!label) {
+            toastr.error(wgT('profile.err_pk_need_name'));
+            return;
+        }
+        try {
+            var beginResp = await fetch(BASE + '/api/passkeys/register/' + encodeURIComponent(ME) + '/begin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}'
+            });
+            var options = await beginResp.json();
+            if (!beginResp.ok) throw new Error(options.message || wgT('profile.err_pk_begin'));
+            var pk = options.publicKey || options;
+            pk.challenge = b64urlToBytes(pk.challenge);
+            if (pk.user && pk.user.id) pk.user.id = b64urlToBytes(pk.user.id);
+            if (pk.excludeCredentials) {
+                pk.excludeCredentials = pk.excludeCredentials.map(function (c) {
+                    c.id = b64urlToBytes(c.id);
+                    return c;
+                });
+            }
+
+            var cred = await navigator.credentials.create({ publicKey: pk });
+            var cjson = publicKeyCredentialToJSON(cred);
+            var finishBody = {
+                credential_name: label,
+                id: cjson.id,
+                rawId: cjson.rawId,
+                type: cjson.type,
+                response: cjson.response,
+                clientExtensionResults: cjson.clientExtensionResults || {}
+            };
+            var finishResp = await fetch(BASE + '/api/passkeys/register/' + encodeURIComponent(ME) + '/finish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finishBody)
+            });
+            var finishData = await finishResp.json();
+            if (!finishResp.ok || !finishData.status) throw new Error(finishData.message || wgT('profile.err_pk_finish'));
+            toastr.success(wgT('profile.ok_pk_registered'));
+            $('#pf_new_pk_name').val('');
+            loadPasskeys();
+        } catch (err) {
+            toastr.error(err.message || String(err));
+        }
+    });
+
+    $(document).on('click', '[data-del]', function () {
+        var cr = $(this).attr('data-del');
+        if (!cr) return;
+        if (!confirm(wgT('profile.confirm_remove_pk'))) return;
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: BASE + '/api/passkeys/remove',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ username: ME, credential_id: cr }),
+            success: function (resp) {
+                toastr.warning((resp && resp.message) || wgT('profile.warn_pk_removed'));
+                if (window.wgReauthenticateRedirectIfNeeded && window.wgReauthenticateRedirectIfNeeded(resp)) return;
+                loadPasskeys();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e3) {}
+                toastr.error(j.message || xhr.responseText || wgT('profile.err_pk_remove'));
+            }
+        });
+    });
+
+    $(document).on('click', '[data-rename]', function () {
+        var cr = $(this).attr('data-rename');
+        if (!cr) return;
+        var cur = ($(this).text() || '').trim();
+        var n = prompt(wgT('profile.prompt_pk_name'), cur || '');
+        if (n === null) return;
+        n = String(n).trim();
+        $.ajax({
+            cache: false,
+            method: 'POST',
+            url: BASE + '/api/passkeys/rename',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify({ username: ME, credential_id: cr, name: n }),
+            success: function () {
+                toastr.success(wgT('profile.ok_name_updated'));
+                loadPasskeys();
+            },
+            error: function (xhr) {
+                var j = {}; try { j = xhr.responseJSON; } catch (e4) {}
+                toastr.error(j.message || xhr.responseText || wgT('profile.err_rename'));
+            }
+        });
+    });
+
+    $(document).ready(function () {
+        loadProfile();
+        loadPasskeys();
+    });
+})();
 </script>
 {{ end }}

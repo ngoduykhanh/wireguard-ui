@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha512"
 	"embed"
 	"flag"
@@ -9,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"syscall"
 	"time"
@@ -20,6 +22,7 @@ import (
 
 	"github.com/ngoduykhanh/wireguard-ui/emailer"
 	"github.com/ngoduykhanh/wireguard-ui/handler"
+	"github.com/ngoduykhanh/wireguard-ui/pushnotify"
 	"github.com/ngoduykhanh/wireguard-ui/router"
 	"github.com/ngoduykhanh/wireguard-ui/store/jsondb"
 	"github.com/ngoduykhanh/wireguard-ui/util"
@@ -30,7 +33,7 @@ var (
 	appVersion = "development"
 	gitCommit  = "N/A"
 	gitRef     = "N/A"
-	buildTime  = fmt.Sprintf(time.Now().UTC().Format("01-02-2006 15:04:05"))
+	buildTime  = time.Now().UTC().Format("01-02-2006 15:04:05")
 	// configuration variables
 	flagDisableLogin             = false
 	flagBindAddress              = "0.0.0.0:5000"
@@ -180,6 +183,11 @@ func main() {
 	if err := db.Init(); err != nil {
 		panic(err)
 	}
+	fcmCred := strings.TrimSpace(os.Getenv("FCM_CREDENTIALS_FILE"))
+	if fcmCred == "" {
+		fcmCred = strings.TrimSpace(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	}
+	pushnotify.Init(fcmCred, func() string { return db.GetPath() })
 	// set app extra data
 	extraData := make(map[string]interface{})
 	extraData["appVersion"] = appVersion
@@ -193,6 +201,10 @@ func main() {
 
 	// create the wireguard config on start, if it doesn't exist
 	initServerConfig(db, tmplDir)
+
+	// Warm traffic series cache in background so the Traffic page renders quickly.
+	handler.RegisterTrafficCachePersistence(db)
+	go handler.StartTrafficSeriesCache()
 
 	// Check if subnet ranges are valid for the server configuration
 	// Remove any non-valid CIDRs
@@ -208,24 +220,52 @@ func main() {
 	// register routes
 	app := router.New(tmplDir, extraData, util.SessionSecret)
 
+	// Android only fetches https://<rpId>/.well-known/assetlinks.json (host root). Many reverse
+	// proxies only forward BASE_PATH to this app, so / returns 404 — those installs must add a
+	// proxy/alias for /.well-known/assetlinks.json to this handler (or mirror the JSON from the
+	// duplicate URL below). See handler/android_assetlinks.go.
+	assetLinks := handler.AndroidDigitalAssetLinks()
+	app.GET("/.well-known/assetlinks.json", assetLinks)
+	app.HEAD("/.well-known/assetlinks.json", assetLinks)
+	if alt := util.BasePath + "/.well-known/assetlinks.json"; alt != "/.well-known/assetlinks.json" {
+		app.GET(alt, assetLinks)
+		app.HEAD(alt, assetLinks)
+	}
+
 	app.GET(util.BasePath, handler.WireGuardClients(db), handler.ValidSession, handler.RefreshSession)
+	app.GET(util.BasePath+"/dashboard", handler.Dashboard(db), handler.ValidSession, handler.RefreshSession)
+	app.GET(util.BasePath+"/traffic", handler.TrafficPage(db), handler.ValidSession, handler.RefreshSession)
+	app.GET(util.BasePath+"/logs", handler.LogsPage(db), handler.ValidSession, handler.RefreshSession)
+	app.GET(util.BasePath+"/api/system-logs", handler.APISystemLogs(db), handler.ValidSession, handler.RefreshSession)
+	app.POST(util.BasePath+"/api/global-settings/realtime-stats", handler.APISetRealtimeStatsEnabled(db), handler.ValidSession, handler.ContentTypeJson, handler.RefreshSession, handler.NeedsAdmin)
 
 	// Important: Make sure that all non-GET routes check the request content type using handler.ContentTypeJson to
 	// mitigate CSRF attacks. This is effective, because browsers don't allow setting the Content-Type header on
 	// cross-origin requests.
 
 	if !util.DisableLogin {
-		app.GET(util.BasePath+"/login", handler.LoginPage())
+		app.GET(util.BasePath+"/login", handler.LoginPage(db))
+		app.GET(util.BasePath+"/api/public/login-wg-status", handler.PublicLoginWireguardStatus(db))
 		app.POST(util.BasePath+"/login", handler.Login(db), handler.ContentTypeJson)
+		app.POST(util.BasePath+"/api/passkeys/login/begin", handler.PasskeyBeginLogin(db), handler.ContentTypeJson)
+		app.POST(util.BasePath+"/api/passkeys/login/finish", handler.PasskeyFinishLogin(db), handler.ContentTypeJson)
 		app.GET(util.BasePath+"/logout", handler.Logout(), handler.ValidSession)
-		app.GET(util.BasePath+"/profile", handler.LoadProfile(), handler.ValidSession, handler.RefreshSession)
-		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(), handler.ValidSession, handler.RefreshSession, handler.NeedsAdmin)
+		app.GET(util.BasePath+"/profile", handler.LoadProfile(db), handler.ValidSession, handler.RefreshSession)
+		app.GET(util.BasePath+"/users-settings", handler.UsersSettings(db), handler.ValidSession, handler.RefreshSession, handler.NeedsAdmin)
 		app.POST(util.BasePath+"/update-user", handler.UpdateUser(db), handler.ValidSession, handler.ContentTypeJson)
 		app.POST(util.BasePath+"/create-user", handler.CreateUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 		app.POST(util.BasePath+"/remove-user", handler.RemoveUser(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 		app.GET(util.BasePath+"/get-users", handler.GetUsers(db), handler.ValidSession, handler.NeedsAdmin)
 		app.GET(util.BasePath+"/api/user/:username", handler.GetUser(db), handler.ValidSession)
+		app.GET(util.BasePath+"/api/profile/passkeys", handler.GetCurrentUserPasskeys(db), handler.ValidSession)
+		app.POST(util.BasePath+"/api/user/set-admin", handler.SetUserAdmin(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/api/user/set-disabled", handler.SetUserDisabled(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+		app.POST(util.BasePath+"/api/user/revoke-sessions", handler.RevokeUserSessions(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	}
+	app.POST(util.BasePath+"/api/passkeys/register/:username/begin", handler.PasskeyBeginRegister(db), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/api/passkeys/register/:username/finish", handler.PasskeyFinishRegister(db), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/api/passkeys/remove", handler.PasskeyRemove(db), handler.ValidSession, handler.ContentTypeJson)
+	app.POST(util.BasePath+"/api/passkeys/rename", handler.PasskeyRename(db), handler.ValidSession, handler.ContentTypeJson)
 
 	var sendmail emailer.Emailer
 	if util.SendgridApiKey != "" {
@@ -235,7 +275,7 @@ func main() {
 	}
 
 	app.GET(util.BasePath+"/test-hash", handler.GetHashesChanges(db), handler.ValidSession)
-	app.GET(util.BasePath+"/about", handler.AboutPage())
+	app.GET(util.BasePath+"/about", handler.AboutPage(db))
 	app.GET(util.BasePath+"/_health", handler.Health())
 	app.GET(util.BasePath+"/favicon", handler.Favicon())
 	app.POST(util.BasePath+"/new-client", handler.NewClient(db), handler.ValidSession, handler.ContentTypeJson)
@@ -245,18 +285,30 @@ func main() {
 	app.POST(util.BasePath+"/client/set-status", handler.SetClientStatus(db), handler.ValidSession, handler.ContentTypeJson)
 	app.POST(util.BasePath+"/remove-client", handler.RemoveClient(db), handler.ValidSession, handler.ContentTypeJson)
 	app.GET(util.BasePath+"/download", handler.DownloadClient(db), handler.ValidSession)
+	app.GET(util.BasePath+"/download-all-configs", handler.DownloadAllClientsZip(db), handler.ValidSession, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/wg-server", handler.WireGuardServer(db), handler.ValidSession, handler.RefreshSession, handler.NeedsAdmin)
 	app.POST(util.BasePath+"/wg-server/interfaces", handler.WireGuardServerInterfaces(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/api/wg-server/save-page", handler.WireGuardServerSave(db, tmplDir), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/api/wireguard/wg-quick-down", handler.WireGuardQuickStop(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	app.POST(util.BasePath+"/api/wireguard/wg-quick-up", handler.WireGuardQuickStart(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
+	// Same session gate as /api/apply-wg-config (ValidSession, not admin-only) so managers can align restart with tunnel state.
+	app.GET(util.BasePath+"/api/wireguard/tunnel-status", handler.WireGuardTunnelStatus(db), handler.ValidSession, handler.RefreshSession)
+	app.POST(util.BasePath+"/api/push/register", handler.RegisterPushToken(db), handler.ValidSession, handler.ContentTypeJson, handler.RefreshSession)
+	app.POST(util.BasePath+"/api/push/unregister", handler.UnregisterPushToken(db), handler.ValidSession, handler.ContentTypeJson, handler.RefreshSession)
 	app.POST(util.BasePath+"/wg-server/keypair", handler.WireGuardServerKeyPair(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/global-settings", handler.GlobalSettings(db), handler.ValidSession, handler.RefreshSession, handler.NeedsAdmin)
 	app.POST(util.BasePath+"/global-settings", handler.GlobalSettingSubmit(db), handler.ValidSession, handler.ContentTypeJson, handler.NeedsAdmin)
 	app.GET(util.BasePath+"/status", handler.Status(db), handler.ValidSession, handler.RefreshSession)
 	app.GET(util.BasePath+"/api/clients", handler.GetClients(db), handler.ValidSession)
+	app.GET(util.BasePath+"/api/wg-peer-stats", handler.GetWgPeerStats(db), handler.ValidSession)
+	app.GET(util.BasePath+"/api/dashboard-stats", handler.GetDashboardStats(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/client/:id", handler.GetClient(db), handler.ValidSession)
 	app.GET(util.BasePath+"/api/machine-ips", handler.MachineIPAddresses(), handler.ValidSession)
 	app.GET(util.BasePath+"/api/subnet-ranges", handler.GetOrderedSubnetRanges(), handler.ValidSession)
 	app.GET(util.BasePath+"/api/suggest-client-ips", handler.SuggestIPAllocation(db), handler.ValidSession)
+	app.GET(util.BasePath+"/api/wg-traffic-series", handler.GetTrafficSeries(), handler.ValidSession)
 	app.POST(util.BasePath+"/api/apply-wg-config", handler.ApplyServerConfig(db, tmplDir), handler.ValidSession, handler.ContentTypeJson)
+	app.GET(util.BasePath+"/api/ui-nav-hints", handler.GetUINavHints(db), handler.ValidSession)
 	app.GET(util.BasePath+"/wake_on_lan_hosts", handler.GetWakeOnLanHosts(db), handler.ValidSession, handler.RefreshSession)
 	app.POST(util.BasePath+"/wake_on_lan_host", handler.SaveWakeOnLanHost(db), handler.ValidSession, handler.ContentTypeJson)
 	app.DELETE(util.BasePath+"/wake_on_lan_host/:mac_address", handler.DeleteWakeOnHost(db), handler.ValidSession, handler.ContentTypeJson)
@@ -276,6 +328,21 @@ func main() {
 
 	initTelegram(initDeps)
 
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		sig := <-quit
+		app.Logger.Infof("Caught %v, saving traffic snapshot and shutting down", sig)
+		if err := handler.FlushTrafficCacheSnapshot(); err != nil {
+			app.Logger.Warnf("traffic snapshot save: %v", err)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		if err := app.Shutdown(ctx); err != nil {
+			app.Logger.Errorf("Echo shutdown: %v", err)
+		}
+	}()
+
 	if strings.HasPrefix(util.BindAddress, "unix://") {
 		// Listen on unix domain socket.
 		// https://github.com/labstack/echo/issues/830
@@ -288,10 +355,15 @@ func main() {
 			app.Logger.Fatalf("Cannot create unix socket. Error: %v", err)
 		}
 		app.Listener = l
-		app.Logger.Fatal(app.Start(""))
+		err = app.Start("")
+		if err != nil && err != http.ErrServerClosed {
+			app.Logger.Fatal(err)
+		}
 	} else {
-		// Listen on TCP socket
-		app.Logger.Fatal(app.Start(util.BindAddress))
+		err := app.Start(util.BindAddress)
+		if err != nil && err != http.ErrServerClosed {
+			app.Logger.Fatal(err)
+		}
 	}
 }
 
@@ -322,7 +394,7 @@ func initServerConfig(db store.IStore, tmplDir fs.FS) {
 	}
 
 	// write config file
-	err = util.WriteWireGuardServerConfig(tmplDir, server, clients, users, settings)
+	err = util.WriteWireGuardServerConfig(tmplDir, server, clients, users, settings, "")
 	if err != nil {
 		log.Fatalf("Cannot create server config: %v", err)
 	}

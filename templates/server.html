@@ -1,254 +1,549 @@
-{{define "title"}}
-Wireguard Server
-{{end}}
+{{define "title"}}{{ tr .UILang "server.title" }}{{end}}
 
 {{define "top_css"}}
+<style>
+.wg-srv-root{font-family:inherit;color:var(--t1);}
+.wg-srv-banner{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:14px 16px;margin-bottom:16px;border-radius:var(--rlg);border:1px solid var(--bdr);background:var(--ele);}
+.wg-srv-banner.ok{border-color:rgba(102,187,106,.35);background:rgba(102,187,106,.09);}
+.wg-srv-banner.warn{border-color:rgba(255,202,40,.35);background:rgba(255,202,40,.08);}
+.wg-srv-banner.err{border-color:rgba(239,83,80,.38);background:rgba(239,83,80,.1);}
+.wg-srv-ban-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--t1);}
+.wg-srv-ban-title .wg-dot-mini{width:8px;height:8px;border-radius:50%;background:var(--grn);flex-shrink:0;}
+.wg-srv-banner.warn .wg-dot-mini{background:var(--amb);}
+.wg-srv-banner.err .wg-dot-mini{background:var(--red);}
+.wg-srv-ban-meta{font-size:11px;line-height:1.55;color:var(--t2);margin-top:4px;font-variant-numeric:tabular-nums;}
+.wg-srv-ban-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.wg-btn-ok{border-color:rgba(102,187,106,.38)!important;color:var(--grn)!important;background:rgba(102,187,106,.06)!important;}
+.wg-btn-ok:hover{border-color:rgba(102,187,106,.58)!important;}
+.wg-btn-warn{border-color:rgba(255,202,40,.45)!important;color:#FFCA28!important;background:rgba(255,202,40,.1)!important;}
+.wg-btn-warn:hover{border-color:rgba(255,202,40,.65)!important;}
+.wg-btn-stop{border-color:rgba(239,83,80,.42)!important;color:var(--red)!important;background:rgba(239,83,80,.06)!important;}
+.wg-srv-ban-actions .wg-btn[disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.15);}
+.wg-srv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+@media(max-width:1024px){.wg-srv-grid{grid-template-columns:1fr;}}
+
+.wg-srv-pane{background:#1e1e1e;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px 18px;}
+.wg-srv-pane h4{margin:0 0 14px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#e8e8e8;}
+.wg-srv-pane h4 i{color:#EF5350;width:14px;text-align:center;opacity:.9;}
+.wg-srv-label{display:block;font-size:9px;font-weight:700;letter-spacing:.45px;color:var(--t3);margin-bottom:8px;text-transform:uppercase;}
+.wg-srv-stack{display:flex;flex-direction:column;gap:14px;}
+.wg-srv-pane .wg-srv-stack.gap-dense{gap:12px;}
+
+.wg-srv-input{width:100%;border-radius:10px;background:#252525;border:1px solid rgba(255,255,255,.08);padding:10px 12px;color:var(--t1);font-size:13px;}
+.wg-srv-input[disabled]{opacity:.82;cursor:not-allowed;}
+.wg-srv-textarea{width:100%;border-radius:10px;background:#252525;border:1px solid rgba(255,255,255,.08);padding:11px 12px;color:var(--t1);font-size:11px;font-family:ui-monospace,monospace;line-height:1.5;resize:vertical;min-height:88px;}
+.wg-keys-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+
+.wg-srv-optgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2px;}
+@media(max-width:700px){.wg-srv-optgrid{grid-template-columns:1fr;}}
+.wg-srv-opt{background:#252525;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:13px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.wg-srv-opt h5{margin:0 0 4px;font-size:13px;font-weight:700;color:#e8e8e8;}
+.wg-srv-opt p{margin:0;font-size:10px;line-height:1.45;color:var(--t3);}
+input[type=checkbox].wg-toggle{appearance:none;width:44px;height:24px;background:#3a3a3a;border-radius:999px;border:1px solid var(--bdr);position:relative;cursor:pointer;flex-shrink:0;outline:none;}
+input[type=checkbox].wg-toggle::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:#bdbdbd;border-radius:50%;transition:.18s;}
+input[type=checkbox].wg-toggle:checked{background:rgba(239,83,80,.38);border-color:rgba(239,83,80,.52);}
+input[type=checkbox].wg-toggle:checked::after{left:22px;background:#EF5350;}
+
+.wg-srv-foot{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:4px;}
+.wg-srv-micro{font-size:9px;line-height:1.4;color:var(--t3);margin-top:14px;font-style:italic;}
+</style>
 {{end}}
 
-{{define "username"}}
-{{ .username }}
-{{end}}
-
-{{define "page_title"}}
-Wireguard Server Settings
-{{end}}
+{{define "username"}} {{ .username }} {{end}}
+{{define "page_title"}}{{ tr .UILang "server.page" }}{{end}}
 
 {{define "page_content"}}
-<section class="content">
-    <div class="container-fluid">
-        <!-- <h5 class="mt-4 mb-2">Wireguard Server</h5> -->
-        <div class="row">
-            <!-- left column -->
-            <div class="col-md-6">
-                <div class="card card-success">
-                    <div class="card-header">
-                        <h3 class="card-title">Interface</h3>
+<section class="content wg-shell-page wg-srv-root">
+    {{with .serverBanner}}
+    {{$cls := "warn"}}
+    {{if ne .WgBackendErr ""}}{{$cls = "err"}}{{else if .IsListening}}{{$cls = "ok"}}{{end}}
+    <div class="wg-srv-banner {{$cls}}">
+        <div>
+            <div class="wg-srv-ban-title"><span class="wg-dot-mini" aria-hidden="true"></span>
+                {{- $.wgIfaceName -}}
+                {{- if .WgBackendErr -}}
+                {{ tr $.UILang "server.banner_query_err" }}
+                {{- else if .IsListening -}}
+                {{ tr $.UILang "server.banner_active" }}
+                {{- else -}}
+                {{ tr $.UILang "server.banner_no_iface" }}
+                {{- end -}}
                     </div>
-                    <!-- /.card-header -->
-                    <!-- form start -->
-                    <form role="form" id="frm_server_interface" name="frm_server_interface">
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label for="addresses" class="control-label">Server Interface Addresses</label>
-                                <input type="text" data-role="tagsinput" class="form-control" id="addresses" value="">
+            <div class="wg-srv-ban-meta">
+                {{ tr $.UILang "server.banner_port" }} {{if .UdpListenPortCfg}}{{.UdpListenPortCfg}}{{else}}—{{end}}/UDP
+                · {{.WgPeersTotal}} {{ tr $.UILang "server.banner_peers" }}
+                · {{ printf (tr $.UILang "server.banner_hs_fmt") .WgPeersRecent }}
+                {{- if .HostUptime}}{{ tr $.UILang "server.banner_uptime" }} {{.HostUptime}}{{end}}
                             </div>
-                            <div class="form-group">
-                                <label for="listen_port">Listen Port</label>
-                                <input type="text" class="form-control" id="listen_port" name="listen_port"
-                                    placeholder="Listen Port" value="{{ .serverInterface.ListenPort }}">
+            {{ if ne .WgBackendErr "" }}
+            <div class="wg-srv-ban-meta" style="color:#ffb4b4;margin-top:6px;">{{.WgBackendErr}}</div>
+            {{ end }}
                             </div>
-                            <div class="form-group">
-                                <label for="post_up">Post Up Script</label>
-                                <input type="text" class="form-control" id="post_up" name="post_up"
-                                       placeholder="Post Up Script" value="{{ .serverInterface.PostUp }}">
+        <div class="wg-srv-ban-actions">
+            <button type="button" class="wg-btn bg" id="wg_srv_btn_apply_config"
+                {{if $.baseData.Admin}}title="{{ tr $.UILang "server.tooltip_apply_dump" }}"
+                {{else}}disabled title="{{ tr $.UILang "server.tooltip_admin_required" }}"{{end}}><i class="fas fa-file-export"></i> {{ tr $.UILang "top.apply_config" }}</button>
+            {{if $.allowWgQuick}}
+            <button type="button" class="wg-btn wg-btn-warn" id="wg_srv_wg_quick_restart" {{if $.baseData.Admin}}{{else}}disabled{{end}}><i class="fas fa-redo-alt"></i> {{ tr $.UILang "server.quick_restart" }}</button>
+            {{if .IsListening}}
+            <button type="button" class="wg-btn wg-btn-stop" id="wg_srv_wg_quick_down" {{if $.baseData.Admin}}{{else}}disabled{{end}}><i class="fas fa-stop-circle"></i> {{ tr $.UILang "server.quick_down" }}</button>
+            {{else}}
+            <button type="button" class="wg-btn bp" id="wg_srv_wg_quick_up" {{if $.baseData.Admin}}{{else}}disabled{{end}}><i class="fas fa-play-circle"></i> {{ tr $.UILang "server.quick_up" }}</button>
+            {{end}}
+            {{end}}
                             </div>
-                            <div class="form-group">
-                                <label for="pre_down">Pre Down Script</label>
-                                <input type="text" class="form-control" id="pre_down" name="pre_down"
-                                       placeholder="Pre Down Script" value="{{ .serverInterface.PreDown }}">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="post_down">Post Down Script</label>
-                                <input type="text" class="form-control" id="post_down" name="post_down"
-                                       placeholder="Post Down Script" value="{{ .serverInterface.PostDown }}">
-                            </div>
-                        </div>
-                        <!-- /.card-body -->
-
-                        <div class="card-footer">
-                            <button type="submit" class="btn btn-success">Save</button>
-                        </div>
-                    </form>
-                </div>
-                <!-- /.card -->
+            {{if $.allowWgQuick}}
+            <div class="wg-srv-ban-meta" style="flex-basis:100%;margin-top:10px;">
+                {{ tr $.UILang "server.quick_actions_note" }}
             </div>
-            <!-- right column -->
-            <div class="col-md-6">
-                <div class="card card-danger">
-                    <div class="card-header">
-                        <h3 class="card-title">Key Pair</h3>
-                    </div>
-                    <!-- /.card-header -->
-                    <!-- form start -->
-                    <form role="form">
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label for="private_key">Private Key</label>
-                                <div class="input-group input-group">
-                                    <input type="password" class="form-control" id="private_key" placeholder="Private Key"
-                                        value="{{ .serverKeyPair.PrivateKey }}" disabled>
-                                    <span class="input-group-append">
-                                        <button type="button" class="btn btn-danger btn-flat"
-                                            id="btn_show_private_key">Show</button>
-                                    </span>
-                                </div>
+            {{end}}
                             </div>
-                            <div class="form-group">
-                                <label for="public_key">Public Key</label>
-                                <input type="text" class="form-control" id="public_key" placeholder="Public Key"
-                                    value="{{ .serverKeyPair.PublicKey }}" disabled>
-                            </div>
-                        </div>
-                        <!-- /.card-body -->
+    {{ end }}
 
-                        <div class="card-footer">
-                            <button type="button" class="btn btn-danger" data-toggle="modal"
-                                data-target="#modal_keypair_confirmation">Generate</button>
-                        </div>
-                    </form>
+    <input type="hidden" id="wg_srv_initial_json" value="" />
+
+    <div class="wg-srv-grid">
+        <div class="wg-srv-pane">
+            <h4><i class="fas fa-network-wired"></i> {{ tr .UILang "server.section_iface" }}</h4>
+            <div class="wg-srv-stack gap-dense">
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_ifname" }}</span>
+                    <input id="srv_ifname_disp" type="text" class="wg-srv-input" value="{{ .wgIfaceName }}" disabled autocomplete="off" />
                 </div>
-                <!-- /.card -->
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_ip_addr" }}</span>
+                    <input type="text" data-role="tagsinput" class="form-control wg-srv-input srv-tags" style="padding:8px;background:#252525;border-color:rgba(255,255,255,.08);color:inherit;" id="srv_addresses" value="" />
+                            </div>
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_listen_port" }}</span>
+                    <input type="text" class="wg-srv-input" id="srv_listen_port" name="listen_port" inputmode="numeric" value="{{if .serverInterface}}{{.serverInterface.ListenPort}}{{end}}" />
+                        </div>
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_mtu" }}</span>
+                    <input type="text" class="wg-srv-input" id="srv_mtu" inputmode="numeric" value="{{if .globalSettings.MTU}}{{.globalSettings.MTU}}{{end}}" />
+                        </div>
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_dns" }}</span>
+                    <input type="text" class="wg-srv-input" id="srv_dns" autocomplete="off" value="{{ .dnsCsv }}" placeholder="1.1.1.1, 8.8.8.8" />
+                    <span class="wg-srv-micro">{{ tr .UILang "server.dns_micro" }}</span>
+                </div>
             </div>
         </div>
-        <!-- /.row -->
+        <div class="wg-srv-pane">
+            <h4><i class="fas fa-lock"></i> {{ tr .UILang "server.section_crypt" }}</h4>
+            <div class="wg-srv-stack" style="gap:13px;margin-bottom:16px;">
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_privkey" }}</span>
+                    <div style="display:flex;gap:8px;">
+                        <input type="password" class="wg-srv-input" id="srv_private_key" value="{{ .serverKeyPair.PrivateKey }}" disabled style="flex:1;" autocomplete="new-password"/>
+                    </div>
+                </div>
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_pubkey" }}</span>
+                    <input type="text" class="wg-srv-input" style="font-family:ui-monospace,monospace;font-size:11px;" id="srv_public_key" value="{{ .serverKeyPair.PublicKey }}" disabled />
+                </div>
+                <div class="wg-keys-row">
+                    <button type="button" class="wg-btn bg" id="srv_toggle_pk"><i class="fas fa-eye"></i> {{ tr .UILang "server.pk_show" }}</button>
+                    <button type="button" class="wg-btn brd" data-toggle="modal" data-target="#modal_keypair_confirmation"><i class="fas fa-key"></i> {{ tr .UILang "server.regenerate" }}</button>
+                </div>
+            </div>
+            <h4 style="margin-top:4px;"><i class="fas fa-terminal"></i> {{ tr .UILang "server.section_post" }}</h4>
+            <div class="wg-srv-stack gap-dense">
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_post_up" }}</span>
+                    <textarea class="wg-srv-textarea" id="srv_post_up" name="post_up">{{if .serverInterface}}{{.serverInterface.PostUp}}{{end}}</textarea>
+                </div>
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_pre_down" }}</span>
+                    <textarea class="wg-srv-textarea" rows="2" style="min-height:56px;" id="srv_pre_down" name="pre_down">{{if .serverInterface}}{{.serverInterface.PreDown}}{{end}}</textarea>
+                </div>
+                <div>
+                    <span class="wg-srv-label">{{ tr .UILang "server.lbl_post_down" }}</span>
+                    <textarea class="wg-srv-textarea" id="srv_post_down" name="post_down">{{if .serverInterface}}{{.serverInterface.PostDown}}{{end}}</textarea>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+
+    <div class="wg-srv-pane">
+        <h4><i class="fas fa-shield-alt"></i> {{ tr .UILang "server.section_firewall" }}</h4>
+        <div class="wg-srv-optgrid">
+            <div class="wg-srv-opt">
+                <div>
+                    <h5>{{ tr $.UILang "server.opt_fwd_title" }}</h5>
+                    <p>{{if $.baseData.Admin}}{{ tr $.UILang "server.opt_fwd_desc_admin" }}{{else}}{{ tr $.UILang "server.opt_fwd_readonly" }}{{end}}</p>
+                </div>
+                <label style="cursor:pointer;display:inline-flex;"><input type="checkbox" role="switch" class="wg-toggle" id="opt_ip_forward" {{if .globalSettings.IPForwardDesired}}checked{{end}}{{if $.baseData.Admin}}{{else}}disabled{{end}} /></label>
+            </div>
+            <div class="wg-srv-opt">
+                <div>
+                    <h5>{{ tr $.UILang "server.opt_gdns_title" }}</h5>
+                    <p>{{ tr $.UILang "server.opt_gdns_body" }}</p>
+                </div>
+                <label style="cursor:pointer;display:inline-flex;"><input type="checkbox" role="switch" class="wg-toggle" id="opt_dns_global" {{if .globalSettings.GlobalDNSOverride}}checked{{end}}{{if $.baseData.Admin}}{{else}}disabled{{end}} /></label>
+            </div>
+            <div class="wg-srv-opt">
+                <div>
+                    <h5>{{ tr $.UILang "server.opt_persist_title" }}</h5>
+                    <p>{{ printf (tr $.UILang "server.opt_persist_body_fmt") .wgIfaceName }}</p>
+                </div>
+                <label style="cursor:pointer;display:inline-flex;"><input type="checkbox" role="switch" class="wg-toggle" id="opt_persist_conf" {{if .globalSettings.PersistWgConfOnSave}}checked{{end}}{{if $.baseData.Admin}}{{else}}disabled{{end}} /></label>
+                        </div>
+            <div class="wg-srv-opt">
+                <div>
+                    <h5>{{ tr $.UILang "server.opt_auto_title" }}</h5>
+                    <p>{{ tr $.UILang "server.opt_auto_body" }}</p>
+                </div>
+                <label style="cursor:pointer;display:inline-flex;"><input type="checkbox" role="switch" class="wg-toggle" id="opt_auto_apply" {{if .globalSettings.AutoApplyWGOnSave}}checked{{end}}{{if $.baseData.Admin}}{{else}}disabled{{end}} /></label>
+            </div>
+        </div>
+        <p class="wg-srv-micro">{{ tr .UILang "server.micro_footer" }}</p>
     </div>
+
 </section>
+<div class="wg-srv-foot">
+    <button type="button" class="wg-btn bp" id="wg_srv_btn_save"><i class="fas fa-save"></i> {{ tr .UILang "server.btn_save_changes" }}</button>
+</div>
 
 <div class="modal fade" id="modal_keypair_confirmation">
     <div class="modal-dialog">
         <div class="modal-content bg-warning">
             <div class="modal-header">
-                <h4 class="modal-title">KeyPair Generation</h4>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <h4 class="modal-title">{{ tr .UILang "server.modal_regen_title" }}</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure to generate a new key pair for the Wireguard server?<br/>
-                The existing Client's peer public key need to be updated to keep the connection working.</p>
+                <p>{{ tr .UILang "server.modal_regen_body" }}</p>
             </div>
             <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-outline-dark" id="btn_generate_confirm">Generate</button>
+                <button type="button" class="btn btn-outline-dark" data-dismiss="modal">{{ tr .UILang "modal.apply.cancel" }}</button>
+                <button type="button" class="btn btn-outline-dark" id="btn_generate_confirm">{{ tr .UILang "server.modal_regen_btn" }}</button>
             </div>
         </div>
-        <!-- /.modal-content -->
     </div>
-    <!-- /.modal-dialog -->
 </div>
-<!-- /.modal -->
 {{end}}
 
 {{define "bottom_js"}}
     <script>
-        function submitServerInterfaceSetting() {
-            const addresses = $("#addresses").val().split(",");
-            const listen_port = $("#listen_port").val();
-            const post_up = $("#post_up").val();
-            const pre_down = $("#pre_down").val();
-            const post_down = $("#post_down").val();
-            const data = {"addresses": addresses, "listen_port": listen_port, "post_up": post_up, "pre_down": pre_down, "post_down": post_down};
+        var wgSrvSnap = null;
+        var wgSrvKernelListening = {{if and .serverBanner .serverBanner.IsListening}}true{{else}}false{{end}};
+        var wgSrvIsAdmin = {{if .baseData.Admin}}true{{else}}false{{end}};
+        var wgSrvPendingApply = {{if .needsWgConfApply}}true{{else}}false{{end}};
 
-            $.ajax({
-                cache: false,
-                method: 'POST',
-                url: '{{.basePath}}/wg-server/interfaces',
-                dataType: 'json',
-                contentType: "application/json",
-                data: JSON.stringify(data),
-                success: function(data) {
-                    $("#modal_new_client").modal('hide');
-                    toastr.success('Updated Wireguard server interface addresses successfully');
-                },
-                error: function(jqXHR, exception) {
-                    const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                    toastr.error(responseJson['message']);
-                }
+        function wgSrvGatherPayload() {
+            const addresses = $("#srv_addresses").val() ? $("#srv_addresses").val().split(",").map(function (s) { return s.trim(); }).filter(Boolean) : [];
+            const mtuRaw = $("#srv_mtu").val().trim();
+            const lpRaw = $("#srv_listen_port").val().trim();
+            return {
+                addresses: addresses,
+                listen_port: parseInt(lpRaw, 10),
+                post_up: $("#srv_post_up").val(),
+                pre_down: $("#srv_pre_down").val(),
+                post_down: $("#srv_post_down").val(),
+                mtu: mtuRaw === "" ? 0 : parseInt(mtuRaw, 10),
+                dns_servers: $("#srv_dns").val(),
+                ip_forward_desired: $("#opt_ip_forward").prop("checked"),
+                global_dns_override: $("#opt_dns_global").prop("checked"),
+                persist_wg_conf_on_save: $("#opt_persist_conf").prop("checked"),
+                auto_apply_wg_on_save: $("#opt_auto_apply").prop("checked"),
+            };
+        }
+
+        function wgSrvSaveSnap() {
+            wgSrvSnap = JSON.stringify(wgSrvGatherPayload());
+            $("#wg_srv_initial_json").val(wgSrvSnap);
+            wgSrvRefreshApplyButton();
+        }
+
+        function wgSrvIsDirty() {
+            return JSON.stringify(wgSrvGatherPayload()) !== String(wgSrvSnap || "");
+        }
+
+        function wgSrvRefreshApplyButton() {
+            var btn = $("#wg_srv_btn_apply_config");
+            if (!btn.length) return;
+            var show = wgSrvIsAdmin && (wgSrvIsDirty() || wgSrvPendingApply);
+            btn.toggle(show);
+            if (!show) return;
+            if (wgSrvIsDirty()) {
+                btn.html('<i class="fas fa-save"></i> ' + wgT('server.js_btn_save_apply'));
+                btn.attr("title", wgT('server.js_tooltip_dirty_apply'));
+            } else {
+                btn.html('<i class="fas fa-file-export"></i> ' + wgT('top.apply_config'));
+                btn.attr("title", wgT('server.js_tooltip_apply_file'));
+            }
+        }
+
+        function wgSrvBindDirtyWatchers() {
+            $("#srv_listen_port,#srv_mtu,#srv_dns,#srv_post_up,#srv_pre_down,#srv_post_down,#opt_ip_forward,#opt_dns_global,#opt_persist_conf,#opt_auto_apply,#srv_addresses").on("input change", function () {
+                wgSrvRefreshApplyButton();
             });
         }
+
+        function wgSrvSaveCurrent(onSuccess) {
+            const lp = $("#srv_listen_port").val().trim();
+            if (!/^\d+$/.test(lp)) {
+                toastr.error(wgT('server.js_err_port_invalid'));
+                return;
+            }
+            const p = parseInt(lp, 10);
+            if (p < 1 || p > 65535) {
+                toastr.error(wgT('server.js_err_port_range'));
+                return;
+            }
+            if (!wgSrvValidateMtu()) {
+                return;
+            }
+            const payload = wgSrvGatherPayload();
+            $.ajax({
+                cache: false,
+                method: "POST",
+                url: "{{.basePath}}/api/wg-server/save-page",
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify(payload),
+                success: function (data) {
+                    toastr.success(wgT('server.js_ok_updated'));
+                    wgSrvSaveSnap();
+                    wgSrvPendingApply = !!(data && data.needs_wg_conf_apply);
+                    wgSrvRefreshApplyButton();
+                    if (typeof updateApplyConfigVisibility === "function") { updateApplyConfigVisibility(); }
+                    if (typeof onSuccess === "function") onSuccess();
+                },
+                error: function (jqXHR) {
+                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson.message || jqXHR.responseText);
+                },
+            });
+        }
+
+        function wgSrvTunnelDownApplyHint() {
+            return wgSrvKernelListening ? '' : ('\n\n' + wgT('server.js_tunnel_down_apply_note'));
+        }
+
+        function wgSrvApplyConfigNow() {
+            function doPost(restartWg) {
+                var body = (restartWg === undefined) ? {} : { restart_wireguard: !!restartWg };
+                $.ajax({
+                    cache: false,
+                    method: "POST",
+                    url: "{{.basePath}}/api/apply-wg-config",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: JSON.stringify(body),
+                    success: function () {
+                        toastr.success(wgT('server.js_ok_applied_conf'));
+                        wgSrvPendingApply = false;
+                        wgSrvRefreshApplyButton();
+                        if (typeof updateApplyConfigVisibility === "function") { updateApplyConfigVisibility(); }
+                    },
+                    error: function (jqXHR) {
+                        try {
+                            var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                            toastr.error(responseJson.message || jqXHR.responseText);
+                        } catch (e) {
+                            toastr.error(jqXHR.responseText || wgT('server.js_err_generic'));
+                        }
+                    },
+                });
+            }
+            $.getJSON("{{.basePath}}/api/wireguard/tunnel-status")
+                .done(function (ts) {
+                    doPost(!!(ts && ts.tunnel_running));
+                })
+                .fail(function () {
+                    doPost(undefined);
+                });
+        }
+
+        function wgSrvValidateMtu() {
+            var raw = $("#srv_mtu").val().trim();
+            if (raw === "") {
+                return true;
+            }
+            if (!/^\d{1,5}$/.test(raw)) {
+                toastr.error(wgT('server.js_mtu_invalid'));
+                return false;
+            }
+            var m = parseInt(raw, 10);
+            if (isNaN(m) || m < 1280 || m > 9000) {
+                toastr.error(wgT('server.js_mtu_range'));
+                return false;
+            }
+            return true;
+        }
+
+        $("#wg_srv_btn_save").on("click", function () { wgSrvSaveCurrent(); });
+
+        $("#wg_srv_btn_apply_config").on("click", function () {
+            if ($(this).prop("disabled")) return;
+            if (wgSrvIsDirty()) {
+                if (!confirm(wgT('server.js_confirm_dirty_then_apply') + wgSrvTunnelDownApplyHint())) {
+                    return;
+                }
+                wgSrvSaveCurrent(function () {
+                    if (!confirm(wgT('server.js_confirm_saved_apply') + wgSrvTunnelDownApplyHint())) return;
+                    wgSrvApplyConfigNow();
+                });
+                return;
+            }
+            if (!confirm(wgT('server.js_confirm_apply_saved') + wgSrvTunnelDownApplyHint())) return;
+            wgSrvApplyConfigNow();
+        });
+
+        $("#wg_srv_wg_quick_down").on("click", function () {
+            if (!confirm(wgT('server.js_confirm_quick_down'))) {
+                return;
+            }
+            $.ajax({
+                cache: false,
+                method: "POST",
+                url: "{{.basePath}}/api/wireguard/wg-quick-down",
+                dataType: "json",
+                contentType: "application/json",
+                success: function () {
+                    toastr.success(wgT('server.js_ok_iface_down'));
+                    window.location.reload();
+                },
+                error: function (jqXHR) {
+                    var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                    toastr.error(responseJson.message || jqXHR.responseText);
+                },
+            });
+        });
+
+        $("#wg_srv_wg_quick_up").on("click", function () {
+            if (!confirm(wgT('server.js_confirm_quick_up'))) {
+                return;
+            }
+            $.ajax({
+                cache: false,
+                method: "POST",
+                url: "{{.basePath}}/api/wireguard/wg-quick-up",
+                dataType: "json",
+                contentType: "application/json",
+                success: function () {
+                    toastr.success(wgT('server.js_ok_iface_up'));
+                    window.location.reload();
+                },
+                error: function (jqXHR) {
+                    try {
+                        var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson.message || jqXHR.responseText);
+                    } catch (e) {
+                        toastr.error(jqXHR.responseText || wgT('server.js_err_generic'));
+                    }
+                },
+            });
+        });
+
+        $("#wg_srv_wg_quick_restart").on("click", function () {
+            if (!confirm(wgT('server.js_confirm_quick_restart'))) return;
+            var doUp = function () {
+                $.ajax({
+                    cache: false,
+                    method: "POST",
+                    url: "{{.basePath}}/api/wireguard/wg-quick-up",
+                    dataType: "json",
+                    contentType: "application/json",
+                    success: function () {
+                        toastr.success(wgT('server.js_ok_iface_restart'));
+                        window.location.reload();
+                    },
+                    error: function (jqXHR) {
+                        try {
+                            var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                            toastr.error(responseJson.message || jqXHR.responseText);
+                        } catch (e) {
+                            toastr.error(jqXHR.responseText || wgT('server.js_err_generic'));
+                        }
+                    },
+                });
+            };
+            if (!wgSrvKernelListening) {
+                doUp();
+                return;
+            }
+            $.ajax({
+                cache: false,
+                method: "POST",
+                url: "{{.basePath}}/api/wireguard/wg-quick-down",
+                dataType: "json",
+                contentType: "application/json",
+                success: function () { doUp(); },
+                error: function (jqXHR) {
+                    try {
+                        var responseJson = jQuery.parseJSON(jqXHR.responseText);
+                        toastr.error(responseJson.message || jqXHR.responseText);
+                    } catch (e) {
+                        toastr.error(jqXHR.responseText || wgT('server.js_err_generic'));
+                    }
+                },
+            });
+        });
+
+        $("#srv_toggle_pk").on("click", function () {
+            const el = document.getElementById("srv_private_key");
+            const isPwd = el.type === "password";
+            el.type = isPwd ? "text" : "password";
+            $(this).html(isPwd ? "<i class=\"fas fa-eye-slash\"></i> " + wgT('server.pk_hide') : "<i class=\"fas fa-eye\"></i> " + wgT('server.pk_show'));
+        });
     </script>
     <script>
-        // Wireguard Interface Addresses tag input
-        $("#addresses").tagsInput({
-            'width': '100%',
-            // 'height': '75%',
-            'interactive': true,
-            'defaultText': 'Add More',
-            'removeWithBackspace': true,
-            'minChars': 0,
-            'minInputWidth': '100%',
-            'placeholderColor': '#666666'
+        $("#srv_addresses").tagsInput({
+            width: "100%",
+            interactive: true,
+            defaultText: wgT('js.tags_placeholder'),
+            removeWithBackspace: true,
+            minChars: 0,
+            minInputWidth: "100%",
+            placeholderColor: "#666666",
         });
-
-        // Load server addresses to the form
-        {{range .serverInterface.Addresses}}
-        $("#addresses").removeTag('{{.}}');
-        $("#addresses").addTag('{{.}}');
-        {{end}}
-
-        // Wireguard Interface Addresses form validation
+        {{if .serverInterface}}{{range .serverInterface.Addresses}}
+        $("#srv_addresses").removeTag("{{.}}");
+        $("#srv_addresses").addTag("{{.}}");
+        {{end}}{{end}}
+    </script>
+    <script>
         $(document).ready(function () {
-            $.validator.setDefaults({
-                submitHandler: function () {
-                    submitServerInterfaceSetting();
+            wgSrvSaveSnap();
+            wgSrvBindDirtyWatchers();
+            wgSrvRefreshApplyButton();
+            setInterval(wgSrvRefreshApplyButton, 900);
+
+            $("#opt_persist_conf").on("change", function () {
+                if (!$(this).prop("checked")) {
+                    $("#opt_auto_apply").prop("checked", false);
                 }
             });
-            $("#frm_server_interface").validate({
-                rules: {
-                    listen_port: {
-                        required: true,
-                        digits: true,
-                        range: [1, 65535]
-                    }
-                },
-                messages: {
-                    listen_port: {
-                        required: "Please enter a port",
-                        digits: "Port must be an integer",
-                        range: "Port must be in range 1..65535"
-                    }
-                },
-                errorElement: 'span',
-                errorPlacement: function (error, element) {
-                    error.addClass('invalid-feedback');
-                    element.closest('.form-group').append(error);
-                },
-                highlight: function (element, errorClass, validClass) {
-                    $(element).addClass('is-invalid');
-                },
-                unhighlight: function (element, errorClass, validClass) {
-                    $(element).removeClass('is-invalid');
+            $("#opt_auto_apply").on("change", function () {
+                if ($(this).prop("checked")) {
+                    $("#opt_persist_conf").prop("checked", true);
                 }
             });
-        });
 
-        // Wireguard Key Pair generation confirmation button
-        $(document).ready(function () {
             $("#btn_generate_confirm").click(function () {
                 $.ajax({
                     cache: false,
-                    method: 'POST',
-                    url: '{{.basePath}}/wg-server/keypair',
-                    dataType: 'json',
+                    method: "POST",
+                    url: "{{.basePath}}/wg-server/keypair",
+                    dataType: "json",
                     contentType: "application/json",
-                    success: function(data) {
-                        $("#modal_keypair_confirmation").modal('hide');
-                        toastr.success('Generate new key pair successfully');
-                        // update the UI
-                        $("#private_key").val(data['private_key']);
-                        $("#public_key").val(data['public_key']);
+                    success: function (data) {
+                        $("#modal_keypair_confirmation").modal("hide");
+                        toastr.success(wgT('server.js_ok_keys_regen'));
+                        $("#srv_private_key").val(data["private_key"]);
+                        $("#srv_public_key").val(data["public_key"]);
+                        if (typeof updateApplyConfigVisibility === "function") { updateApplyConfigVisibility(); }
                     },
-                    error: function(jqXHR, exception) {
+                    error: function (jqXHR) {
                         const responseJson = jQuery.parseJSON(jqXHR.responseText);
-                        toastr.error(responseJson['message']);
-                    }
+                        toastr.error(responseJson["message"]);
+                    },
                 });
-            });
-        });
-
-        // Show private key button event
-        $(document).ready(function () {
-            $("#btn_show_private_key").click(function () {
-                const privateElement = document.getElementById("private_key");
-                const btnElement = document.getElementById("btn_show_private_key");
-                if (privateElement.type === 'password') {
-                    privateElement.type = 'text';
-                    btnElement.innerText = 'Hide';
-                } else {
-                    privateElement.type = 'password';
-                    btnElement.innerText = 'Show';
-                }
             });
         });
     </script>

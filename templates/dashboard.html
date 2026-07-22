@@ -1,0 +1,472 @@
+{{define "title"}}{{tr .UILang "meta.title_dashboard"}}{{end}}
+{{define "top_css"}}
+<style>
+.wg-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px;width:100%}
+.wg-kpi .k{background:#1e1e1e;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px 14px;border-top:3px solid var(--accent,#EF5350);}
+.wg-kpi .k.g{border-top-color:#66BB6A}
+.wg-kpi .k.b{border-top-color:#EF5350}
+.wg-kpi .k.y{border-top-color:#FFCA28}
+.wg-kpi .k.r{border-top-color:#EF5350}
+.wg-kpi .lbl{font-size:10px;color:#9e9e9e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.wg-kpi .val{font-size:20px;font-weight:800;line-height:1.1}
+.wg-kpi .sub{font-size:10px;color:#5c5c5c;margin-top:4px}
+.wg-dash-grid{display:grid;grid-template-columns:2fr minmax(240px,.9fr);gap:14px;align-items:start}
+@media(max-width:1024px){.wg-dash-grid{grid-template-columns:1fr}}
+.wg-pane{background:#1e1e1e;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:14px 16px}
+.wg-pane h3{font-size:13px;margin:0 0 12px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.wg-mini-badge{font-size:10px;color:#9e9e9e;background:#252525;padding:3px 8px;border-radius:8px;font-weight:600}
+.wg-mini-badge.wg-srv-status--active{color:#66BB6A;background:rgba(102,187,106,.12)}
+.wg-mini-badge.wg-srv-status--inactive{color:#EF5350;background:rgba(239,83,80,.14)}
+.wg-peer-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.wg-peer-row:last-child{border-bottom:0}
+.wg-peer-meta{display:flex;align-items:flex-start;gap:10px}
+.wg-peer-right{display:flex;align-items:flex-start;gap:10px}
+.wg-peer-state{font-size:11px;text-align:right;min-width:120px}
+.wg-peer-state .line1{display:block}
+.wg-peer-state .line2{display:block;color:#9e9e9e;font-size:10px;margin-top:2px}
+.wg-toggle-sm{appearance:none;width:44px;height:24px;background:#3a3a3a;border-radius:999px;border:1px solid rgba(255,255,255,.1);position:relative;cursor:pointer;flex-shrink:0;outline:none;}
+.wg-toggle-sm::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:#d0d0d0;border-radius:50%;transition:.18s;}
+.wg-toggle-sm:checked{background:rgba(239,83,80,.38);border-color:rgba(239,83,80,.52);}
+.wg-toggle-sm:checked::after{left:22px;background:#EF5350;}
+.wg-toggle-sm:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:1024px){.wg-kpi{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:640px){.wg-kpi{grid-template-columns:1fr;}.wg-peer-state{min-width:90px}}
+.wg-dot{width:6px;height:6px;border-radius:50%;background:#616161;flex-shrink:0}
+.wg-dot.on{background:#66BB6A;box-shadow:0 0 6px #66bb6a77}
+.peer-list-search{display:flex;margin-bottom:8px;}
+.peer-list-search input{background:#252525;border:1px solid rgba(255,255,255,.08);color:#eee;border-radius:10px;padding:7px 10px;width:100%;font-size:12px;}
+.wg-srv-mini{font-size:11px;line-height:1.6;color:#b0b0b0;}
+.wg-srv-mini dt{color:#5c5c5c;text-transform:uppercase;font-size:9px;margin-top:6px;}
+.wg-srv-mini dd{margin:0;font-family:ui-monospace,monospace;color:#eaeaea}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.quick-actions a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:8px 6px;background:#252525;border:1px solid rgba(255,255,255,.06);border-radius:12px;color:#eaeaea;text-decoration:none!important;font-size:10px;font-weight:600}
+.quick-actions a:hover{background:#2c2c2c;color:#EF5350;border-color:rgba(239,83,80,.35)}
+.quick-actions .qa{min-height:58px;font-size:9px;font-weight:700}
+.quick-actions .qa i{font-size:18px;line-height:1}
+.mini-spark{display:flex;align-items:flex-end;gap:3px;height:36px;margin:8px 0}
+.mini-spark .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;min-width:0}
+.mini-spark .seg{width:100%;display:block;border-radius:2px}
+.mini-spark .seg-rx{background:rgba(239,83,80,.65)}
+.mini-spark .seg-tx{background:rgba(255,202,40,.72)}
+</style>
+{{end}}
+{{define "username"}} {{ .username }} {{end}}
+{{define "page_title"}}{{tr .UILang "page.dashboard"}}{{end}}
+
+{{define "page_content"}}
+<section class="content wg-shell-page">
+    {{ if .error }}<div class="alert alert-danger">{{ .error }}</div>{{ end }}
+    {{ if and .wgStatusError (eq .wgOK false)}}<div class="alert alert-warning" role="alert">{{ tr .UILang "dash.wg_warn" }} {{ .wgStatusError }}. {{ tr .UILang "dash.wg_warn_suffix" }}</div>{{ end }}
+    <div class="wg-kpi">
+        <div class="k g">
+            <div class="lbl">{{ tr .UILang "dash.kpi.active" }}</div>
+            <div class="val"><span id="wg-kpi-enabled">{{ .enabledPeers }}</span><span style="opacity:.65;font-weight:600;font-size:.7em;">/<span id="wg-kpi-total">{{ .totalPeers }}</span></span></div>
+            <div class="sub">{{ tr .UILang "dash.kpi.active_sub" }}</div>
+        </div>
+        <div class="k b">
+            <div class="lbl">{{ tr .UILang "dash.kpi.down_lbl" }}</div>
+            <div class="val" title="{{ .bytesTransmitted }} B"><span id="wg-kpi-rx">—</span></div>
+            <div class="sub">{{ tr .UILang "dash.kpi.down_sub" }}</div>
+        </div>
+        <div class="k y">
+            <div class="lbl">{{ tr .UILang "dash.kpi.up_lbl" }}</div>
+            <div class="val" title="{{ .bytesReceived }} B"><span id="wg-kpi-tx">—</span></div>
+            <div class="sub">{{ tr .UILang "dash.kpi.up_sub" }}</div>
+        </div>
+        <div class="k r">
+            <div class="lbl">{{ tr .UILang "dash.kpi.sessions" }}</div>
+            <div class="val" id="wg-kpi-sessions">{{ .onlineCount }}</div>
+            <div class="sub">{{ tr .UILang "dash.kpi.sessions_sub" }}</div>
+        </div>
+    </div>
+
+    <div class="wg-dash-grid">
+        <div class="wg-pane">
+            <h3><span>{{ tr .UILang "dash.peers_title" }}</span><span class="wg-mini-badge">{{ len .recentClients }}{{ tr .UILang "dash.meta_sep" }}{{ .totalPeers }} {{ tr .UILang "dash.peers_of" }}</span></h3>
+            <div class="peer-list-search"><input id="wg-dash-peer-filter" placeholder="{{ tr .UILang "dash.peer_filter_ph" }}"></div>
+            {{ if not .recentClients }}
+            <div class="text-muted" style="font-size:12px;padding:16px;text-align:center">{{ tr .UILang "dash.no_peers" }}</div>
+            {{ else }}
+            <div id="wg-dash-peer-rows">
+            {{ range $p := .recentClients }}
+              {{ $on := index $.onlinePeerByPubKey $p.Client.PublicKey }}
+              <div class="wg-peer-row" data-peer-name="{{$p.Client.Name}}" data-peer-id="{{$p.Client.ID}}" data-peer-pub="{{$p.Client.PublicKey}}" data-peer-enabled="{{if $p.Client.Enabled}}1{{else}}0{{end}}">
+                <span class="wg-dot {{if $on}}on{{end}}"></span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:13px;">{{ $p.Client.Name }}</div>
+                    <div style="font-size:10px;color:#9e9e9e;font-family:ui-monospace,monospace;">{{if $p.Client.AllocatedIPs}}{{index $p.Client.AllocatedIPs 0}}{{else}}—{{end}}</div>
+                </div>
+                <div class="wg-peer-right">
+                  <div class="wg-peer-state">
+                    {{ if $on }}<span class="line1" style="color:#66BB6A">{{ tr $.UILang "dash.peer_online" }}</span>
+                    {{ else }}<span class="line1" style="color:#9e9e9e">{{ if $p.Client.Enabled }}{{ tr $.UILang "dash.peer_offline" }}{{else}}{{ tr $.UILang "dash.peer_disabled" }}{{end}}</span>{{ end }}
+                    <span class="line2 wg-peer-usage">↓ <span class="wg-peer-rx" data-wg-bytes="0">0</span>  ↑ <span class="wg-peer-tx" data-wg-bytes="0">0</span> <span style="opacity:.8">{{ tr $.UILang "dash.peer_usage" }}</span></span>
+                  </div>
+                  <label title="{{ tr $.UILang "dash.toggle_peer" }}">
+                    <input type="checkbox" class="wg-toggle-sm wg-peer-toggle" {{if $p.Client.Enabled}}checked{{end}} {{if $.baseData.Admin}}{{else}}disabled{{end}}>
+                  </label>
+                </div>
+              </div>
+            {{ end }}
+            </div>
+            {{ end }}
+        </div>
+        <div>
+          <div class="wg-pane" style="margin-bottom:14px;">
+            <h3><span>{{ tr .UILang "dash.srv_title" }}</span><span class="wg-mini-badge {{if .serverActive}}wg-srv-status--active{{else}}wg-srv-status--inactive{{end}}">{{if .serverActive}}{{ tr .UILang "dash.srv_active" }}{{else}}{{ tr .UILang "dash.srv_inactive" }}{{end}}</span></h3>
+            {{ if .serverSummary.Interface }}
+              <dl class="wg-srv-mini">
+              <dt>{{ tr .UILang "dash.srv_iface_port" }}</dt>
+              <dd>{{ if gt (len .serverSummary.Interface.Addresses) 0}}{{ index .serverSummary.Interface.Addresses 0 }}{{ else }}-{{ end }} — {{ .serverSummary.Interface.ListenPort }}/UDP</dd>
+              <dt>{{ tr .UILang "dash.srv_pubkey" }}</dt>
+              <dd>{{ if .serverSummary.KeyPair }}<span translate="no">{{slice .serverSummary.KeyPair.PublicKey 0 24}}…</span>{{ else }}—{{ end }}</dd>
+              </dl>
+              <div class="mini-spark" id="wg-dash-server-bw" aria-hidden="true"></div>
+            {{ else }}
+            <p class="text-muted mb-0" style="font-size:11px;">{{ tr .UILang "dash.server_no_config" }}</p>
+            {{ end }}
+          </div>
+          <div class="wg-pane">
+            <h3>{{ tr .UILang "dash.quick_actions" }}</h3>
+            <div class="quick-actions">
+                <a class="qa" href="{{.basePath}}/download-all-configs" style="{{if .baseData.Admin}}{{else}}opacity:.35;pointer-events:none{{end}}"><i class="fas fa-download" style="color:#EF5350;"></i><span>{{ tr .UILang "dash.export_configs" }}</span></a>
+                <a class="qa" href="#" id="wg-qa-restart" style="{{if .baseData.Admin}}{{else}}opacity:.35;pointer-events:none{{end}}"><i class="fas fa-redo-alt" style="color:#66BB6A;"></i><span>{{ tr .UILang "dash.restart_server" }}</span></a>
+                <a class="qa" href="#" id="wg-qa-key" style="{{if .baseData.Admin}}{{else}}opacity:.35;pointer-events:none{{end}}"><i class="fas fa-lock" style="color:#FFCA28;"></i><span>{{ tr .UILang "dash.change_server_key" }}</span></a>
+                <a class="qa" href="{{.basePath}}/logs"><i class="fas fa-exclamation-circle" style="color:#EF5350;"></i><span>{{ tr .UILang "dash.view_logs" }}</span></a>
+            </div>
+            <p style="margin:10px 0 0;font-size:9px;color:#5c5c5c;line-height:1.4;">{{ printf (tr .UILang "dash.logs_tail_hint") .logTailEnvVarHint }}</p>
+          </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="modal_dash_restart_warn" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">{{ tr .UILang "dash.modal.restart_title" }}</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}"><span>&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <p style="margin:0;">{{ tr .UILang "dash.modal.restart_body" }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{{ tr .UILang "dash.modal.cancel" }}</button>
+        <button type="button" class="btn btn-success" id="btn_dash_restart_confirm">{{ tr .UILang "dash.modal.restart_confirm" }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal_dash_key_warn" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">{{ tr .UILang "dash.modal.key_title" }}</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr .UILang "aria.close" }}"><span>&times;</span></button>
+      </div>
+      <div class="modal-body">
+        <p style="margin:0;">{{ tr .UILang "dash.modal.key_body" }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{{ tr .UILang "dash.modal.cancel" }}</button>
+        <button type="button" class="btn btn-warning" id="btn_dash_key_confirm">{{ tr .UILang "dash.modal.key_confirm" }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var rx=document.getElementById('wg-kpi-rx');var tx=document.getElementById('wg-kpi-tx');
+  var en=document.getElementById('wg-kpi-enabled');
+  var tt=document.getElementById('wg-kpi-total');
+  var ss=document.getElementById('wg-kpi-sessions');
+  function fmtBytes(n){
+    if (window.wgFmtBytes) return window.wgFmtBytes(n);
+    var v = Number(n || 0);
+    if (v < 1024) return v + ' B';
+    var u = [' KB',' MB',' GB',' TB'];
+    var i = -1;
+    do { v /= 1024; ++i; } while (v >= 1024 && i < u.length - 1);
+    return v.toFixed(2) + u[i];
+  }
+  if(rx)rx.textContent=fmtBytes(Number({{.bytesTransmitted}}));
+  if(tx)tx.textContent=fmtBytes(Number({{.bytesReceived}}));
+
+  function updateKpi(){
+    fetch('{{.basePath}}/api/dashboard-stats', { credentials: 'same-origin' })
+      .then(function(resp){ if(!resp.ok) throw new Error('HTTP ' + resp.status); return resp.json(); })
+      .then(function(data){
+        if(!data) return;
+        if(en) en.textContent = Number(data.enabled_peers || 0);
+        if(tt) tt.textContent = Number(data.total_peers || 0);
+        if(ss) ss.textContent = Number(data.online_sessions || 0);
+      })
+      .catch(function(){});
+
+    // Keep top KPI traffic aligned with peer 24h totals (same source as peer rows).
+    fetch('{{.basePath}}/api/wg-traffic-series?range=24h', { credentials: 'same-origin' })
+      .then(function(resp){ if(!resp.ok) throw new Error('HTTP ' + resp.status); return resp.json(); })
+      .then(function(data){
+        var arr = (data && data.peer_totals) || [];
+        var sumDl = 0; // peer perspective download = tx_bytes
+        var sumUl = 0; // peer perspective upload   = rx_bytes
+        arr.forEach(function(p){
+          sumDl += Number((p && p.tx_bytes) || 0);
+          sumUl += Number((p && p.rx_bytes) || 0);
+        });
+        if (rx) {
+          rx.textContent = fmtBytes(sumDl);
+          rx.parentElement && rx.parentElement.setAttribute('title', sumDl + ' B');
+        }
+        if (tx) {
+          tx.textContent = fmtBytes(sumUl);
+          tx.parentElement && tx.parentElement.setAttribute('title', sumUl + ' B');
+        }
+      })
+      .catch(function(){});
+  }
+
+  function start(){
+    updateKpi();
+    if ({{if .globalSettings.RealtimeStatsEnabled}}true{{else}}false{{end}}) {
+      setInterval(updateKpi, 4000);
+    }
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();
+(function(){
+ var ip=document.getElementById('wg-dash-peer-filter');if(!ip)return;
+ ip.addEventListener('input',function(){
+  var q=(ip.value||'').toLowerCase();
+  document.querySelectorAll('#wg-dash-peer-rows .wg-peer-row').forEach(function(r){
+   var n=(r.getAttribute('data-peer-name')||'').toLowerCase();
+   r.style.display=q===''||n.indexOf(q)>=0?'flex':'none';
+  });
+ });
+})();
+(function(){
+  function fmtBytes(n){
+    if (window.wgFmtBytes) return window.wgFmtBytes(n);
+    var v = Number(n || 0);
+    if (v < 1024) return v + ' B';
+    var u = [' KB',' MB',' GB',' TB'];
+    var i = -1;
+    do { v /= 1024; ++i; } while (v >= 1024 && i < u.length - 1);
+    return v.toFixed(2) + u[i];
+  }
+
+  function applyPeerTraffic24h(peerTotals){
+    var byPub = {};
+    (peerTotals || []).forEach(function(p){
+      var pk = String((p && p.public_key) || '');
+      if (!pk) return;
+      byPub[pk] = {
+        rx: Number((p && p.rx_bytes) || 0),
+        tx: Number((p && p.tx_bytes) || 0)
+      };
+    });
+    document.querySelectorAll('#wg-dash-peer-rows .wg-peer-row').forEach(function(row){
+      var pub = row.getAttribute('data-peer-pub') || '';
+      var tr = byPub[pub] || { rx: 0, tx: 0 };
+      var rxEl = row.querySelector('.wg-peer-rx');
+      var txEl = row.querySelector('.wg-peer-tx');
+      if (rxEl) rxEl.textContent = fmtBytes(Number(tr.tx || 0));
+      if (txEl) txEl.textContent = fmtBytes(Number(tr.rx || 0));
+    });
+  }
+
+  function refreshPeerTraffic24h(){
+    fetch('{{.basePath}}/api/wg-traffic-series?range=24h', { credentials: 'same-origin' })
+      .then(function(resp){ if(!resp.ok) throw new Error('HTTP ' + resp.status); return resp.json(); })
+      .then(function(data){ applyPeerTraffic24h((data && data.peer_totals) || []); })
+      .catch(function(){});
+  }
+
+  function setPeerStatus(clientID, enabled){
+    return fetch('{{.basePath}}/client/set-status', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: clientID, status: !!enabled })
+    }).then(function(resp){
+      if (!resp.ok) throw new Error('status update failed');
+      return resp.json();
+    });
+  }
+
+  refreshPeerTraffic24h();
+  if ({{if .globalSettings.RealtimeStatsEnabled}}true{{else}}false{{end}}) {
+    setInterval(refreshPeerTraffic24h, 4000);
+  }
+
+  document.querySelectorAll('.wg-peer-toggle').forEach(function(toggle){
+    toggle.addEventListener('change', function(){
+      var row = toggle.closest('.wg-peer-row');
+      if (!row) return;
+      var id = row.getAttribute('data-peer-id');
+      var checked = !!toggle.checked;
+      toggle.disabled = true;
+      setPeerStatus(id, checked)
+        .then(function(){
+          row.setAttribute('data-peer-enabled', checked ? '1' : '0');
+          var dot = row.querySelector('.wg-dot');
+          if (dot && !checked) dot.classList.remove('on');
+          var state1 = row.querySelector('.wg-peer-state .line1');
+          if (state1) {
+            if (!checked) {
+              state1.textContent = 'Deshabilitado';
+              state1.style.color = '#9e9e9e';
+            } else {
+              state1.textContent = 'Offline';
+              state1.style.color = '#9e9e9e';
+            }
+          }
+          if (typeof updateApplyConfigVisibility === 'function') updateApplyConfigVisibility();
+        })
+        .catch(function(){
+          toggle.checked = !checked;
+        })
+        .finally(function(){
+          toggle.disabled = {{if .baseData.Admin}}false{{else}}true{{end}};
+        });
+    });
+  });
+})();
+(function(){
+  var restart = document.getElementById('wg-qa-restart');
+  var btnRestartConfirm = document.getElementById('btn_dash_restart_confirm');
+  var qaKey = document.getElementById('wg-qa-key');
+  var btnKeyConfirm = document.getElementById('btn_dash_key_confirm');
+
+  function postJson(url){
+    return fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function(r){
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json().catch(function(){ return {}; });
+    });
+  }
+
+  if (restart) {
+    restart.addEventListener('click', function(ev){
+      ev.preventDefault();
+      $('#modal_dash_restart_warn').modal('show');
+    });
+  }
+  if (btnRestartConfirm) {
+    btnRestartConfirm.addEventListener('click', function(){
+      btnRestartConfirm.disabled = true;
+      postJson('{{.basePath}}/api/wireguard/wg-quick-down')
+        .catch(function(){ return {}; })
+        .then(function(){ return postJson('{{.basePath}}/api/wireguard/wg-quick-up'); })
+        .then(function(){
+          $('#modal_dash_restart_warn').modal('hide');
+          if (window.toastr) toastr.success(wgT('dash.toast_restart_ok'));
+        })
+        .catch(function(){
+          if (window.toastr) toastr.error(wgT('dash.toast_restart_err'));
+        })
+        .finally(function(){
+          btnRestartConfirm.disabled = false;
+        });
+    });
+  }
+
+  if (qaKey) {
+    qaKey.addEventListener('click', function(ev){
+      ev.preventDefault();
+      $('#modal_dash_key_warn').modal('show');
+    });
+  }
+  if (btnKeyConfirm) {
+    btnKeyConfirm.addEventListener('click', function(){
+      btnKeyConfirm.disabled = true;
+      postJson('{{.basePath}}/wg-server/keypair')
+        .then(function(){
+          $('#modal_dash_key_warn').modal('hide');
+          if (window.toastr) toastr.success(wgT('dash.toast_key_ok'));
+        })
+        .catch(function(){
+          if (window.toastr) toastr.error(wgT('dash.toast_key_err'));
+        })
+        .finally(function(){
+          btnKeyConfirm.disabled = false;
+        });
+    });
+  }
+})();
+
+(function(){
+  var spark = document.getElementById('wg-dash-server-bw');
+  if (!spark) return;
+
+  function renderSpark(buckets){
+    spark.innerHTML = '';
+    var arr = (buckets || []).slice(-14);
+    if (!arr.length) {
+      for (var i = 0; i < 14; i++) {
+        var ph = document.createElement('div');
+        ph.className = 'bar';
+        var phSeg = document.createElement('span');
+        phSeg.className = 'seg seg-rx';
+        phSeg.style.height = '8px';
+        ph.appendChild(phSeg);
+        spark.appendChild(ph);
+      }
+      return;
+    }
+    var max = 0;
+    arr.forEach(function(b){
+      var t = Number((b && b.rx_avg_bps) || 0) + Number((b && b.tx_avg_bps) || 0);
+      if (t > max) max = t;
+    });
+    if (max <= 0) max = 1;
+    arr.forEach(function(b){
+      var rx = Number((b && b.rx_avg_bps) || 0);
+      var tx = Number((b && b.tx_avg_bps) || 0);
+      var total = rx + tx;
+      var h = Math.max(6, Math.round((total / max) * 30));
+      var rxH = total > 0 ? Math.max(2, Math.round(h * (rx / total))) : 0;
+      var txH = Math.max(0, h - rxH);
+      var bar = document.createElement('div');
+      bar.className = 'bar';
+      if (txH > 0) {
+        var segTx = document.createElement('span');
+        segTx.className = 'seg seg-tx';
+        segTx.style.height = txH + 'px';
+        bar.appendChild(segTx);
+      }
+      if (rxH > 0) {
+        var segRx = document.createElement('span');
+        segRx.className = 'seg seg-rx';
+        segRx.style.height = rxH + 'px';
+        bar.appendChild(segRx);
+      }
+      spark.appendChild(bar);
+    });
+  }
+
+  function refreshSpark(){
+    fetch('{{.basePath}}/api/wg-traffic-series?range=24h', { credentials: 'same-origin' })
+      .then(function(resp){ if(!resp.ok) throw new Error('HTTP ' + resp.status); return resp.json(); })
+      .then(function(data){ renderSpark((data && data.buckets) || []); })
+      .catch(function(){ renderSpark([]); });
+  }
+
+  refreshSpark();
+  setInterval(refreshSpark, 4000);
+})();
+</script>
+{{end}}
+
+{{define "bottom_js"}}
+{{end}}

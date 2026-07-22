@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -11,8 +12,57 @@ import (
 	"github.com/ngoduykhanh/wireguard-ui/util"
 )
 
+// WebAuthn credential ID (RawURLEncoded) used for the current login, if login was via passkey.
+const sessionPkLoginCredKey = "pk_login_cred"
+
+// androidCompanionIdleMinSeconds is the minimum sliding idle window for requests that identify as the
+// Flutter Android client (header X-WGUI-Client: android). Browser/HTML sessions keep using only
+// global session_timeout_minutes from settings.
+const androidCompanionIdleMinSeconds = 15 * 24 * 3600
+
+const androidCompanionClientHeader = "X-WGUI-Client"
+const androidCompanionClientValue = "android"
+
+func isWireguardUiAndroidClient(c echo.Context) bool {
+	return strings.EqualFold(strings.TrimSpace(c.Request().Header.Get(androidCompanionClientHeader)), androidCompanionClientValue)
+}
+
+func effectiveIdleSeconds(sess *sessions.Session, c echo.Context) int64 {
+	maxAge := getMaxAge(sess)
+	if maxAge <= 0 {
+		maxAge = 86400
+	}
+	v := int64(maxAge)
+	if isWireguardUiAndroidClient(c) && v < androidCompanionIdleMinSeconds {
+		return androidCompanionIdleMinSeconds
+	}
+	return v
+}
+
+func effectiveIdleSecondsForCookie(sess *sessions.Session, c echo.Context) int {
+	maxAge := getMaxAge(sess)
+	if maxAge <= 0 {
+		maxAge = 86400
+	}
+	if isWireguardUiAndroidClient(c) && maxAge < androidCompanionIdleMinSeconds {
+		return androidCompanionIdleMinSeconds
+	}
+	return maxAge
+}
+
+func sessionPasskeyCredentialID(sess *sessions.Session) string {
+	if sess == nil {
+		return ""
+	}
+	s, _ := sess.Values[sessionPkLoginCredKey].(string)
+	return strings.TrimSpace(s)
+}
+
 func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
+		if util.DisableLogin {
+			return next(c)
+		}
 		if !isValidSession(c) {
 			nextURL := c.Request().URL
 			if nextURL != nil && c.Request().Method == http.MethodGet {
@@ -20,6 +70,11 @@ func ValidSession(next echo.HandlerFunc) echo.HandlerFunc {
 			} else {
 				return c.Redirect(http.StatusTemporaryRedirect, util.BasePath+"/login")
 			}
+		}
+		// Sliding idle timeout: treat this request as last activity for idle expiry.
+		// Do not refresh cookies on /logout: it races with clearSession in the same response.
+		if !strings.HasSuffix(c.Request().URL.Path, "/logout") {
+			touchSessionIdle(c)
 		}
 		return next(c)
 	}
@@ -56,13 +111,8 @@ func isValidSession(c echo.Context) bool {
 	// Check time bounds
 	createdAt := getCreatedAt(sess)
 	updatedAt := getUpdatedAt(sess)
-	maxAge := getMaxAge(sess)
-	// Temporary session is considered valid within 24h if browser is not closed before
-	// This value is not saved and is used as virtual expiration
-	if maxAge == 0 {
-		maxAge = 86400
-	}
-	expiration := updatedAt + int64(maxAge)
+	idleWindow := effectiveIdleSeconds(sess, c)
+	expiration := updatedAt + idleWindow
 	now := time.Now().UTC().Unix()
 	if updatedAt > now || expiration < now || createdAt+util.SessionMaxDuration < now {
 		return false
@@ -110,11 +160,10 @@ func doRefreshSession(c echo.Context) {
 
 	sess.Values["updated_at"] = now
 	sess.Options = &sessions.Options{
-		Path:     cookiePath,
-		MaxAge:   maxAge,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		Path:   cookiePath,
+		MaxAge: maxAge,
 	}
+	util.ApplySessionSecureFlags(sess.Options)
 	sess.Save(c.Request(), c.Response())
 
 	cookie := new(http.Cookie)
@@ -122,8 +171,7 @@ func doRefreshSession(c echo.Context) {
 	cookie.Path = cookiePath
 	cookie.Value = oldCookie.Value
 	cookie.MaxAge = maxAge
-	cookie.HttpOnly = true
-	cookie.SameSite = http.SameSiteLaxMode
+	util.ApplySessionHTTPFlags(cookie)
 	c.SetCookie(cookie)
 }
 
@@ -138,9 +186,45 @@ func getMaxAge(sess *sessions.Session) int {
 	switch typedMaxAge := maxAge.(type) {
 	case int:
 		return typedMaxAge
+	case int32:
+		return int(typedMaxAge)
+	case int64:
+		return int(typedMaxAge)
+	case float64:
+		return int(typedMaxAge)
 	default:
 		return 0
 	}
+}
+
+// touchSessionIdle updates updated_at while session is alive so expires at (last_activity + max_age idle window).
+func touchSessionIdle(c echo.Context) {
+	sess, _ := session.Get("session", c)
+	oldCookie, err := c.Cookie("session_token")
+	if err != nil || sess.Values["session_token"] != oldCookie.Value {
+		return
+	}
+	maxAge := effectiveIdleSecondsForCookie(sess, c)
+	now := time.Now().UTC().Unix()
+	sess.Values["updated_at"] = now
+
+	cookiePath := util.GetCookiePath()
+	sess.Options = &sessions.Options{
+		Path:   cookiePath,
+		MaxAge: maxAge,
+	}
+	util.ApplySessionSecureFlags(sess.Options)
+	if err := sess.Save(c.Request(), c.Response()); err != nil {
+		return
+	}
+
+	cookie := new(http.Cookie)
+	cookie.Name = "session_token"
+	cookie.Path = cookiePath
+	cookie.Value = oldCookie.Value
+	cookie.MaxAge = maxAge
+	util.ApplySessionHTTPFlags(cookie)
+	c.SetCookie(cookie)
 }
 
 // Get a timestamp in seconds of the time the session was created
@@ -225,15 +309,19 @@ func setUser(c echo.Context, username string, admin bool, userCRC32 uint32) {
 // clearSession to remove current session
 func clearSession(c echo.Context) {
 	sess, _ := session.Get("session", c)
+	delete(sess.Values, sessionPkLoginCredKey)
 	sess.Values["username"] = ""
 	sess.Values["user_hash"] = 0
 	sess.Values["admin"] = false
 	sess.Values["session_token"] = ""
 	sess.Values["max_age"] = -1
-	sess.Options.MaxAge = -1
-	sess.Save(c.Request(), c.Response())
-
 	cookiePath := util.GetCookiePath()
+	sess.Options = &sessions.Options{
+		Path:   cookiePath,
+		MaxAge: -1,
+	}
+	util.ApplySessionSecureFlags(sess.Options)
+	sess.Save(c.Request(), c.Response())
 
 	cookie, err := c.Cookie("session_token")
 	if err != nil {
@@ -243,7 +331,6 @@ func clearSession(c echo.Context) {
 	cookie.Name = "session_token"
 	cookie.Path = cookiePath
 	cookie.MaxAge = -1
-	cookie.HttpOnly = true
-	cookie.SameSite = http.SameSiteLaxMode
+	util.ApplySessionHTTPFlags(cookie)
 	c.SetCookie(cookie)
 }
